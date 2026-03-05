@@ -1,0 +1,261 @@
+# ac
+
+**A structured development partner for Claude Code.**
+
+`ac` learns how you code, how you write, and how you think about architecture — then applies that knowledge to every task. It plans before coding, researches before asking, delegates to specialized agents, and never forgets your conventions.
+
+Install the plugin, teach it your style once, and every Claude Code session becomes a pair programming session with someone who already knows your codebase.
+
+Designed for **Sonnet as your daily driver**. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Haiku agents handle fast search. Then Sonnet picks up execution. Opus-quality decisions at Sonnet-level costs.
+
+## Why This Plugin
+
+Claude Code is powerful out of the box, but without structure it burns tokens on false starts, scope creep, and redundant exploration. `ac` fixes that:
+
+- **It knows your style** — Analyzes your existing projects and writing to create personal `my-coding` and `my-language` skills that load automatically
+- **It plans before it codes** — Every non-trivial task goes through classify, research, interview, plan. No wasted cycles on wrong approaches
+- **It delegates intelligently** — Haiku agents search your codebase and fetch docs in parallel. Sonnet and Opus agents review plans through quality gates
+- **It scaffolds from reality** — Auto-generates `CLAUDE.md` and `.claude/rules/` from actual codebase analysis, not generic templates
+- **It's token-efficient** — Progressive disclosure loads context only when needed. Path-scoped rules inject only for matching files
+- **It's built on official patterns** — Pure markdown on Claude Code's native extension points (agents, skills, commands, rules, MCP). No custom runtime, no vendor lock-in
+
+## Install
+
+```bash
+claude plugin add anilcancakir/claude-code-plugin
+```
+
+## Getting Started
+
+The plugin works best when configured in the right order. Personal setup is **one-time** (shared across all projects). Project setup runs **once per project**.
+
+### Step 1: Personal Setup (one-time)
+
+These commands analyze your existing code and writing to create personalized skills.
+
+**1a. Create your coding style skill**
+
+```
+/ac:setup-coding
+```
+
+Scans 1-3 of your representative projects, interviews you on naming, architecture, formatting, and testing preferences. Generates `~/.claude/skills/my-coding/` — your personal coding rulebook.
+
+**1b. Create your writing style skill**
+
+```
+/ac:setup-language
+```
+
+Analyzes your existing documentation, articles, or commit messages. Interviews you on voice, tone, and structure. Generates `~/.claude/skills/my-language/` — your personal writing guide.
+
+**1c. Generate your global CLAUDE.md**
+
+```
+/ac:setup-global-claude-md
+```
+
+Detects your environment, installed skills, and MCP servers. Interviews you on communication style, autonomy level, and non-negotiable rules. Generates `~/.claude/CLAUDE.md` — your orchestration config that references the skills from steps 1a-1b.
+
+### Step 2: Project Setup (per project)
+
+Run these in each project directory. They analyze the actual codebase — no generic templates.
+
+**2a. Generate project CLAUDE.md**
+
+```
+/ac:init-claude-md
+```
+
+Launches 3 parallel agents to discover commands, architecture, and conventions. Interviews you to validate findings. Generates a token-budgeted `./CLAUDE.md` that is additive to your global config (no duplication).
+
+**2b. Generate path-scoped rules**
+
+```
+/ac:init-rules
+```
+
+Scores directories by complexity, detects tech stacks, extracts conventions from source code. Generates `.claude/rules/*.md` with path globs — rules inject only when matching files are touched.
+
+### Step 3: Daily Workflow
+
+Once setup is complete, use the plan-execute loop for development.
+
+```
+/ac:plan <describe your task>
+```
+
+Claude classifies the request, launches research agents, interviews you on ambiguities, and produces an actionable plan with acceptance criteria. Then:
+
+```
+/ac:execute <plan-name>
+```
+
+Decomposes the plan into independent work units and executes them — parallel worktree agents for independent steps, sequential agents for dependent ones.
+
+For complex bugs or deep investigation:
+
+```
+/ac:deep <describe the bug or issue>
+```
+
+Opus investigates the codebase, traces root cause through hypothesis-first analysis, and returns specific fix steps.
+
+## Commands
+
+### Workflow
+
+| Command | Description | Model |
+|---------|-------------|-------|
+| `/ac:plan` | Classify intent, research via agents, interview, produce actionable plan | Opus |
+| `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation | Opus |
+| `/ac:execute` | Execute an approved plan — parallel worktree agents or sequential | Sonnet |
+
+### Project Setup
+
+| Command | Description | Model |
+|---------|-------------|-------|
+| `/ac:init-claude-md` | Auto-discover codebase, interview developer, generate project `CLAUDE.md` | Opus |
+| `/ac:init-rules` | Analyze project conventions, score directories, generate `.claude/rules/` | Opus |
+
+### Personal Setup
+
+| Command | Description |
+|---------|-------------|
+| `/ac:setup-coding` | Scan your projects, interview on preferences, generate `~/.claude/skills/my-coding/` |
+| `/ac:setup-language` | Scan your writing, interview on voice, generate `~/.claude/skills/my-language/` |
+| `/ac:setup-global-claude-md` | Detect environment, interview, generate `~/.claude/CLAUDE.md` |
+
+## Agents
+
+All agents are **read-only** — advisory roles never have write tools.
+
+| Agent | Model | Role |
+|-------|-------|------|
+| `ac:explore` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
+| `ac:librarian` | Haiku | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
+| `ac:plan-analysis` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
+| `ac:plan-review` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
+
+## Skills
+
+| Skill | Model | Description |
+|-------|-------|-------------|
+| `ac-skill-creator` | Opus | Create skills, agents, commands, rules optimized for Claude Code. Includes prompt pattern library and style templates in `references/` |
+
+## How It Works
+
+### Planning (`/ac:plan`)
+
+```
+Request -> Classify (intent + complexity)
+        -> Research (parallel ac:explore + ac:librarian agents)
+        -> Interview (AskUserQuestion with options)
+        -> Draft plan with acceptance criteria
+        -> Analysis gate (plan-analysis agent)
+        -> Save to ~/.claude/projects/<hash>/plans/
+        -> User approves -> /ac:execute
+```
+
+### Deep Investigation (`/ac:deep`)
+
+```
+Request -> Classify (intent type + scope + predict likely issues)
+        -> Research (parallel ac:explore + ac:librarian agents)
+        -> Analyze (hypothesis-first, verify against code, load my-coding)
+        -> Report (diagnosis + evidence + recommended fix + verification)
+        -> Main agent executes recommended steps
+```
+
+### Execution (`/ac:execute`)
+
+```
+Load plan -> Decompose into Work Units
+          -> Independent units -> parallel worktree agents
+          -> Dependent units -> sequential agents
+          -> Track progress per wave
+          -> Final verification (build + test + lint)
+```
+
+## Design Principles
+
+**Sonnet-first, Opus-when-needed** — The plugin is designed for developers who run Claude Code on Sonnet as their default model. Complex tasks escalate to Opus agents for planning, investigation, and architecture, then return to Sonnet for execution. Haiku handles fast search and exploration. You get the right model at each step without switching manually.
+
+```
+Daily work (Sonnet) -> Complex task detected
+  -> Build/Refactor? -> /ac:plan (Opus plans, Haiku researches)
+  -> Debug/Investigate? -> /ac:deep (Opus investigates, Haiku searches)
+  -> /ac:execute (Sonnet agents implement)
+  -> Back to daily work (Sonnet)
+```
+
+**Built on official patterns** — Every component follows Claude Code's native extension points: agents, skills, commands, rules, MCP. Patterns extracted from Anthropic's official plugins and system prompt archives. No custom runtime, no compilation — pure markdown with YAML frontmatter.
+
+**Progressive disclosure** — Plugin metadata is always in context (~100 words per component). SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant.
+
+**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review) never have write tools. Only execution agents spawned by `/ac:execute` get full tool access.
+
+**Plan-first** — All commands follow the same pattern: classify, research, interview, generate, review, install. No code is written during planning.
+
+## Plugin Structure
+
+```
+claude-code-plugin/
+├── .claude-plugin/
+│   └── plugin.json              # Plugin metadata (name: "ac")
+├── .mcp.json                    # MCP server config (context7)
+├── commands/                    # 8 user-invocable /ac:* commands
+│   ├── plan.md                  # /ac:plan
+│   ├── deep.md                  # /ac:deep
+│   ├── execute.md               # /ac:execute
+│   ├── init-claude-md.md        # /ac:init-claude-md
+│   ├── init-rules.md            # /ac:init-rules
+│   ├── setup-coding.md          # /ac:setup-coding
+│   ├── setup-language.md        # /ac:setup-language
+│   └── setup-global-claude-md.md # /ac:setup-global-claude-md
+├── agents/                      # 4 read-only agent definitions
+│   ├── explore.md               # Haiku codebase search
+│   ├── librarian.md             # Haiku external docs
+│   ├── plan-analysis.md         # Sonnet plan auditor
+│   └── plan-review.md           # Opus plan reviewer
+├── skills/
+│   └── ac-skill-creator/        # Component creation skill
+│       ├── SKILL.md
+│       └── references/
+│           ├── prompt-patterns.md
+│           ├── coding-style-template.md
+│           ├── language-style-template.md
+│           ├── project-claude-md-template.md
+│           └── global-claude-md-template.md
+├── package.json
+├── LICENSE
+└── README.md
+```
+
+All components are pure markdown with YAML frontmatter. No compiled code, no runtime dependencies.
+
+## MCP Servers
+
+| Server | Purpose |
+|--------|---------|
+| `context7` | Live documentation API for 18+ frameworks. Used by `ac:librarian` before falling back to WebSearch |
+
+The plugin ships with context7 pre-configured in `.mcp.json`. Add your API key to your shell profile:
+
+```bash
+export CONTEXT7_API_KEY="your-api-key-here"
+```
+
+Get a free key at [context7.com](https://context7.com).
+
+## Requirements
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed and configured
+
+## Contributing
+
+Issues and pull requests are welcome at [github.com/anilcancakir/claude-code-plugin](https://github.com/anilcancakir/claude-code-plugin).
+
+## License
+
+MIT

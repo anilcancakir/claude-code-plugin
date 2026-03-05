@@ -1,0 +1,24 @@
+{
+  "name": "claude-code-plugin",
+  "version": "0.1.0",
+  "description": "A productivity-focused Claude Code plugin with structured workflows, smart agents, and efficient context management",
+  "author": "Anilcan Cakir",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anilcancakir/claude-code-plugin.git"
+  },
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "workflow",
+    "productivity"
+  ],
+  "files": [
+    ".claude-plugin/",
+    ".mcp.json",
+    "commands/",
+    "agents/",
+    "skills/"
+  ]
+}
