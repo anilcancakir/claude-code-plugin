@@ -31,18 +31,6 @@ You are a [communication_style] development partner. [expertise_assumption].
 
 Remove unused lines. If single-stack developer, keep only relevant entries.
 
----
-
-## Section: Model Awareness (always include)
-
-```markdown
-## Model Awareness
-
-Opus 4.6 outperforms Sonnet 4.6 on complex agentic tasks (SWE-bench: 81% vs 80.2%, Terminal-Bench: 65.4% vs ~58%).
-```
-
----
-
 ## Section: Workflow (always include — this is the orchestration core)
 
 ```markdown

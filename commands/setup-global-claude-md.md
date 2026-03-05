@@ -126,7 +126,6 @@ You are orchestrating an interactive session to build the developer's global `~/
 2. Build sections:
    - **Identity block**: Communication style from Q1
    - **Tech Stack**: From Q2 or detected from `my-coding` skill
-   - **Model Awareness**: Static benchmark line (Opus 4.6 vs Sonnet 4.6)
    - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:deep"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
    - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
    - **Skills section**: Include all detected skills from Phase 1. Use table format with skill name and "Load When" column. If additional skills approved in Q6, add them. If no skills detected, omit this section
