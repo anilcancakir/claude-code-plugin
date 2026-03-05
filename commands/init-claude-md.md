@@ -191,11 +191,40 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 **Skip entirely** if user declined Q5 or no dev tools detected.
 
-**Actions**:
+### Hook JSON Structure
+
+Every hook MUST follow this three-level nesting. Do NOT flatten or restructure:
+
+```json
+{
+  "hooks": {
+    "<EventName>": [
+      {
+        "matcher": "<regex string>",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<shell command>",
+            "timeout": 10000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Schema rules:
+
+- `matcher` → **regex string** (e.g. `"Edit|Write"`, `"Bash"`, `"mcp__.*"`). NEVER an object.
+- `hooks` → **array** of handler objects. Each handler has `type`, `command`, and optional `timeout`.
+- `timeout` → lives **inside** the handler object, NOT at matcher group level.
+
+### Actions
 
 1. For each approved hook, use these templates:
 
-   **Auto-format (PostToolUse → Write|Edit):**
+   **Auto-format (PostToolUse, matcher: `"Edit|Write"`, timeout: 10000ms):**
 
    | Tool | Command |
    |------|---------|
@@ -206,7 +235,7 @@ This file provides guidance to Claude Code when working with code in this reposi
    | rustfmt | `jq -r '.tool_response.filePath // .tool_input.file_path' \| grep '\.rs$' \| xargs rustfmt 2>/dev/null \|\| true` |
    | php-cs-fixer | `jq -r '.tool_response.filePath // .tool_input.file_path' \| grep '\.php$' \| xargs php-cs-fixer fix 2>/dev/null \|\| true` |
 
-   **Auto-lint (PostToolUse → Write|Edit):**
+   **Auto-lint (PostToolUse, matcher: `"Edit|Write"`, timeout: 15000ms):**
 
    | Tool | Command |
    |------|---------|
@@ -214,16 +243,41 @@ This file provides guidance to Claude Code when working with code in this reposi
    | eslint | `jq -r '.tool_response.filePath // .tool_input.file_path' \| grep -E '\.(ts\|js\|tsx\|jsx)$' \| xargs eslint --fix 2>/dev/null \|\| true` |
    | phpstan | `jq -r '.tool_response.filePath // .tool_input.file_path' \| grep '\.php$' && phpstan analyze --no-progress \|\| true` |
 
-   **Write guard (PreToolUse → Write):**
+   **Write guard (PreToolUse, matcher: `"Write"`, timeout: 5000ms):**
    `jq -r '.tool_input.file_path' | grep -qE '(\.env|\.credentials|secrets)' && echo '{"continue":false,"stopReason":"Blocked: sensitive file"}' && exit 2 || true`
+
+   **Concrete example** — dart format + dart analyze together:
+
+   ```json
+   {
+     "hooks": {
+       "PostToolUse": [
+         {
+           "matcher": "Edit|Write",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | grep '.dart$' | xargs dart format 2>/dev/null || true",
+               "timeout": 10000
+             },
+             {
+               "type": "command",
+               "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | grep '.dart$' && dart analyze --no-fatal-infos || true",
+               "timeout": 15000
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
 
 2. **Merge strategy** — CRITICAL:
    - Read existing `.claude/settings.json` first (detected in Phase 1)
    - If exists: merge new hooks into existing `hooks` object, preserve all other settings
-   - If event already has hooks array: append, don't replace
+   - If event already has hooks array: append matcher groups, don't replace
    - If doesn't exist: create `{ "hooks": { ... } }`
    - All commands end with `|| true` — hook failures must never block work
-   - Timeouts: format 10000ms, lint 15000ms, guard 5000ms
 
 3. Prepare hooks preview for Phase 5
 
