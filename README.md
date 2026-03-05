@@ -22,7 +22,17 @@ Claude Code is powerful out of the box, but without structure it burns tokens on
 ## Install
 
 ```bash
-claude plugin add anilcancakir/claude-code-plugin
+# Step 1: Add marketplace
+/plugin marketplace add anilcancakir/claude-code-plugin
+
+# Step 2: Install plugin
+/plugin install ac
+```
+
+### Updating
+
+```bash
+/plugin marketplace update ac
 ```
 
 ## Getting Started
@@ -202,7 +212,8 @@ Daily work (Sonnet) -> Complex task detected
 ```
 claude-code-plugin/
 ├── .claude-plugin/
-│   └── plugin.json              # Plugin metadata (name: "ac")
+│   ├── plugin.json              # Plugin metadata (name: "ac")
+│   └── marketplace.json         # Marketplace registry for /plugin install
 ├── .mcp.json                    # MCP server config (context7)
 ├── commands/                    # 8 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan

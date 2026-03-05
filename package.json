@@ -1,7 +1,7 @@
 {
   "name": "claude-code-plugin",
-  "version": "0.1.0",
-  "description": "A productivity-focused Claude Code plugin with structured workflows, smart agents, and efficient context management",
+  "version": "1.0.0",
+  "description": "Structured development partner for Claude Code — Opus-quality decisions at Sonnet-level costs",
   "author": "Anilcan Cakir",
   "license": "MIT",
   "repository": {
@@ -11,14 +11,23 @@
   "keywords": [
     "claude-code",
     "claude-code-plugin",
-    "workflow",
-    "productivity"
+    "development-twin",
+    "cost-optimization",
+    "model-routing",
+    "multi-agent",
+    "orchestration"
   ],
   "files": [
     ".claude-plugin/",
     ".mcp.json",
     "commands/",
     "agents/",
-    "skills/"
+    "skills/",
+    "rules/",
+    "hooks/",
+    "scripts/",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE"
   ]
 }
