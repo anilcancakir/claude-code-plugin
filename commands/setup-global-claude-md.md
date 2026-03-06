@@ -48,6 +48,16 @@ You are orchestrating an interactive session to build the developer's global `~/
    - OS and architecture: `uname -ms`
    - Shell: `echo $SHELL`
    - Common tools: check for `docker`, `git`, `node`, `php`, `dart`, `python3`, `go`
+6. Detect global Claude Code settings via Bash:
+
+   ```bash
+   cat ~/.claude/settings.json 2>/dev/null
+   ```
+
+   - Parse `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
+   - Parse `env.CLAUDE_CODE_ENABLE_TASKS`
+   - Parse `teammateMode`
+   - Mark missing keys for optional safe merge during install
 
 ---
 
@@ -129,8 +139,8 @@ You are orchestrating an interactive session to build the developer's global `~/
    - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:deep"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
    - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
    - **Skills section**: Include all detected skills from Phase 1. Use table format with skill name and "Load When" column. If additional skills approved in Q6, add them. If no skills detected, omit this section
-   - **MCP section**: If user approved MCP references in Q6, add a concise MCP reference block listing server name and capability. Only enabled servers. Format: `MCP: <server> — <capability>`
-   - **Rules section**: Compile from Q3 non-negotiables + Q4 architecture + Q7 extras. Deduplicate against `my-coding` skill rules
+    - **MCP section**: If user approved MCP references in Q6, add a concise MCP reference block listing server name and capability. Only enabled servers. Format: `MCP: <server> — <capability>`
+    - **Rules section**: Compile from Q3 non-negotiables + Q4 architecture + Q7 extras. Deduplicate against `my-coding` skill rules
 3. Count total lines — if over 120, trim Rules section (defer detailed rules to `my-coding` skill reference)
 
 ---
@@ -174,7 +184,14 @@ CRITICAL: Do not install without user approval.
 4. Once approved:
    - If existing `~/.claude/CLAUDE.md`, backup: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak`
    - Write the new file: `~/.claude/CLAUDE.md`
+   - If `~/.claude/settings.json` exists or can be created, perform safe merge for background-agent reliability keys:
+     - Ensure `env` object exists
+     - Add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"` only if missing
+     - Add `env.CLAUDE_CODE_ENABLE_TASKS = "true"` only if missing
+     - Never overwrite existing values
+     - Never modify existing `teammateMode`
 5. Confirm installation:
    - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md`"
    - "It will be injected into every Claude Code conversation automatically."
+   - If settings keys were added: "Added missing background-agent settings keys in `~/.claude/settings.json` without changing existing teammateMode or user-defined values."
    - If `my-coding` or `my-language` not detected: "Consider running `/ac:setup-coding` and `/ac:setup-language` to create personalized skills that this CLAUDE.md can reference."

@@ -259,6 +259,40 @@ export CONTEXT7_API_KEY="your-api-key-here"
 
 Get a free key at [context7.com](https://context7.com).
 
+## Agent Teams & Background Agents (Troubleshooting)
+
+If you see agent calls stuck at `Backgrounded agent` and no visible progress, check your global Claude Code settings.
+
+### Required global settings
+
+Add these keys in `~/.claude/settings.json` under `env`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_ENABLE_TASKS": "true"
+  }
+}
+```
+
+### iTerm2 + tmux notes
+
+If you want visible teammate panes, run Claude Code inside tmux:
+
+```bash
+tmux -CC
+claude
+```
+
+- `teammateMode: "tmux"` needs tmux runtime.
+- If you prefer not to use tmux panes, keep `teammateMode: "in-process"`.
+- In `in-process` mode, teammates run in the same terminal session (no split panes).
+
+### Safe configuration principle
+
+`ac` should only add missing settings keys. It should never overwrite an existing `teammateMode` or replace user-defined values.
+
 ## Requirements
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed and configured

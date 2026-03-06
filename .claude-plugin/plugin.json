@@ -1,6 +1,6 @@
 {
   "name": "ac",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A structured development partner for Claude Code — learns your style, plans before coding, investigates bugs with Opus, and delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
   "author": {
     "name": "Anilcan Cakir",
