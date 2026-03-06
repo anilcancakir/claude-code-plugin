@@ -16,6 +16,7 @@ You are orchestrating a planning workflow. Classify intent, research the codebas
 - **One instruction per question**: Use AskUserQuestion with specific, preference-based options
 - **Plan, never implement**: Produce actionable plans with acceptance criteria. Do not write code
 - **Adaptive depth**: Scale phases to request complexity
+- **Plan-mode safety**: Respect Claude Code runtime mode. If plan mode is active, follow native plan-mode workflow and use `ExitPlanMode` for approval. If plan mode is not active, stay in standard chat flow with AskUserQuestion for decisions
 
 ---
 
@@ -202,6 +203,10 @@ options:
 ```
 
 If user selects **Execute (Parallel)**, invoke `ac:execute` with the plan file path.
+
+Plan handoff must respect runtime mode:
+- If plan mode is active, use `ExitPlanMode` for approval handoff
+- If plan mode is not active, use standard chat flow and AskUserQuestion options
 
 CRITICAL: Do not write code or modify source files during planning. Only produce the plan.
 

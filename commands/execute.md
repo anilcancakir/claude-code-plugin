@@ -81,9 +81,53 @@ Proceed? [Execute / Adjust Wave Grouping / Cancel]
 
 ---
 
-## Phase 3: Execute
+## Phase 3: Reliability Preflight (MANDATORY)
 
-**Goal**: Launch agents and track progress.
+**Goal**: Prevent stuck or non-deterministic execution before launching agents.
+
+Apply this preflight before any agent launch. If preflight fails, do not start parallel background execution.
+
+**Actions**:
+
+1. Capture and report an execution mode snapshot before any launch using available runtime evidence:
+   - Current permission mode (if surfaced by system/runtime reminders)
+   - Whether bypassPermissions appears active or disabled
+   - Any explicit disable reason if bypass is inactive (settings/runtime gate reminders)
+2. Read `~/.claude/settings.json` if present and validate:
+   - `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS == "1"`
+   - `env.CLAUDE_CODE_ENABLE_TASKS == "true"`
+3. Detect `teammateMode` if set:
+   - If `teammateMode: "tmux"`, verify tmux runtime is available before spawning parallel teammates
+   - If tmux is unavailable, do not attempt tmux teammate spawning
+4. Check permission posture before execution:
+   - If workflow requires write/edit but permission mode or hooks block it, do not continue with background execution
+   - Prefer explicit remediation over silent retries
+5. Check hook interference risk:
+   - If PreToolUse hooks can block required tools (Write/Edit/Bash), switch to deterministic fallback mode
+6. Enforce execution policy:
+
+| Preflight Result | Allowed Strategy |
+|------------------|------------------|
+| PASS | Planned strategy (parallel/sequential) |
+| SOFT FAIL (recoverable) | Sequential foreground fallback |
+| HARD FAIL (blocking) | Stop and provide remediation |
+
+**Remediation message requirements** (when preflight fails):
+- State exactly what failed (missing env key, tmux unavailable, permission denied, hook block)
+- Include mode snapshot details from available evidence (permission mode, bypassPermissions active/inactive, disable reason if known)
+- State why execution cannot proceed safely
+- Provide concrete fix steps
+
+---
+
+## Phase 4: Execute
+
+**Goal**: Launch agents and track progress with deterministic behavior.
+
+**Execution guardrails (official-aligned):**
+- Do not sleep between commands that can run immediately
+- Do not retry failing commands in sleep loops
+- If waiting on background tasks, rely on completion notifications and TaskOutput checks
 
 ### For Parallel Waves (3+ independent steps)
 
@@ -151,7 +195,7 @@ Execute the step directly — read files, make changes, verify. No agent delegat
 
 ---
 
-## Phase 4: Track Progress
+## Phase 5: Track Progress
 
 **Goal**: Monitor agent completion and report status.
 
@@ -170,12 +214,13 @@ As background agent notifications arrive:
 1. Update status to ✅ done or ❌ failed
 2. If a wave completes, launch the next wave
 3. If an agent fails, log the failure and continue with other agents
+4. For background task result retrieval, use TaskOutput once notified. Do not poll in loops while waiting.
 
 When all agents complete, render the final table and summary.
 
 ---
 
-## Phase 5: Final Verification
+## Phase 6: Final Verification
 
 **Goal**: Verify the full plan was executed correctly.
 
@@ -215,7 +260,11 @@ When all agents complete, render the final table and summary.
 
 ## Error Handling
 
+- **Preflight hard fail**: Stop execution before agent launch. Provide explicit remediation steps
 - **Agent fails**: Log failure, continue other agents. Report in final summary
+- **Permission denied in don't-ask mode**: Attempt only reasonable alternatives; if required capability remains blocked, stop and explain why permission is essential
+- **Execution stopped by PreToolUse hook**: Report the hook stop reason and switch to sequential fallback when possible
 - **Plan file not found**: Inform user, suggest running `/ac:plan` first
 - **No independent steps found**: Fall back to sequential execution
 - **Worktree not available** (not a git repo): Fall back to sequential execution without worktree isolation
+- **Plugin newly installed/updated but behavior missing**: Ask user to restart Claude Code before retrying execution

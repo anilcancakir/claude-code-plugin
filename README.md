@@ -289,6 +289,18 @@ claude
 - If you prefer not to use tmux panes, keep `teammateMode: "in-process"`.
 - In `in-process` mode, teammates run in the same terminal session (no split panes).
 
+### Plan mode and permission mode transitions
+
+Claude Code may restore runtime permission behavior when leaving plan mode. In some sessions, after plan approval and exiting plan mode, tool permission behavior can differ from the initial CLI startup mode.
+
+To keep execution deterministic, `/ac:execute` now performs a reliability preflight before launching agents:
+
+- Captures an execution mode snapshot from available runtime evidence
+- Validates required task/agent-team environment keys
+- Detects `teammateMode` + tmux availability
+- Checks permission/hook interference risk
+- Applies deterministic fallback (sequential foreground) on soft failures
+
 ### Safe configuration principle
 
 `ac` should only add missing settings keys. It should never overwrite an existing `teammateMode` or replace user-defined values.
