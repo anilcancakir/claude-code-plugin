@@ -39,7 +39,7 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
    - If exists and `$ARGUMENTS` is "enhance" or no argument: read it, announce "Found existing CLAUDE.md — I'll enhance it". Pre-fill interview answers from existing content.
    - If exists and `$ARGUMENTS` is "overwrite": announce "Will create fresh CLAUDE.md (existing backed up)"
    - If not exists: announce "Creating new CLAUDE.md"
-2. Detect all global skills via Bash:
+2. Detect all global user skills via Bash:
 
    ```bash
    find ~/.claude/skills -name "SKILL.md" -maxdepth 3 2>/dev/null
@@ -47,21 +47,28 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
 
    - For each found: read frontmatter (name, description) and first paragraph
    - Special handling: `my-coding` → note North Star section, `my-language` → note purpose
-3. Detect global MCP servers via Bash:
+3. Detect active marketplace plugin skills from your current session's available skills list:
+   - Plugin skills use namespaced format: `<plugin>:<skill>` (e.g., `github-cli:github-cli`, `frontend-design:frontend-design`, `git-master:git-master`)
+   - A plugin skill is active if it appears in your available skills list for this session
+   - **Always exclude** `ac-skill-creator` and `ac:ac-skill-creator` — user-invoked on demand, must never appear in the generated Skills table
+   - For each active plugin skill: note its namespaced name and description for Phase 3
+4. Detect global MCP servers via Bash:
 
    ```bash
    cat ~/.claude/.mcp.json 2>/dev/null
-   cat ~/.claude.json 2>/dev/null | grep -A5 '"mcpServers"'
+   cat ~/.claude.json 2>/dev/null
    ```
 
-   - Both `~/.claude/.mcp.json` and `~/.claude.json` can define global MCP servers
-   - Parse each server: name, command, enabled status
-4. Cross-reference file-detected items with your current session capabilities — check if you can call specific MCP tools (e.g., try resolving a context7 library), verify agent names appear in your available agent list. This confirms detection accuracy against runtime state.
-5. Detect environment via Bash:
+   - `~/.claude/.mcp.json` — plugin-installed MCP servers (e.g., context7 installed by `ac` plugin)
+   - `~/.claude.json` — user-global MCP servers: parse the full `mcpServers` object, not just a grep preview
+   - For each server: extract name, infer capability from command/args (one-line description), check enabled status
+   - Cross-reference with your session's available MCP tools (look for `mcp__<server>__*` tool patterns to confirm active servers)
+5. Cross-reference all detected items (user skills, plugin skills, MCP servers) with your current session capabilities — check if you can call specific MCP tools (e.g., try resolving a context7 library), verify agent names appear in your available agent list. This confirms detection accuracy against runtime state.
+6. Detect environment via Bash:
    - OS and architecture: `uname -ms`
    - Shell: `echo $SHELL`
    - Common tools: check for `docker`, `git`, `node`, `php`, `dart`, `python3`, `go`
-6. Detect global Claude Code settings via Bash:
+7. Detect global Claude Code settings via Bash:
 
    ```bash
    cat ~/.claude/settings.json 2>/dev/null
@@ -127,13 +134,16 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
   - "Balanced — plan complex tasks, execute simple ones directly"
   - "High autonomy — execute and report, ask only when blocked"
 
-**Question 6 — Skills & MCP references** (if additional skills or MCP servers detected beyond my-coding/my-language):
+**Question 6 — Skills & MCP references** (if additional skills, plugin skills, or MCP servers detected):
 
 - "Found these global extensions. Include references in CLAUDE.md?"
 - multiSelect: true
-- List each detected skill/MCP with name and description from frontmatter
+- List each item with name and description:
+  - User skills beyond my-coding/my-language: from `~/.claude/skills/` detection
+  - Active marketplace plugin skills: from session capabilities (namespaced `<plugin>:<skill>` format) — **never list ac-skill-creator**
+  - MCP servers: from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers
 - Pre-selected: all enabled items
-- Skip this question if only my-coding and my-language detected (they're already handled)
+- Skip this question if only my-coding and my-language detected and no plugin skills active and no extra MCP servers found
 
 **Question 7 — Extra rules:**
 
@@ -162,8 +172,8 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
    - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:deep"`, Critical/Must-not-fail → `skill: "ac:ultra"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
    - **Workflow — Research**: Copy the Research BLOCKING block verbatim from the template. NEVER compress, soften, or summarize — the "Do NOT use Grep, Glob, Read, or WebSearch directly" prohibition must appear word-for-word. This is the primary mechanism that makes Claude delegate to `ac:explore` and `ac:librarian` agents.
    - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
-   - **Skills section**: Include all detected skills from Phase 1. Use table format with skill name and "Load When" column. If additional skills approved in Q6, add them. If no skills detected, omit this section
-   - **MCP section**: If user approved MCP references in Q6, add a concise MCP reference block listing server name and capability. Only enabled servers. Format: `MCP: <server> — <capability>`
+   - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>` from session). User skills: trigger description from frontmatter. Plugin skills: trigger description from frontmatter. **Never include `ac-skill-creator` or `ac:ac-skill-creator`** — omit entirely regardless of detection. If no skills detected, omit this section
+   - **MCP section**: If user approved MCP references in Q6, include all active MCP servers from both `~/.claude/.mcp.json` and `~/.claude.json` mcpServers. For each: `| server-name | one-line capability |`. Only enabled servers. Infer capability from command/args if no description available. Omit if none detected or user declined
    - **Rules section**: Compile from Q3 non-negotiables + Q4 architecture + Q7 extras. Deduplicate against `my-coding` skill rules
 
 4. Count total lines — if over 120, trim Rules section (defer detailed rules to `my-coding` skill reference)

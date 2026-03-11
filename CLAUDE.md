@@ -69,7 +69,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis | Opus |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill | Opus |
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
-| `/ac:setup-global-claude-md` | Interview → generate `~/.claude/CLAUDE.md` | Opus |
+| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
 
 ## Agents (ac plugin)
 

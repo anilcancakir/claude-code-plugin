@@ -45,7 +45,7 @@ Analyzes your existing documentation, articles, or commit messages. Interviews y
 /ac:setup-global-claude-md
 ```
 
-Detects your environment, installed skills, and MCP servers. Interviews you on communication style, autonomy level, and non-negotiable rules. Generates `~/.claude/CLAUDE.md` — your orchestration config that references the skills from steps 1a-1b.
+Detects your environment, active marketplace plugin skills, and all global MCP servers. Interviews you on communication style, autonomy level, and non-negotiable rules. Generates `~/.claude/CLAUDE.md` — your orchestration config that references the skills from steps 1a-1b and any installed plugin skills.
 
 ### Step 2: Project Setup (per project)
 
@@ -138,7 +138,7 @@ This updates workflow routing and skill references while preserving your persona
 |---------|-------------|-------|
 | `/ac:setup-coding` | Scan your projects, interview on preferences, generate `~/.claude/skills/my-coding/` | Opus |
 | `/ac:setup-language` | Scan your writing, interview on voice, generate `~/.claude/skills/my-language/` | Opus |
-| `/ac:setup-global-claude-md` | Detect environment, interview, generate `~/.claude/CLAUDE.md` | Opus |
+| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP, interview, generate `~/.claude/CLAUDE.md` | Opus |
 
 ## Agents
 

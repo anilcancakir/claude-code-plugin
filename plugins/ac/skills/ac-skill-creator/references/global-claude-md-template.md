@@ -101,12 +101,17 @@ Load relevant skills before starting any task:
 |-------|-----------|
 | `my-coding` | ANY code generation, review, refactor, implementation |
 | `my-language` | Writing documentation, guides, articles, any written content |
-| `<additional-skill>` | <when to load — from frontmatter description> |
-
-Check `~/.claude/skills/` for available skills. Load matching skill before starting work.
+| `github-cli:github-cli` | gh CLI, issues, PRs, releases, GitHub Actions, gh api |
+| `frontend-design:frontend-design` | Any UI work — pages, components, mobile screens, color, typography |
+| `git-master:git-master` | Committing, rebasing, squashing, blame, bisect, history search |
+| `<additional-user-skill>` | <when to load — from frontmatter description> |
 ```
 
-Include only detected + user-approved skills. If none detected, omit entirely.
+- Include only detected + user-approved skills
+- User skills (`my-coding`, `my-language`) come from `~/.claude/skills/` detection
+- Plugin skills (`<plugin>:<skill>`) come from active session capabilities — include only if that plugin is installed
+- **Never include `ac-skill-creator`** — omit unconditionally, it is user-invoked on demand
+- If no skills detected, omit this section entirely
 
 ---
 
@@ -117,11 +122,14 @@ Include only detected + user-approved skills. If none detected, omit entirely.
 
 | Server | Capability |
 |--------|------------|
-| `context7` | Live framework documentation (version-aware) |
-| `<server>` | <capability from config> |
+| `context7` | Live framework docs — version-aware library reference |
+| `<server>` | <one-line capability — infer from command/args if no description> |
 ```
 
-Only enabled servers. Omit this section if no MCP servers detected or user declined.
+- Aggregate from both `~/.claude/.mcp.json` (plugin-installed) and `~/.claude.json` mcpServers (user-global)
+- Only enabled servers
+- Keep capability descriptions concise — one line per server, LLM-effective
+- Omit this section if no MCP servers detected or user declined
 
 ---
 
