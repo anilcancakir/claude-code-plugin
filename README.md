@@ -42,7 +42,7 @@ After updating, sync your global config with new plugin features:
 │   ├── ac/                      # Main plugin — structured development partner
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/            # 9 /ac:* commands
+│   │   ├── commands/            # 10 /ac:* commands
 │   │   ├── agents/              # 4 read-only agents
 │   │   ├── skills/              # Component creation skill
 │   │   └── README.md

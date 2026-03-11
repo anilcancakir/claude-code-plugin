@@ -16,7 +16,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (context7)
-│   │   ├── commands/             # 9 user-invocable /ac:* commands
+│   │   ├── commands/             # 10 user-invocable /ac:* commands
 │   │   ├── agents/               # 4 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
@@ -70,6 +70,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill | Opus |
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
+| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
 
 ## Agents (ac plugin)
 

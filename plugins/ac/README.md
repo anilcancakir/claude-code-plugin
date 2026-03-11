@@ -91,6 +91,14 @@ For complex bugs or deep investigation:
 
 Opus investigates the codebase, traces root cause through hypothesis-first analysis, and returns specific fix steps.
 
+For smart commits with preflight checks:
+
+```
+/ac:commit
+```
+
+Runs linter and tests first, detects your project's commit conventions, and creates well-structured atomic commits. Delegates to `git-master:git-master` skill when available for style detection and intelligent splitting.
+
 For critical tasks where partial delivery is unacceptable:
 
 ```
@@ -124,6 +132,7 @@ This updates workflow routing and skill references while preserving your persona
 | `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation | Opus |
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
 | `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
+| `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
 
 ### Project Setup
 
@@ -191,6 +200,16 @@ Load plan -> Decompose into Work Units
           -> Final verification (build + test + lint)
 ```
 
+### Smart Commit (`/ac:commit`)
+
+```
+Request -> Context (git state + convention detection)
+        -> Preflight (lint + tests must pass)
+        -> Strategy (delegate to git-master or built-in atomic logic)
+        -> Review (present commit plan, user approves)
+        -> Execute (create commits, optional push)
+```
+
 ### Ultra Mode (`/ac:ultra`)
 
 ```
@@ -230,7 +249,7 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (context7)
-├── commands/                    # 9 user-invocable /ac:* commands
+├── commands/                    # 10 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
@@ -239,7 +258,8 @@ plugins/ac/
 │   ├── init-rules.md            # /ac:init-rules
 │   ├── setup-coding.md          # /ac:setup-coding
 │   ├── setup-language.md        # /ac:setup-language
-│   └── setup-global-claude-md.md # /ac:setup-global-claude-md
+│   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
+│   └── commit.md               # /ac:commit
 ├── agents/                      # 4 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Haiku external docs
