@@ -65,6 +65,17 @@ git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "NO_UPSTREAM"
 
 **Actions**:
 
+### LSP Diagnostic Pre-check
+
+Before running lint/test commands, check for auto-injected diagnostics:
+
+If `<new-diagnostics>` context contains entries for files to be staged:
+- `ERROR` severity → do NOT stage. Report to user:
+  > "LSP found errors — fix before committing: `[file:line — message]`"
+- `WARNING` severity → note in commit report, do not block
+
+If `<new-diagnostics>` is empty or LSP not available → proceed to tooling detection below.
+
 1. Detect project tooling — check for:
 
 | Tool Type | Detection | Run Command |

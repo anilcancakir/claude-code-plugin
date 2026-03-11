@@ -194,6 +194,22 @@ Launch agents one at a time. Wait for each to complete before launching the next
 
 Execute the step directly — read files, make changes, verify. No agent delegation needed.
 
+### After Each Work Unit Completes
+
+Before marking a work unit done:
+
+1. Check `<new-diagnostics>` context:
+   - If ERROR-level diagnostics appear for modified files → fix in this turn before marking done
+   - If WARNING-level only → log to final report, continue
+   - If LSP not available → proceed to Phase 6 lint commands
+
+2. If LSP tool is available and work unit involved code changes, delegate to ac:linter:
+   - `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit description]")`
+   - BLOCKED verdict → fix errors before proceeding to next unit
+   - CLEAN or LSP UNAVAILABLE verdict → mark unit done
+
+Do NOT mark a work unit complete with unresolved ERROR diagnostics.
+
 ---
 
 ## Phase 5: Track Progress
@@ -251,6 +267,24 @@ When all agents complete, render the final table and summary.
 - Tests: [pass/fail]
 - Lint: [pass/fail]
 ```
+
+### LSP Navigation Check (if LSP tool available)
+
+After build/test/lint pass, run final structure verification:
+
+For each modified file:
+```
+LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)
+```
+→ confirms file is parseable and exports are intact
+
+For refactor/rename work:
+```
+LSP(operation="findReferences", filePath=<file>, line=<symbol_line>, character=<symbol_col>)
+```
+→ confirms no broken callers
+
+If LSP tool is not available → skip this step, rely on lint output only.
 
 ---
 

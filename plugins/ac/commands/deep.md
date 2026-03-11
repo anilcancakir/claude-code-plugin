@@ -64,6 +64,28 @@ this phase.
 
 **Actions**:
 
+### Code Navigation Strategy
+
+Use LSP semantic navigation when symbol position is known — it is scope-aware
+and has no false positives. Fall back to Grep for pattern matching.
+
+**Decision table**:
+
+| Investigation Need | If LSP available | If LSP not available |
+|-------------------|-----------------|---------------------|
+| Find all callers | `LSP(operation="incomingCalls", filePath, line, character)` | Grep for function name |
+| Jump to definition | `LSP(operation="goToDefinition", filePath, line, character)` | Grep + Read |
+| Inspect type / docs | `LSP(operation="hover", filePath, line, character)` | Read source file |
+| All usages | `LSP(operation="findReferences", filePath, line, character)` | Grep (risk: false positives) |
+| Module structure | `LSP(operation="documentSymbol", filePath, 1, 1)` | Glob + Read |
+| Call chain tracing | `LSP(operation="outgoingCalls", filePath, line, character)` | Manual trace |
+
+**If LSP returns error** ("No server available for this file type"):
+→ fall back to Grep immediately, log "LSP unavailable for [ext]" in investigation notes.
+
+Known position + known symbol → LSP first.
+Unknown files + pattern search → Grep.
+
 1. Launch 2-3 ac:explore agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"`).
    Each agent targets a different aspect based on intent type
 2. Launch 1 ac:librarian agent (with `subagent_type: "ac:librarian"`) if external libraries or frameworks are involved

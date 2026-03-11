@@ -17,7 +17,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (context7)
 │   │   ├── commands/             # 10 user-invocable /ac:* commands
-│   │   ├── agents/               # 4 read-only agent definitions
+│   │   ├── agents/               # 5 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
@@ -78,6 +78,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 |-------|-----------------|-------|------|-------|
 | `explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
 | `librarian` | `"ac:librarian"` | Haiku | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
+| `linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
 | `plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
 | `plan-review` | `"ac:plan-review"` | Opus | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
 

@@ -157,6 +157,7 @@ All agents are **read-only** — advisory roles never have write tools. Commands
 |-------|----------------|-------|------|
 | `ac:explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
 | `ac:librarian` | `"ac:librarian"` | Haiku | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
+| `ac:linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
 | `ac:plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
 | `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
 
@@ -184,7 +185,8 @@ Request -> Classify (intent + complexity)
 
 ```
 Request -> Classify (intent type + scope + predict likely issues)
-        -> Research (parallel ac:explore + ac:librarian agents)
+        -> Research (LSP navigation first: incomingCalls/goToDefinition/findReferences,
+                     then parallel ac:explore + ac:librarian agents)
         -> Analyze (hypothesis-first, verify against code, load my-coding)
         -> Report (diagnosis + evidence + recommended fix + verification)
         -> Main agent executes recommended steps
@@ -196,8 +198,9 @@ Request -> Classify (intent type + scope + predict likely issues)
 Load plan -> Decompose into Work Units
           -> Independent units -> parallel background agents
           -> Dependent units -> sequential agents
+          -> After each unit: check <new-diagnostics>, delegate to ac:linter
           -> Track progress per wave
-          -> Final verification (build + test + lint)
+          -> Final verification (build + test + lint + LSP navigation check)
 ```
 
 ### Smart Commit (`/ac:commit`)
@@ -260,9 +263,10 @@ plugins/ac/
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   └── commit.md               # /ac:commit
-├── agents/                      # 4 read-only agent definitions
+├── agents/                      # 5 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Haiku external docs
+│   ├── linter.md                # Haiku LSP code intelligence verifier
 │   ├── plan-analysis.md         # Sonnet plan auditor
 │   └── plan-review.md           # Opus plan reviewer
 ├── skills/

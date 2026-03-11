@@ -162,6 +162,23 @@ Plans must follow this exact structure for ac:execute compatibility:
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
 
+### Symbol Verification (if LSP tool available)
+
+Before running the analysis gate, verify key symbols the plan references actually exist:
+
+If LSP tool is available:
+  For each file the plan proposes to modify with known symbol names:
+  ```
+  LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)
+  ```
+  → if expected class/function/interface is missing → revise that plan step before proceeding
+
+If LSP tool is not available:
+  Skip this step. Note "symbol existence unverified — confirm file structure before implementation"
+  in the plan's Risks section.
+
+Do not present a plan that references symbols verified-missing by LSP.
+
 **Analysis gate** (mandatory before presenting to user):
 
 1. Launch the `plan-analysis` agent via the Agent tool with `subagent_type: "ac:plan-analysis"`. In the prompt, provide the plan file path. This runs gap classification, AI-slop detection, and acceptance criteria audit on a fresh Sonnet context

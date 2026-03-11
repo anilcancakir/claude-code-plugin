@@ -205,6 +205,23 @@ options:
 - Manual QA: [what was tested] → [what was observed]
 ```
 
+### LSP Verification (if LSP tool available)
+
+Run after build/test/lint, as final gate before marking complete:
+
+1. Delegate to ac:linter for modified files:
+   ```
+   Agent(subagent_type="ac:linter", prompt="Final verification on [modified files list]")
+   ```
+2. BLOCKED verdict → do not mark complete, fix errors first, re-run ac:linter
+3. CLEAN verdict → add to evidence report
+4. LSP UNAVAILABLE verdict → note "LSP unavailable" in report, rely on lint output
+
+**Add this line to the evidence report**:
+- LSP diagnostics: `✓ 0 new errors` | `✗ N errors — see ac:linter report` | `⚠ LSP unavailable`
+
+If LSP tool is not available → omit evidence line, note "LSP unavailable" in report.
+
 4. If ANY verification fails:
    - Fix the issue (or delegate to an agent)
    - Re-run the failed verification

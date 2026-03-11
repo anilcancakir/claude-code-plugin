@@ -185,6 +185,19 @@ Question 7:
    - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
    - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>` from session). User skills: trigger description from frontmatter. Plugin skills: trigger description from frontmatter. **Never include `ac-skill-creator` or `ac:ac-skill-creator`** — omit entirely regardless of detection. If no skills detected, omit this section
    - **MCP section**: If user approved MCP references in Q6, include all active MCP servers from both `~/.claude/.mcp.json` and `~/.claude.json` mcpServers. For each: `| server-name | one-line capability |`. Only enabled servers. Infer capability from command/args if no description available. Omit if none detected or user declined
+   - **LSP (Code Intelligence)** — if the user has LSP plugins installed or plans to use them. Include this concise block (5 lines max) in the generated CLAUDE.md:
+
+     ```
+     ## LSP (Code Intelligence)
+
+     If LSP plugin installed (`/plugin install <lang>-lsp@claude-plugins-official`):
+     - Navigation first: use `LSP(findReferences/goToDefinition/hover)` before Grep for semantic lookups
+     - Diagnostics auto-injected: check `<new-diagnostics>` after every Edit — fix ERRORs before proceeding
+     - Verify after edits: `LSP(documentSymbol, file, 1, 1)` confirms structure intact
+     - Graceful: if LSP returns error → fall back to Grep silently
+     ```
+
+     Include in both "enhance existing CLAUDE.md" and "create new CLAUDE.md" modes.
    - **Rules section**: Compile from Q3 non-negotiables + Q4 architecture + Q7 extras. Deduplicate against `my-coding` skill rules
 
 4. Count total lines — if over 120, trim Rules section (defer detailed rules to `my-coding` skill reference)
