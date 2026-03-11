@@ -142,14 +142,14 @@ This updates workflow routing and skill references while preserving your persona
 
 ## Agents
 
-All agents are **read-only** — advisory roles never have write tools.
+All agents are **read-only** — advisory roles never have write tools. Commands invoke agents via the Agent tool with explicit `subagent_type` values (`"ac:explore"`, `"ac:librarian"`, etc.) to avoid routing to builtin agents.
 
-| Agent | Model | Role |
-|-------|-------|------|
-| `ac:explore` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
-| `ac:librarian` | Haiku | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
-| `ac:plan-analysis` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
-| `ac:plan-review` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
+| Agent | `subagent_type` | Model | Role |
+|-------|----------------|-------|------|
+| `ac:explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
+| `ac:librarian` | `"ac:librarian"` | Haiku | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
+| `ac:plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
+| `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
 
 ## Skills
 

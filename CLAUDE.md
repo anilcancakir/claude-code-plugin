@@ -73,14 +73,14 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 ## Agents (ac plugin)
 
-| Agent | Model | Role | Tools |
-|-------|-------|------|-------|
-| `explore` | Haiku | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
-| `librarian` | Haiku | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
-| `plan-analysis` | Sonnet | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
-| `plan-review` | Opus | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
+| Agent | `subagent_type` | Model | Role | Tools |
+|-------|-----------------|-------|------|-------|
+| `explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
+| `librarian` | `"ac:librarian"` | Haiku | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
+| `plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
+| `plan-review` | `"ac:plan-review"` | Opus | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
 
-All agents are read-only. No write tools on advisory roles.
+All agents are read-only. No write tools on advisory roles. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
 ## Skills & MCP
 
