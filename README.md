@@ -35,9 +35,22 @@ Claude Code is powerful out of the box, but without structure it burns tokens on
 /plugin marketplace update ac
 ```
 
+After updating, sync your global config with new plugin features:
+
+```
+/ac:setup-global-claude-md update
+```
+
+This updates workflow routing and skill references while preserving your personal preferences (identity, stack, rules). Project-level files can be synced the same way:
+
+```
+/ac:init-claude-md update
+/ac:init-rules update
+```
+
 ## Getting Started
 
-The plugin works best when configured in the right order. Personal setup is **one-time** (shared across all projects). Project setup runs **once per project**.
+The plugin works best when configured in the right order. Personal setup is **one-time** (shared across all projects). Project setup runs **once per project**. After plugin updates, re-run with `update` argument to sync new features without losing your preferences.
 
 ### Step 1: Personal Setup (one-time)
 
