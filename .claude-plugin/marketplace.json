@@ -10,7 +10,7 @@
         {
             "name": "ac",
             "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
-            "version": "2.6.0",
+            "version": "2.7.0",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
@@ -110,6 +110,96 @@
                 "lsp",
                 "language-server",
                 "code-intelligence"
+            ]
+        },
+        {
+            "name": "json-lsp",
+            "description": "JSON language server — diagnostics, schema validation, and hover for .json and .jsonc files.",
+            "version": "0.1.0",
+            "author": {
+                "name": "Anilcan Cakir",
+                "email": "anilcan.cakir@gmail.com"
+            },
+            "source": "./plugins/json-lsp",
+            "category": "development",
+            "homepage": "https://github.com/anilcancakir/claude-code-plugin",
+            "strict": false,
+            "lspServers": {
+                "json": {
+                    "command": "vscode-json-languageserver",
+                    "args": ["--stdio"],
+                    "extensionToLanguage": {
+                        ".json": "json",
+                        ".jsonc": "jsonc"
+                    }
+                }
+            },
+            "tags": [
+                "json",
+                "jsonc",
+                "lsp",
+                "language-server",
+                "schema-validation"
+            ]
+        },
+        {
+            "name": "yaml-lsp",
+            "description": "YAML language server — schema validation, hover, and diagnostics for .yaml and .yml files.",
+            "version": "0.1.0",
+            "author": {
+                "name": "Anilcan Cakir",
+                "email": "anilcan.cakir@gmail.com"
+            },
+            "source": "./plugins/yaml-lsp",
+            "category": "development",
+            "homepage": "https://github.com/anilcancakir/claude-code-plugin",
+            "strict": false,
+            "lspServers": {
+                "yaml": {
+                    "command": "yaml-language-server",
+                    "args": ["--stdio"],
+                    "extensionToLanguage": {
+                        ".yaml": "yaml",
+                        ".yml": "yaml"
+                    }
+                }
+            },
+            "tags": [
+                "yaml",
+                "yml",
+                "lsp",
+                "language-server",
+                "schema-validation"
+            ]
+        },
+        {
+            "name": "markdown-lsp",
+            "description": "Markdown language server (marksman) — go-to-definition for links, find references, and document symbols for .md files.",
+            "version": "0.1.0",
+            "author": {
+                "name": "Anilcan Cakir",
+                "email": "anilcan.cakir@gmail.com"
+            },
+            "source": "./plugins/markdown-lsp",
+            "category": "development",
+            "homepage": "https://github.com/anilcancakir/claude-code-plugin",
+            "strict": false,
+            "lspServers": {
+                "markdown": {
+                    "command": "marksman",
+                    "args": ["server"],
+                    "extensionToLanguage": {
+                        ".md": "markdown",
+                        ".mdx": "markdown"
+                    }
+                }
+            },
+            "tags": [
+                "markdown",
+                "md",
+                "lsp",
+                "language-server",
+                "marksman"
             ]
         }
     ]

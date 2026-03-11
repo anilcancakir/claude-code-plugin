@@ -1,0 +1,8 @@
+{
+    "name": "yaml-lsp",
+    "description": "YAML language server — schema validation, hover, and diagnostics for .yaml and .yml files.",
+    "author": {
+        "name": "Anilcan Cakir",
+        "email": "anilcan.cakir@gmail.com"
+    }
+}

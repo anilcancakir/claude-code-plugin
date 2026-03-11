@@ -11,6 +11,9 @@ A curated marketplace of Claude Code plugins for structured development workflow
 | **[git-master](plugins/git-master/)** | Git expert skill — atomic commits with style detection, interactive rebase/squash, and history archaeology (blame, bisect, pickaxe). | productivity |
 | **[frontend-design](plugins/frontend-design/)** | Frontend design skill — production-grade UI for web and mobile with design systems, visual hierarchy, and distinctive aesthetics. | productivity |
 | **[dart-lsp](plugins/dart-lsp/)** | Dart/Flutter language server — go-to-definition, find references, hover, and real-time diagnostics for Claude Code. | development |
+| **[json-lsp](plugins/json-lsp/)** | JSON language server — schema validation, hover, and diagnostics for .json and .jsonc files. | development |
+| **[yaml-lsp](plugins/yaml-lsp/)** | YAML language server — schema validation, hover, and diagnostics for .yaml and .yml files. | development |
+| **[markdown-lsp](plugins/markdown-lsp/)** | Markdown language server (marksman) — link navigation, find references, and document symbols for .md files. | development |
 
 ## Installation
 
@@ -66,7 +69,22 @@ After updating, sync your global config with new plugin features:
 │   │   │   └── references/      # Deep-dive: hierarchy, color, mobile
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── dart-lsp/                # Dart/Flutter LSP plugin
+│   ├── dart-lsp/                # Dart/Flutter LSP plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── README.md
+│   │   └── LICENSE
+│   ├── json-lsp/                # JSON LSP plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── README.md
+│   │   └── LICENSE
+│   ├── yaml-lsp/                # YAML LSP plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── markdown-lsp/            # Markdown LSP plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── README.md

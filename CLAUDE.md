@@ -47,7 +47,22 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── references/   # Deep-dive: hierarchy, color, mobile
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── dart-lsp/                 # Dart/Flutter language server plugin
+│   ├── dart-lsp/                 # Dart/Flutter language server plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── README.md
+│   │   └── LICENSE
+│   ├── json-lsp/                 # JSON language server plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── README.md
+│   │   └── LICENSE
+│   ├── yaml-lsp/                 # YAML language server plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── markdown-lsp/             # Markdown language server plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── README.md
@@ -106,6 +121,15 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 
 ### dart-lsp plugin
 - LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.
+
+### json-lsp plugin
+- LSP plugin — JSON language server via `vscode-json-languageserver`. Schema validation, hover, and diagnostics for `.json` and `.jsonc` files. Binary: `npm install -g vscode-langservers-extracted`.
+
+### yaml-lsp plugin
+- LSP plugin — YAML language server via `yaml-language-server`. Schema validation, hover, and diagnostics for `.yaml` and `.yml` files. Binary: `npm install -g yaml-language-server`.
+
+### markdown-lsp plugin
+- LSP plugin — Markdown language server via `marksman`. Link navigation, find references, and document symbols for `.md` and `.mdx` files. Binary: `brew install marksman`.
 
 ## Design Principles
 

@@ -1,0 +1,8 @@
+{
+    "name": "markdown-lsp",
+    "description": "Markdown language server (marksman) — go-to-definition for links, find references, and document symbols for .md files.",
+    "author": {
+        "name": "Anilcan Cakir",
+        "email": "anilcan.cakir@gmail.com"
+    }
+}
