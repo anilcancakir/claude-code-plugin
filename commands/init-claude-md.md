@@ -1,6 +1,6 @@
 ---
-description: Generate or enhance project-level CLAUDE.md — auto-discovers codebase, interviews developer, produces optimized context file
-argument-hint: enhance (optional, to improve existing CLAUDE.md)
+description: Generate or enhance project-level CLAUDE.md — auto-discovers codebase, interviews developer, produces optimized context file. Re-run after project changes to update commands, architecture, and extensions while preserving custom sections.
+argument-hint: update or enhance (optional)
 model: opus
 ---
 
@@ -13,6 +13,19 @@ You are generating a project-level `./CLAUDE.md` file for the active codebase. T
 > **CLAUDE.md's job is project-level context, not rules management.**
 >
 > Rules belong in `.claude/rules/*.md` (path/topic-scoped, auto-injected). CLAUDE.md gives Claude the map — what the project is, how it builds, where things live, what's non-obvious. A developer's first-day briefing, not a policy manual.
+
+## Scope Constraint
+
+**Do NOT create `.claude/rules/` files.** This command produces ONLY `./CLAUDE.md` and optionally `.claude/settings.json` hooks. If conventions are discovered that belong in path-scoped rules, mention them in the output and suggest: "Run `/ac:init-rules` to generate path-scoped rules for these conventions." Never create rule files yourself.
+
+## Section Ownership
+
+| Type | Sections | Update Behavior |
+|------|----------|----------------|
+| **Auto-detected** | Commands, Architecture, Key Files, Testing, Skills & Extensions | Re-discovered and updated on every run |
+| **User-managed** | Mission/description, Code Style (custom conventions), Gotchas (manually added) | Preserved across updates, merged with new findings |
+
+On **update** mode: re-run discovery agents, update auto-detected sections, preserve user-managed sections, skip interview. On **enhance** mode: full discovery + interview, pre-fill from existing content.
 
 ## Token Budget
 
@@ -63,8 +76,8 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
    cat .claude/settings.local.json 2>/dev/null | head -50
    ```
 
-   - If `./CLAUDE.md` exists and `$ARGUMENTS` is not "enhance": announce "Found existing CLAUDE.md — I'll enhance it"
-   - If `$ARGUMENTS` is "enhance": announce "Enhance mode — will improve existing CLAUDE.md"
+   - If exists and `$ARGUMENTS` is "update": announce "Update mode — re-discovering project, preserving your custom sections". Extract user-managed sections (Mission, custom Code Style entries, manually added Gotchas) for reuse. Skip Phase 2 interview.
+   - If exists and `$ARGUMENTS` is "enhance" or no argument: announce "Found existing CLAUDE.md — I'll enhance it". Pre-fill interview from existing content.
    - If not exists: announce "Creating new CLAUDE.md"
    - Collect detected: skills list, MCP servers, custom agents
    - Collect existing hooks from settings.json (if any) — avoid duplicate proposals
@@ -78,6 +91,8 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
 ## Phase 2: Interactive Interview
 
 **Goal**: Validate discoveries, gather developer input, decide references.
+
+**Skip entirely in update mode** — user-managed sections are preserved from existing file. Proceed to Phase 3.
 
 **Actions**:
 
@@ -118,15 +133,22 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
 
 **Actions**:
 
-1. Build sections from merged findings + interview answers
-2. Apply anti-slop filter (see top of this file)
-3. **Deduplication check**: Read `~/.claude/CLAUDE.md` if it exists. Remove any content that overlaps with global CLAUDE.md — the project file is ADDITIVE, not a replacement
-4. Incorporate context files selectively:
+1. **Update mode**: Reconstruct the file by combining:
+   - **User-managed sections** (verbatim from existing file): Mission/description, custom Code Style entries, manually added Gotchas
+   - **Auto-detected sections** (regenerated from discovery): Commands, Architecture, Key Files, Testing, Skills & Extensions
+   - Merge new Gotchas from discovery with existing user Gotchas (no duplicates)
+
+2. **Enhance/New mode**: Build sections from merged findings + interview answers
+
+3. Apply anti-slop filter (see top of this file)
+4. **Deduplication check**: Read `~/.claude/CLAUDE.md` if it exists. Remove any content that overlaps with global CLAUDE.md — the project file is ADDITIVE, not a replacement
+5. Incorporate context files selectively:
    - README → non-obvious architecture info only
    - GEMINI.md / root AGENTS.md → conventions, anti-patterns, gotchas
    - Source code findings always override doc claims
-5. Add user-approved references (skills, MCP servers)
-6. Token budget check: ≤2500 tokens (~100-120 lines)
+6. Add user-approved references (skills, MCP servers)
+7. **Scope check**: If conventions were discovered that are path-specific (apply only to certain directories/file types), do NOT include them in CLAUDE.md. Instead, collect them and suggest in Phase 5: "Found [N] path-specific conventions. Run `/ac:init-rules` to generate scoped rules."
+8. Token budget check: ≤2500 tokens (~100-120 lines)
    - Over limit → trim least-critical sections
    - Defer detailed conventions to `.claude/rules/` and mention in output
 
@@ -330,5 +352,7 @@ Schema rules:
    - If hooks approved: merge into `.claude/settings.json` (read → merge → write)
 6. Post-install message:
    - "CLAUDE.md installed — [N] tokens, [M] sections"
+   - If update mode: highlight what changed — "Updated: Commands table, Architecture, Skills. Preserved: Mission, Code Style, Gotchas."
    - If hooks installed: "[K] hooks added to .claude/settings.json"
-   - "This file is project-level context. For path-scoped rules, use `.claude/rules/`"
+   - If path-specific conventions were found: "Found [N] path-specific conventions. Run `/ac:init-rules` to generate scoped rules for them."
+   - "This file is project-level context. For path-scoped rules, use `/ac:init-rules`"

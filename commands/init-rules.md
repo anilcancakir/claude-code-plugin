@@ -1,6 +1,6 @@
 ---
-description: Auto-generate .claude/rules/ — path-scoped coding conventions from project analysis
-argument-hint: enhance (optional, to update existing rules)
+description: Auto-generate .claude/rules/ — path-scoped coding conventions from project analysis. Re-run after codebase changes to update rules while preserving manually added conventions.
+argument-hint: update or enhance (optional)
 model: opus
 ---
 
@@ -72,14 +72,16 @@ Stack and domain globs can overlap — stack provides general conventions, domai
 
    ```bash
    ls -la .claude/rules/ 2>/dev/null
+   cat .claude/rules/*.md 2>/dev/null
    cat CLAUDE.md 2>/dev/null | head -80
    cat ~/.claude/CLAUDE.md 2>/dev/null | head -80
    find . -maxdepth 3 -type f \( -name "*.dart" -o -name "*.php" -o -name "*.ts" -o -name "*.vue" -o -name "*.py" -o -name "*.go" -o -name "*.rs" \) | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn | head -20
    ```
 
-   - Detect existing rules → enhance mode
+   - Detect existing rules → if found, read each rule file fully to identify user-added vs auto-generated content
    - Read CLAUDE.md files for dedup reference
    - Get file distribution per directory
+   - If `$ARGUMENTS` is "update": mark update mode — preserve user-added conventions in existing rules, only update auto-detected patterns
 
 3. Collect all agent results
 4. Merge into: stacks detected + directory scores + conventions per domain
@@ -147,8 +149,9 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    - multiSelect with all proposed rules pre-selected
    - Each shows: type, path, line count estimate, top 3 conventions
 
-   **Q2** (if existing rules found): "Found existing rules: [list]. How to handle?"
+   **Q2** (if existing rules found and not update mode): "Found existing rules: [list]. How to handle?"
    - "Update with new findings" / "Skip existing, only add new" / "Replace all"
+   - In update mode: skip this question — default to "Update with new findings" while preserving user-added lines
 
    **Q3** (optional): "Any directories or conventions I missed?"
    - Free-text
@@ -180,7 +183,9 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    - **Domain rules** (15-40 lines): can include short code examples for key API patterns, must-know method signatures, domain-specific gotchas
 
 3. Create `.claude/rules/` directory if it doesn't exist
-4. Write each file. Enhance mode: read existing → merge (no duplicates) → write
+4. Write each file:
+   - **New rule**: write directly
+   - **Existing rule (update/enhance)**: read existing content → identify user-added lines (not matching any auto-detected pattern) → merge: keep user-added lines, update auto-detected patterns with fresh findings, append new discoveries → write
 5. Validate:
    - No rule duplicates CLAUDE.md content
    - No rule-to-rule duplication
