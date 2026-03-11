@@ -3,3 +3,5 @@ node_modules/
 *.log
 .env
 CLAUDE.local.md
+.claude/worktrees
+.idea
