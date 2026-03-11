@@ -9,7 +9,7 @@
     "plugins": [
         {
             "name": "ac",
-            "description": "[v2.0.0] Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
+            "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
             "version": "2.0.0",
             "author": {
                 "name": "Anilcan Cakir",
@@ -28,7 +28,7 @@
         },
         {
             "name": "github-cli",
-            "description": "[v0.1.0] GitHub CLI skill — teaches Claude Code effective gh usage patterns for issues, PRs, releases, and workflows.",
+            "description": "GitHub CLI skill — teaches Claude Code effective gh usage patterns for issues, PRs, releases, and workflows.",
             "version": "0.1.0",
             "author": {
                 "name": "Anilcan Cakir",
@@ -47,7 +47,7 @@
         },
         {
             "name": "git-master",
-            "description": "[v0.1.0] Git expert skill — atomic commits with style detection, interactive rebase, and history archaeology for Claude Code.",
+            "description": "Git expert skill — atomic commits with style detection, interactive rebase, and history archaeology for Claude Code.",
             "version": "0.1.0",
             "author": {
                 "name": "Anilcan Cakir",
