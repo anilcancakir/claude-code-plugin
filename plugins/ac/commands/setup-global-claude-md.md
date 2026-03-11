@@ -2,6 +2,7 @@
 description: Interactive global CLAUDE.md generator — interviews developer, detects skills, produces orchestration config. Re-run after plugin updates to sync workflow routing and skill references while preserving your personal preferences.
 argument-hint: update, enhance, or overwrite (optional)
 model: opus
+allowed-tools: AskUserQuestion, Read, Write, Bash
 ---
 
 # Setup Global CLAUDE.md
@@ -93,63 +94,73 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
 
 1. Present Discovery findings first: "Here's what I detected about your environment and existing skills."
 
-2. Ask 4-6 questions via AskUserQuestion. Skip questions already answered by detected skills or pre-filled from existing CLAUDE.md (enhance mode).
+2. Use AskUserQuestion to gather preferences. Skip questions already answered by detected skills or pre-filled from existing CLAUDE.md (enhance mode). Ask up to 4 questions per AskUserQuestion call.
 
-**Question 1 — Communication style:**
+**First AskUserQuestion call** — core preferences (Q1-Q3):
 
-- "How should I communicate with you?"
-- Options:
-  - "Expert peer — skip basics, focus on architecture" (Recommended)
-  - "Collaborative — explain decisions, discuss trade-offs"
-  - "Mentor — explain reasoning, teach patterns"
+Question 1:
+- question: "How should I communicate with you?"
+- header: "Comm style"
+- options:
+  - Expert peer (Recommended) — "Skip basics, focus on architecture and trade-offs"
+  - Collaborative — "Explain decisions, discuss trade-offs before acting"
+  - Mentor — "Explain reasoning, teach patterns along the way"
 
-**Question 2 — Primary tech stack:**
+Question 2 (skip if `my-coding` skill already defines stack):
+- question: "What is your primary development stack?"
+- header: "Tech stack"
+- options:
+  - PHP/Laravel — "Backend with Laravel ecosystem"
+  - Dart/Flutter — "Mobile and cross-platform"
+  - TypeScript/Node — "Full-stack JavaScript/TypeScript"
+  - Python — "Backend, ML, scripting"
 
-- "What is your primary development stack?"
-- Options: PHP/Laravel, Dart/Flutter, TypeScript/Node, Python, Multi-stack (specify)
-- Skip if `my-coding` skill already defines this
-
-**Question 3 — Non-negotiable rules:**
-
-- "Which rules must NEVER be violated?"
+Question 3:
+- question: "Which rules must NEVER be violated?"
+- header: "Rules"
 - multiSelect: true
-- Options:
-  - "TDD — write failing test first, always"
-  - "English only — all code, comments, commits"
-  - "Strict types — every parameter and return typed"
-  - "Zero suppressions — no @ts-ignore, @phpstan-ignore"
-- Include "Other" for custom rules
+- options:
+  - TDD — "Write failing test first, always"
+  - English only — "All code, comments, commits in English"
+  - Strict types — "Every parameter and return typed"
+  - Zero suppressions — "No @ts-ignore, @phpstan-ignore, no linter disables"
 
-**Question 4 — Architecture philosophy:**
+**Second AskUserQuestion call** — workflow and extensions (Q4-Q6):
 
-- "How do you organize business logic?"
-- Options: Thin Controllers + Fat Services, Service-Repository, Action classes, Domain-Driven, Other
-- Skip if `my-coding` skill already defines this
+Question 4 (skip if `my-coding` skill already defines this):
+- question: "How do you organize business logic?"
+- header: "Architecture"
+- options:
+  - Thin Controllers + Fat Services — "Controllers delegate to service classes"
+  - Service-Repository — "Services use repository pattern for data access"
+  - Action classes — "Single-purpose action classes per operation"
+  - Domain-Driven — "Bounded contexts with domain objects"
 
-**Question 5 — Autonomy level:**
+Question 5:
+- question: "How autonomous should I be?"
+- header: "Autonomy"
+- options:
+  - Plan-first (Recommended) — "Always plan non-trivial work before executing"
+  - Balanced — "Plan complex tasks, execute simple ones directly"
+  - High autonomy — "Execute and report, ask only when blocked"
 
-- "How autonomous should I be?"
-- Options:
-  - "Plan-first — always plan non-trivial work before executing" (Recommended)
-  - "Balanced — plan complex tasks, execute simple ones directly"
-  - "High autonomy — execute and report, ask only when blocked"
-
-**Question 6 — Skills & MCP references** (if additional skills, plugin skills, or MCP servers detected):
-
-- "Found these global extensions. Include references in CLAUDE.md?"
+Question 6 (only if additional skills, plugin skills, or MCP servers detected beyond my-coding/my-language):
+- question: "Found these global extensions. Include references in CLAUDE.md?"
+- header: "Extensions"
 - multiSelect: true
-- List each item with name and description:
-  - User skills beyond my-coding/my-language: from `~/.claude/skills/` detection
-  - Active marketplace plugin skills: from session capabilities (namespaced `<plugin>:<skill>` format) — **never list ac-skill-creator**
-  - MCP servers: from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers
-- Pre-selected: all enabled items
-- Skip this question if only my-coding and my-language detected and no plugin skills active and no extra MCP servers found
+- options: Build dynamically from detected items:
+  - User skills beyond my-coding/my-language from `~/.claude/skills/` detection
+  - Active marketplace plugin skills from session (namespaced `<plugin>:<skill>` format) — **never list ac-skill-creator**
+  - MCP servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers
+- Each option: label is the name, description is one-line capability
 
-**Question 7 — Extra rules:**
+**Third AskUserQuestion call** — free-form (Q7):
 
-- "Any additional rules, pet peeves, or preferences?"
-- Free-text response
-- Examples: "never auto-commit", "always suggest checkpoints", "use backed enums for everything"
+Question 7:
+- question: "Any additional rules, pet peeves, or preferences? (e.g., never auto-commit, always suggest checkpoints, use backed enums)"
+- header: "Extra rules"
+- options:
+  - No extras — "I'm good with the rules above"
 
 ---
 
@@ -213,11 +224,17 @@ CRITICAL: Do not install without user approval.
 1. Present the generated CLAUDE.md content to the developer
 2. Highlight: line count, detected skills referenced, number of rules
 3. In update mode: highlight what changed — "Updated: Workflow routing (added ac:ultra), Skills table (added X). Preserved: Identity, Stack, Rules."
-4. Ask: "Review this CLAUDE.md. What needs adjustment?"
-   - "approve" → Proceed to install
-   - "adjust [detail]" → Update and re-present
-   - "restart" → Return to Phase 2
-4. Once approved:
+4. Use AskUserQuestion for review:
+   - question: "Review the CLAUDE.md above. What needs adjustment?"
+   - header: "Review"
+   - options:
+     - Approve — "Install as shown"
+     - Adjust — "I want to change specific sections"
+     - Restart — "Start the interview over from scratch"
+   - If "Approve" → proceed to install
+   - If "Adjust" → ask what to change, update, re-present, and ask again
+   - If "Restart" → return to Phase 2
+5. Once approved:
    - If existing `~/.claude/CLAUDE.md`, backup: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak`
    - Write the new file: `~/.claude/CLAUDE.md`
    - If `~/.claude/settings.json` exists or can be created, perform safe merge for background-agent reliability keys:
@@ -226,7 +243,7 @@ CRITICAL: Do not install without user approval.
      - Add `env.CLAUDE_CODE_ENABLE_TASKS = "true"` only if missing
      - Never overwrite existing values
      - Never modify existing `teammateMode`
-5. Confirm installation:
+6. Confirm installation:
    - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md`"
    - "It will be injected into every Claude Code conversation automatically."
    - If settings keys were added: "Added missing background-agent settings keys in `~/.claude/settings.json` without changing existing teammateMode or user-defined values."

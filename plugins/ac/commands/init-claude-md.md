@@ -103,27 +103,47 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
    - Gotchas/anti-patterns found
    - Skills, MCP servers, custom agents detected (if any)
 
-2. Ask targeted questions via AskUserQuestion. Skip questions where data is sufficient:
+2. Use AskUserQuestion to gather preferences. Skip questions where data is sufficient.
 
-   **Q1** (always): "Here's what I found. Corrections, additions, or anything I missed?"
-   Options: "Looks good" / Free-text corrections
+   **First AskUserQuestion call** (Q1-Q2):
 
-   **Q2** (if skills/MCP/agents detected): "Found these project extensions. Include references in CLAUDE.md?"
-   multiSelect: list items with descriptions from frontmatter
+   Question 1 (always):
+   - question: "Here's what I found. Corrections, additions, or anything I missed?"
+   - header: "Findings"
+   - options:
+     - Looks good — "Proceed with detected findings"
 
-   **Q3** (if no existing CLAUDE.md): "Any project-specific gotchas or conventions I should know?"
-   Free-text. Examples: "never modify migrations directly", "feature branches only", "use backed enums"
+   Question 2 (if skills/MCP/agents detected):
+   - question: "Found these project extensions. Include references in CLAUDE.md?"
+   - header: "Extensions"
+   - multiSelect: true
+   - options: Build dynamically — one option per detected item, label is name, description from frontmatter
 
-   **Q4** (enhance mode only): "What to improve in current CLAUDE.md?"
-   Options: "Auto-enhance with new findings" / "Specific areas: [free-text]" / "Full rewrite"
+   **Second AskUserQuestion call** (Q3-Q5, conditional):
 
-   **Q5** (if linters/formatters/test runners detected AND not already in settings.json hooks):
-   "Found these dev tools. Set up auto-hooks in `.claude/settings.json`?"
-   multiSelect: true. For each detected tool, propose:
-   - Formatter → "Auto-format on write (PostToolUse)" — e.g. `dart format`, `prettier`
-   - Linter → "Auto-lint on write (PostToolUse)" — e.g. `dart analyze`, `eslint`
-   - Sensitive files (.env) → "Write guard for sensitive files (PreToolUse)"
-   Pre-selected: formatter hooks (most useful). Skip this question if no tools detected or all already hooked.
+   Question 3 (if no existing CLAUDE.md):
+   - question: "Any project-specific gotchas or conventions I should know? (e.g., never modify migrations directly, feature branches only)"
+   - header: "Gotchas"
+   - options:
+     - No extras — "Nothing to add"
+
+   Question 4 (enhance mode only):
+   - question: "What to improve in current CLAUDE.md?"
+   - header: "Improve"
+   - options:
+     - Auto-enhance — "Merge new findings into existing CLAUDE.md"
+     - Specific areas — "I'll tell you what to focus on"
+     - Full rewrite — "Regenerate from scratch"
+
+   Question 5 (if linters/formatters/test runners detected AND not already in settings.json hooks):
+   - question: "Found these dev tools. Set up auto-hooks in .claude/settings.json?"
+   - header: "Hooks"
+   - multiSelect: true
+   - options: Build dynamically from detected tools:
+     - Formatter → "Auto-format on write (PostToolUse)" — e.g. `dart format`, `prettier`
+     - Linter → "Auto-lint on write (PostToolUse)" — e.g. `dart analyze`, `eslint`
+     - Sensitive files (.env) → "Write guard for sensitive files (PreToolUse)"
+   - Pre-selected: formatter hooks (most useful). Skip if no tools detected or all already hooked.
 
 ---
 
@@ -341,11 +361,18 @@ Schema rules:
    - Target file: `.claude/settings.json`
    - Each hook: event, matcher, tool, one-line description
 3. If enhance mode: show diff against existing CLAUDE.md
-4. AskUserQuestion:
-   - "Approve all" → write CLAUDE.md + merge hooks into settings.json
-   - "Approve CLAUDE.md only" → write CLAUDE.md, skip hooks
-   - "Adjust [detail]" → modify and re-present
-   - "Restart" → return to Phase 2
+4. Use AskUserQuestion for review:
+   - question: "Review the CLAUDE.md above. What needs adjustment?"
+   - header: "Review"
+   - options:
+     - Approve all — "Install CLAUDE.md and merge hooks into settings.json"
+     - Approve CLAUDE.md only — "Install CLAUDE.md, skip hooks"
+     - Adjust — "I want to change specific sections"
+     - Restart — "Start the interview over from scratch"
+   - If "Approve all" → write CLAUDE.md + merge hooks into settings.json
+   - If "Approve CLAUDE.md only" → write CLAUDE.md, skip hooks
+   - If "Adjust" → ask what to change via AskUserQuestion, modify, re-present
+   - If "Restart" → return to Phase 2
 5. On approval:
    - If existing `./CLAUDE.md`: backup first → `cp CLAUDE.md CLAUDE.md.bak`
    - Write new `./CLAUDE.md`

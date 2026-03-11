@@ -143,18 +143,28 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    | Rule | Type | Path Glob | Score | Key Points |
    |------|------|-----------|-------|------------|
 
-2. AskUserQuestion:
+2. Use AskUserQuestion to get approval:
 
-   **Q1** (always): "Proposed [N] rules ([M] stack, [K] domain). Select which to generate:"
-   - multiSelect with all proposed rules pre-selected
-   - Each shows: type, path, line count estimate, top 3 conventions
+   Question 1 (always):
+   - question: "Proposed [N] rules ([M] stack, [K] domain). Select which to generate:"
+   - header: "Rules"
+   - multiSelect: true
+   - options: Build dynamically — one option per proposed rule, each showing type, path, line count estimate, top 3 conventions. Pre-select all.
 
-   **Q2** (if existing rules found and not update mode): "Found existing rules: [list]. How to handle?"
-   - "Update with new findings" / "Skip existing, only add new" / "Replace all"
+   Question 2 (if existing rules found and not update mode):
+   - question: "Found existing rules: [list]. How to handle?"
+   - header: "Existing"
+   - options:
+     - Update with new findings — "Merge new discoveries into existing rules"
+     - Skip existing, only add new — "Keep existing rules unchanged"
+     - Replace all — "Regenerate all rules from scratch"
    - In update mode: skip this question — default to "Update with new findings" while preserving user-added lines
 
-   **Q3** (optional): "Any directories or conventions I missed?"
-   - Free-text
+   Question 3 (optional):
+   - question: "Any directories or conventions I missed?"
+   - header: "Extras"
+   - options:
+     - No extras — "Looks complete"
 
 ---
 

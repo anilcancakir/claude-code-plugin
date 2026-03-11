@@ -165,10 +165,16 @@ CRITICAL: Do not install without user approval.
 
 1. Present the generated `SKILL.md` to the developer
 2. Highlight key sections: North Star, Non-Negotiable Rules count, language coverage
-3. Ask: "Review this skill. What needs adjustment?"
-   - "approve" → Proceed to install
-   - "adjust [detail]" → Update via `ac-skill-creator` and re-present
-   - "restart" → Return to Phase 3
+3. Use AskUserQuestion for review:
+   - question: "Review this skill. What needs adjustment?"
+   - header: "Review"
+   - options:
+     - Approve — "Install as shown"
+     - Adjust — "I want to change specific sections"
+     - Restart — "Start the interview over from scratch"
+   - If "Approve" → proceed to install
+   - If "Adjust" → ask what to change via AskUserQuestion, update via `ac-skill-creator`, re-present
+   - If "Restart" → return to Phase 3
 4. Once approved, write files to `~/.claude/skills/my-coding/`:
    - Create directory: `mkdir -p ~/.claude/skills/my-coding/references`
    - Write `SKILL.md`

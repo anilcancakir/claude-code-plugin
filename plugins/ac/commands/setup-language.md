@@ -178,10 +178,16 @@ CRITICAL: Do not install without user approval.
 
 1. Present the generated `SKILL.md` to the developer
 2. Highlight key sections: Voice Characteristics, context count, signature phrases
-3. Ask: "Does this sound like you? What needs adjustment?"
-   - "approve" → Proceed to install
-   - "adjust [detail]" → Update via `ac-skill-creator` and re-present
-   - "restart" → Return to Phase 3
+3. Use AskUserQuestion for review:
+   - question: "Does this sound like you? What needs adjustment?"
+   - header: "Review"
+   - options:
+     - Approve — "Install as shown"
+     - Adjust — "I want to change specific sections"
+     - Restart — "Start the interview over from scratch"
+   - If "Approve" → proceed to install
+   - If "Adjust" → ask what to change via AskUserQuestion, update via `ac-skill-creator`, re-present
+   - If "Restart" → return to Phase 3
 4. Once approved, write files to `~/.claude/skills/my-language/`:
    - Create directory: `mkdir -p ~/.claude/skills/my-language/references`
    - Write `SKILL.md`
