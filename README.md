@@ -111,6 +111,14 @@ For complex bugs or deep investigation:
 
 Opus investigates the codebase, traces root cause through hypothesis-first analysis, and returns specific fix steps.
 
+For critical tasks where partial delivery is unacceptable:
+
+```
+/ac:ultra <describe your task>
+```
+
+Chains the full workflow — certainty gate, planning, execution, and verification — in one command. Enforces delegation-first orchestration and requires evidence-based completion before declaring done.
+
 ## Commands
 
 ### Workflow
@@ -120,6 +128,7 @@ Opus investigates the codebase, traces root cause through hypothesis-first analy
 | `/ac:plan` | Classify intent, research via agents, interview, produce actionable plan | Opus |
 | `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation | Opus |
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
+| `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
 
 ### Project Setup
 
@@ -187,6 +196,17 @@ Load plan -> Decompose into Work Units
           -> Final verification (build + test + lint)
 ```
 
+### Ultra Mode (`/ac:ultra`)
+
+```
+Request -> Classify (intent + complexity)
+        -> Certainty gate (parallel agents, readiness self-check)
+        -> Plan (invoke ac:plan or ac:deep)
+        -> Execute (invoke ac:execute or direct)
+        -> Verify (build + test + lint + manual QA)
+        -> Complete (all TODOs done, evidence collected)
+```
+
 ## Design Principles
 
 **Sonnet-first, Opus-when-needed** — The plugin is designed for developers who run Claude Code on Sonnet as their default model. Complex tasks escalate to Opus agents for planning, investigation, and architecture, then return to Sonnet for execution. Haiku handles fast search and exploration. You get the right model at each step without switching manually.
@@ -195,6 +215,7 @@ Load plan -> Decompose into Work Units
 Daily work (Sonnet) -> Complex task detected
   -> Build/Refactor? -> /ac:plan (Opus plans, Haiku researches)
   -> Debug/Investigate? -> /ac:deep (Opus investigates, Haiku searches)
+  -> Critical task? -> /ac:ultra (Opus orchestrates end-to-end with verification)
   -> /ac:execute (Sonnet agents implement)
   -> Back to daily work (Sonnet)
 ```
@@ -215,10 +236,11 @@ claude-code-plugin/
 │   ├── plugin.json              # Plugin metadata (name: "ac")
 │   └── marketplace.json         # Marketplace registry for /plugin install
 ├── .mcp.json                    # MCP server config (context7)
-├── commands/                    # 8 user-invocable /ac:* commands
+├── commands/                    # 9 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
+│   ├── ultra.md                 # /ac:ultra
 │   ├── init-claude-md.md        # /ac:init-claude-md
 │   ├── init-rules.md            # /ac:init-rules
 │   ├── setup-coding.md          # /ac:setup-coding

@@ -52,8 +52,10 @@ Before the first tool call, classify complexity in one line:
   → "add user auth", "refactor payment module", "implement dark mode"
 - **Debug / Investigate / Root Cause**: Invoke `skill: "ac:deep"`
   → "login returns 500", "why does cache invalidate", "auth broke after refactor"
+- **Critical / Must-not-fail**: Invoke `skill: "ac:ultra"`
+  → important features, production changes, tasks where partial delivery is unacceptable
 
-When in doubt between plan and deep, use ac:plan — it handles both building and investigation through its classify phase.
+When in doubt between plan and deep, use ac:plan — it handles both building and investigation through its classify phase. Use ac:ultra when the task is critical and requires end-to-end verification.
 
 ### Research
 
