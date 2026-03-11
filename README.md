@@ -10,6 +10,7 @@ A curated marketplace of Claude Code plugins for structured development workflow
 | **[github-cli](plugins/github-cli/)** | GitHub CLI skill — comprehensive gh reference for issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), and scripting patterns. | productivity |
 | **[git-master](plugins/git-master/)** | Git expert skill — atomic commits with style detection, interactive rebase/squash, and history archaeology (blame, bisect, pickaxe). | productivity |
 | **[frontend-design](plugins/frontend-design/)** | Frontend design skill — production-grade UI for web and mobile with design systems, visual hierarchy, and distinctive aesthetics. | productivity |
+| **[dart-lsp](plugins/dart-lsp/)** | Dart/Flutter language server — go-to-definition, find references, hover, and real-time diagnostics for Claude Code. | development |
 
 ## Installation
 
@@ -43,7 +44,7 @@ After updating, sync your global config with new plugin features:
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── commands/            # 10 /ac:* commands
-│   │   ├── agents/              # 4 read-only agents
+│   │   ├── agents/              # 5 read-only agents
 │   │   ├── skills/              # Component creation skill
 │   │   └── README.md
 │   ├── github-cli/              # GitHub CLI skill plugin
@@ -58,11 +59,16 @@ After updating, sync your global config with new plugin features:
 │   │   ├── skills/              # Atomic commits, rebase, history
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── frontend-design/         # Frontend design skill plugin
+│   ├── frontend-design/         # Frontend design skill plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/              # Design systems, hierarchy, aesthetics
+│   │   │   └── references/      # Deep-dive: hierarchy, color, mobile
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── dart-lsp/                # Dart/Flutter LSP plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       ├── skills/              # Design systems, hierarchy, aesthetics
-│       │   └── references/      # Deep-dive: hierarchy, color, mobile
 │       ├── README.md
 │       └── LICENSE
 ├── README.md                    # This file

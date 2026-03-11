@@ -38,13 +38,18 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── SKILL.md      # Atomic commits, rebase, history archaeology
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── frontend-design/          # Frontend design skill plugin
+│   ├── frontend-design/          # Frontend design skill plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/
+│   │   │   └── frontend-design/
+│   │   │       ├── SKILL.md      # Design systems, hierarchy, aesthetics (429 lines)
+│   │   │       └── references/   # Deep-dive: hierarchy, color, mobile
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── dart-lsp/                 # Dart/Flutter language server plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       ├── skills/
-│       │   └── frontend-design/
-│       │       ├── SKILL.md      # Design systems, hierarchy, aesthetics (429 lines)
-│       │       └── references/   # Deep-dive: hierarchy, color, mobile
 │       ├── README.md
 │       └── LICENSE
 ├── CLAUDE.md                     # This file
@@ -99,6 +104,9 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 ### frontend-design plugin
 - `frontend-design` (Sonnet) — Production-grade UI for web and mobile: design systems (spacing/type/shadow/color), visual hierarchy, distinctive aesthetics, mobile patterns. Has `references/` for hierarchy, color system, and mobile components
 
+### dart-lsp plugin
+- LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.
+
 ## Design Principles
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
@@ -118,10 +126,15 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 
 ## Adding a New Plugin
 
+**Skill/command plugin** (github-cli, git-master, frontend-design pattern):
 1. Create `plugins/<name>/` with `.claude-plugin/plugin.json` (name, description, author)
 2. Add commands/, agents/, skills/ as needed
 3. Add entry in `.claude-plugin/marketplace.json` with `"source": "./plugins/<name>"`
-4. Add README.md and LICENSE to the plugin directory
+4. Add README.md and LICENSE
+
+**LSP plugin** (dart-lsp pattern):
+1. Create `plugins/<name>/` with `.claude-plugin/plugin.json`, README.md, LICENSE
+2. Add entry in `.claude-plugin/marketplace.json` with `"strict": false` and `"lspServers"` inline — no `.lsp.json` file
 
 ## Gotchas
 

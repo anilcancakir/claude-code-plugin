@@ -1,0 +1,8 @@
+{
+    "name": "dart-lsp",
+    "description": "Dart/Flutter language server — go-to-definition, find references, hover, and real-time diagnostics for Claude Code.",
+    "author": {
+        "name": "Anilcan Cakir",
+        "email": "anilcan.cakir@gmail.com"
+    }
+}
