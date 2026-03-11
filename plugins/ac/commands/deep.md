@@ -41,6 +41,17 @@ Initial request: $ARGUMENTS
 3. Predict 3-5 most likely problem areas BEFORE reading any code
 4. Announce classification, scope, and predictions to the user in 2-3 lines
 
+## Agent Routing
+
+When launching agents via the Agent tool, always use these exact `subagent_type` values:
+
+| Agent | `subagent_type` | NOT |
+|-------|----------------|-----|
+| ac:explore | `"ac:explore"` | `"Explore"` (builtin), `"explore"` |
+| ac:librarian | `"ac:librarian"` | `"librarian"` |
+
+The `ac:` prefix routes to the plugin's custom agent definitions with specific tools and model routing. Without the prefix, Claude Code resolves to builtin agents with different behavior.
+
 ---
 
 ## Phase 2: Research
@@ -53,9 +64,9 @@ this phase.
 
 **Actions**:
 
-1. Launch 2-3 ac:explore agents in parallel (single message, multiple Agent tool calls).
+1. Launch 2-3 ac:explore agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"`).
    Each agent targets a different aspect based on intent type
-2. Launch 1 ac:librarian agent if external libraries or frameworks are involved
+2. Launch 1 ac:librarian agent (with `subagent_type: "ac:librarian"`) if external libraries or frameworks are involved
 3. Once agents return, read all key files identified to build deep understanding
 4. Cross-reference findings across agents for consistency
 

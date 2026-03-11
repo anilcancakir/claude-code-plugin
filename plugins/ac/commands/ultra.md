@@ -58,6 +58,19 @@ Certainty-first, delegation-first, verification-guaranteed.
 
 Present classification and criteria to the user in 3-4 lines.
 
+## Agent Routing
+
+When launching agents via the Agent tool, always use these exact `subagent_type` values:
+
+| Agent | `subagent_type` | NOT |
+|-------|----------------|-----|
+| ac:explore | `"ac:explore"` | `"Explore"` (builtin), `"explore"` |
+| ac:librarian | `"ac:librarian"` | `"librarian"` |
+| ac:plan-analysis | `"ac:plan-analysis"` | `"plan-analysis"` |
+| ac:plan-review | `"ac:plan-review"` | `"plan-review"` |
+
+The `ac:` prefix routes to the plugin's custom agent definitions with specific tools and model routing. Without the prefix, Claude Code resolves to builtin agents with different behavior.
+
 ---
 
 ## Phase 2: Certainty Gate
@@ -66,7 +79,7 @@ Present classification and criteria to the user in 3-4 lines.
 
 **Actions**:
 
-1. Launch parallel ac:explore + ac:librarian agents (single message, multiple Agent tool calls). Route by intent:
+1. Launch parallel ac:explore + ac:librarian agents (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Route by intent:
 
 **Build/Refactor**:
 - ac:explore 1: "CONTEXT: [task description]. GOAL: Find existing patterns and conventions. DOWNSTREAM: Plan file structure. REQUEST: Find similar implementations — directory structure, naming, config. Include project structure overview."

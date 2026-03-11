@@ -40,6 +40,19 @@ Initial request: $ARGUMENTS
    - **Complex** (5+ files, cross-layer, design decisions): All phases
 3. Announce intent and complexity to the user in one line
 
+## Agent Routing
+
+When launching agents via the Agent tool, always use these exact `subagent_type` values:
+
+| Agent | `subagent_type` | NOT |
+|-------|----------------|-----|
+| ac:explore | `"ac:explore"` | `"Explore"` (builtin), `"explore"` |
+| ac:librarian | `"ac:librarian"` | `"librarian"` |
+| ac:plan-analysis | `"ac:plan-analysis"` | `"plan-analysis"` |
+| ac:plan-review | `"ac:plan-review"` | `"plan-review"` |
+
+The `ac:` prefix routes to the plugin's custom agent definitions with specific tools and model routing. Without the prefix, Claude Code resolves to builtin agents with different behavior.
+
 ---
 
 ## Phase 2: Research
@@ -51,7 +64,7 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 **Actions**:
 
 1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
-2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
+2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
 ### Agent Routing by Intent
 
@@ -151,7 +164,7 @@ Plans must follow this exact structure for ac:execute compatibility:
 
 **Analysis gate** (mandatory before presenting to user):
 
-1. Launch the `plan-analysis` agent via the Agent tool with `subagent_type: "plan-analysis"`. In the prompt, provide the plan file path. This runs gap classification, AI-slop detection, and acceptance criteria audit on a fresh Sonnet context
+1. Launch the `plan-analysis` agent via the Agent tool with `subagent_type: "ac:plan-analysis"`. In the prompt, provide the plan file path. This runs gap classification, AI-slop detection, and acceptance criteria audit on a fresh Sonnet context
 2. Read the analysis agent's output. Apply all fixes:
     - CRITICAL gaps: add as questions for the user
     - MINOR gaps: fix directly in the plan

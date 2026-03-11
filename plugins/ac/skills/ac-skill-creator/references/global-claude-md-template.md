@@ -60,8 +60,10 @@ When in doubt between plan and deep, use ac:plan — it handles both building an
 ### Research
 
 BLOCKING — Do NOT use Grep, Glob, Read, or WebSearch directly. Delegate all research to agents:
-- **ac:explore** — internal codebase (files, patterns, structure, relationships)
-- **ac:librarian** — external docs, API references, best practices (context7 MCP → WebSearch fallback)
+- **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, structure, relationships)
+- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API references, best practices (context7 MCP → WebSearch fallback)
+
+CRITICAL: Always use the `ac:` prefixed `subagent_type` values. `"Explore"` (builtin) and `"explore"` route to different agents with different tools and models.
 
 Launch with CONTEXT, GOAL, DOWNSTREAM, REQUEST prompts in one parallel message. Read files AFTER agents return, not before.
 
