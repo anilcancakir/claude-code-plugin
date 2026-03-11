@@ -129,8 +129,8 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 11. If plan has 3+ steps, decompose into Work Units for `ac:execute`:
     - Group independent steps (no shared files, no dependency) into parallel units
     - Merge dependent steps into single sequential units
-    - Each unit must be implementable in an isolated git worktree (no shared state with sibling units)
-    - Each unit must be mergeable on its own
+    - Each unit must have no shared state with sibling units
+    - Each unit must be independently verifiable
     - Add "Work Units" section to plan file
 12. Save the draft plan to `~/.claude/projects/<cwd-hash>/plans/$planName.md`
 
@@ -212,7 +212,7 @@ options:
   - label: "Proceed (Recommended)"
     description: "Approve the plan and begin implementation."
   - label: "Execute (Parallel)"
-    description: "Launch parallel worktree agents to execute independent steps concurrently."
+    description: "Launch parallel background agents to execute independent steps concurrently."
   - label: "Plan Review"
     description: "Launch plan-review agent to verify references and executability."
   - label: "Adjust"

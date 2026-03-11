@@ -101,7 +101,7 @@ Claude classifies the request, launches research agents, interviews you on ambig
 /ac:execute <plan-name>
 ```
 
-Decomposes the plan into independent work units and executes them — parallel worktree agents for independent steps, sequential agents for dependent ones.
+Decomposes the plan into independent work units and executes them — parallel background agents for independent steps, sequential agents for dependent ones.
 
 For complex bugs or deep investigation:
 
@@ -119,7 +119,7 @@ Opus investigates the codebase, traces root cause through hypothesis-first analy
 |---------|-------------|-------|
 | `/ac:plan` | Classify intent, research via agents, interview, produce actionable plan | Opus |
 | `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation | Opus |
-| `/ac:execute` | Execute an approved plan — parallel worktree agents or sequential | Sonnet |
+| `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
 
 ### Project Setup
 
@@ -181,7 +181,7 @@ Request -> Classify (intent type + scope + predict likely issues)
 
 ```
 Load plan -> Decompose into Work Units
-          -> Independent units -> parallel worktree agents
+          -> Independent units -> parallel background agents
           -> Dependent units -> sequential agents
           -> Track progress per wave
           -> Final verification (build + test + lint)

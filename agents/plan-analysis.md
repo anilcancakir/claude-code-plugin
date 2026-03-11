@@ -64,7 +64,7 @@ Check if plan is structured for parallel execution via `ac:execute`:
 
 - **Work Units section**: Present or missing?
 - **File overlap**: Do any parallel units share files? If yes → flag as conflict
-- **Independence test**: Can each unit be implemented in a worktree with no shared state?
+- **Independence test**: Can each unit be implemented with no shared state or file overlap?
 - **Uniform sizing**: Are units roughly equal in scope? Flag if one unit has 5 steps and another has 1
 
 ---

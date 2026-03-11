@@ -69,8 +69,8 @@ Use TodoWrite for any task with 2+ steps. The ac:plan skill will create the init
 
 ### Execution
 
-- For approved plans with 3+ steps, use `ac:execute` for parallel worktree execution
-- Ad-hoc parallel: Agent tool with `run_in_background: true` + `isolation: "worktree"`. Launch all in a single message
+- For approved plans with 3+ steps, use `ac:execute` for parallel execution
+- Ad-hoc parallel: Agent tool with `run_in_background: true`. Launch all in a single message
 - Do not poll or sleep — notifications arrive automatically
 
 ### Delegation

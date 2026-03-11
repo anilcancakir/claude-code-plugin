@@ -1,5 +1,5 @@
 ---
-description: Execute an approved plan — parallel worktree agents or sequential
+description: Execute an approved plan — parallel background agents or sequential
 argument-hint: Plan file path (e.g., auth-system)
 model: sonnet
 ---
@@ -55,15 +55,13 @@ Plan identifier: $ARGUMENTS
 
 3. **Validate** (whether plan-provided or auto-analyzed):
    - Verify no file overlaps between parallel units
-   - Verify each unit can run in a worktree with no shared state
 
 4. Select execution strategy:
 
 | Condition | Strategy |
 |-----------|----------|
 | 1 step total | Execute directly (no agent needed) |
-| 2 steps, all independent | Parallel background agents (no worktree needed if different files) |
-| 3+ independent units | Parallel worktree agents + `run_in_background: true` |
+| 2+ steps, all independent | Parallel background agents + `run_in_background: true` |
 | Mixed parallel + sequential | Parallel units first, then sequential steps |
 | All sequential | Sequential agents — one at a time |
 
@@ -103,10 +101,7 @@ Apply this preflight before any agent launch. If preflight fails, do not start p
 2. Read `~/.claude/settings.json` if present and validate:
    - `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS == "1"`
    - `env.CLAUDE_CODE_ENABLE_TASKS == "true"`
-3. Detect `teammateMode` if set:
-   - If `teammateMode: "tmux"`, verify tmux runtime is available before spawning parallel teammates
-   - If tmux is unavailable, do not attempt tmux teammate spawning
-4. Check permission posture before execution:
+3. Check permission posture before execution:
    - If workflow requires write/edit but permission mode or hooks block it, do not continue with background execution
    - Prefer explicit remediation over silent retries
 5. Check hook interference risk:
@@ -120,7 +115,7 @@ Apply this preflight before any agent launch. If preflight fails, do not start p
 | HARD FAIL (blocking) | Stop and provide remediation |
 
 **Remediation message requirements** (when preflight fails):
-- State exactly what failed (missing env key, tmux unavailable, permission denied, hook block)
+- State exactly what failed (missing env key, permission denied, hook block)
 - Include mode snapshot details from available evidence (permission mode, bypassPermissions active/inactive, disable reason if known)
 - State why execution cannot proceed safely
 - Provide concrete fix steps
@@ -136,14 +131,13 @@ Apply this preflight before any agent launch. If preflight fails, do not start p
 - Do not retry failing commands in sleep loops
 - If waiting on background tasks, rely on completion notifications and TaskOutput checks
 
-### For Parallel Waves (3+ independent steps)
+### For Parallel Waves (2+ independent steps)
 
 For each wave, launch ALL agents in a **single message block** (multiple Agent tool calls):
 
 ```
 Agent(
   prompt: "[full self-contained task prompt — see template below]",
-  isolation: "worktree",
   run_in_background: true
 )
 ```
@@ -233,8 +227,7 @@ When all agents complete, render the final table and summary.
 
 **Actions**:
 
-1. If worktree agents were used, show the branches created and their status
-2. Run project-wide verification:
+1. Run project-wide verification:
    - Full build
    - Full test suite
    - Lint check
@@ -248,19 +241,15 @@ When all agents complete, render the final table and summary.
 **Strategy**: [what was used]
 
 ### Results
-| Step | Status | Branch/PR |
-|------|--------|-----------|
-| 1 | ✅ | worktree/step-1 |
-| 2 | ✅ | worktree/step-2 |
+| Step | Status |
+|------|--------|
+| 1 | ✅ |
+| 2 | ✅ |
 
 ### Verification
 - Build: [pass/fail]
 - Tests: [pass/fail]
 - Lint: [pass/fail]
-
-### Next Steps
-- Merge branches (if worktree): [commands]
-- Or: all changes are on current branch (if sequential)
 ```
 
 ---
@@ -273,5 +262,5 @@ When all agents complete, render the final table and summary.
 - **Execution stopped by PreToolUse hook**: Report the hook stop reason and switch to sequential fallback when possible
 - **Plan file not found**: Inform user, suggest running `/ac:plan` first
 - **No independent steps found**: Fall back to sequential execution
-- **Worktree not available** (not a git repo): Fall back to sequential execution without worktree isolation
+- **Not a git repo**: Fall back to sequential execution
 - **Plugin newly installed/updated but behavior missing**: Ask user to restart Claude Code before retrying execution

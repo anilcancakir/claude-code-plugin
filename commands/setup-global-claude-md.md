@@ -162,7 +162,7 @@ You are orchestrating an interactive session to build the developer's global `~/
    - `skill: "ac:plan"` for planning workflows
    - `skill: "ac:deep"` for debugging/investigation workflows — not "analyze the bug"
    - `AskUserQuestion` not "ask the user"
-   - `run_in_background: true` and `isolation: "worktree"` for parallel execution
+   - `run_in_background: true` for parallel execution
 3. Ensure no duplicate rules — each rule appears exactly once
 4. Verify conditional sections:
    - Skills section present only if skills detected
