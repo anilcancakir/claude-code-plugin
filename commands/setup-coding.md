@@ -1,6 +1,7 @@
 ---
 description: Interactive coding style analyzer — scans existing projects, interviews the developer, generates a personalized my-coding skill
 argument-hint: Path to a representative project (optional)
+model: opus
 ---
 
 # Setup My Coding Style
@@ -149,6 +150,8 @@ Read ${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/coding-style-templ
 ```
 
 1. Review the generated output for completeness and accuracy
+
+**Error Recovery**: If ac-skill-creator produces empty or malformed output, retry once with a simplified prompt (reduce interview findings to top 5 rules only). If still fails, present raw interview findings to user and offer to write the skill file manually via direct Write.
 
 ---
 

@@ -1,6 +1,19 @@
 ---
 name: plan-review
-description: Reviews plans for executability and blocking issues. Verifies file references exist and tasks have enough context to start. Returns OKAY or REJECT verdict.
+description: |
+  Plan executability gatekeeper — use as final check before implementation. Verifies file references exist, tasks have enough context to start, and no blocking contradictions. Returns OKAY or REJECT verdict.
+  <example>
+  Context: User wants to verify a plan is executable before starting implementation
+  user: "Review this plan before I start implementing"
+  assistant: "I'll launch the plan-review agent to verify all file references exist and tasks have enough context."
+  <commentary>Triggered when user wants executability verification before committing to implementation.</commentary>
+  </example>
+  <example>
+  Context: ac:plan offers plan review as an option after presenting the plan
+  user: "Plan Review"
+  assistant: "Launching plan-review agent to do a final executability check on the plan."
+  <commentary>Triggered via ac:plan's post-presentation options. Returns OKAY or REJECT with max 3 blocking issues.</commentary>
+  </example>
 model: opus
 tools: Read, Grep, Glob, LS
 color: green

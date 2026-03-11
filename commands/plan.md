@@ -8,7 +8,7 @@ model: opus
 
 You are orchestrating a planning workflow. Classify intent, research the codebase, interview the user, and produce an actionable plan.
 
-**Plan storage**: Derive project path from the auto memory directory injected in your system prompt (e.g., `~/.claude/projects/<cwd-hash>/memory/`). Save plans to the sibling `plans/` directory: `~/.claude/projects/<cwd-hash>/plans/$planName.md`.
+**Plan storage**: Your auto memory directory appears in your system prompt (e.g., `/Users/user/.claude/projects/-Users-user-Code-project/memory/`). Replace the trailing `memory/` with `plans/` to derive the plan storage path. Save plans as `plans/$planName.md` where `$planName` is slugified from the request topic.
 
 ## Core Principles
 
@@ -50,7 +50,7 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 
 **Actions**:
 
-1. Check for project rules — invoke `skill: "my-coding"` if it exists
+1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
 ### Agent Routing by Intent
@@ -95,6 +95,8 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 1. Once agents return, read all key files identified by agents to build deep understanding
 2. Summarize findings: patterns found, files to modify, dependencies, external best practices discovered
 
+**Error Recovery**: If ac:explore agents return empty or insufficient results, proceed to Phase 3 with reduced confidence. Note research gaps in the plan's Risks section and flag them to the user during review. Do not block planning due to incomplete research — partial data is better than no plan.
+
 ---
 
 ## Phase 3: Interview + Plan Output
@@ -131,6 +133,21 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
     - Each unit must be mergeable on its own
     - Add "Work Units" section to plan file
 12. Save the draft plan to `~/.claude/projects/<cwd-hash>/plans/$planName.md`
+
+**Plan File Format** (contract with ac:execute):
+
+Plans must follow this exact structure for ac:execute compatibility:
+- `# Plan: [Title]` — H1 with plan name
+- `**TL;DR**:` — 1-2 sentence summary
+- `**Intent**:` and `**Complexity**:` — classification metadata
+- `## Steps` or `### Unit N:` — numbered steps, each with:
+  - `**Step N**: [title]` heading
+  - `Files:` list of files to modify
+  - `Done when:` executable acceptance criteria
+  - `Independence:` independent or depends on Step N
+- `### Work Units` — parallel decomposition with Unit entries containing Steps, Files, Verification
+- `### Must NOT Have` — explicit exclusions
+- `### Risks` — optional risk section
 
 **Analysis gate** (mandatory before presenting to user):
 
@@ -219,7 +236,8 @@ For **Simple** requests:
 1. Skip Phase 2 (research)
 2. Identify affected files directly
 3. Create a 3-4 step plan via TodoWrite
-4. Save and present to user
+4. **Analysis gate: skip for Simple** (1-2 step plans don't need gap analysis)
+5. Save and present to user
 
 For **Standard** requests:
 

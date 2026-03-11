@@ -94,11 +94,18 @@ this phase.
 - ac:explore 2: Resource usage — allocations, connection pools, file handles, cleanup
 - ac:librarian: Performance guides, anti-patterns, profiling techniques
 
-**Integration / Architecture**:
+**Integration intent**:
+Launch 2 ac:explore agents + 1 ac:librarian agent in parallel:
 
-- ac:explore: Module interfaces, shared types, existing integration patterns
-- ac:librarian 1: API docs, authentication, rate limits, SDK examples
-- ac:librarian 2 (if migration): Changelog, breaking changes, migration steps
+- ac:explore 1: "CONTEXT: Investigating integration issue with [system/service]. GOAL: Map integration boundaries and data flow. DOWNSTREAM: Identify where integration breaks. REQUEST: Find integration points — API calls, event dispatchers, queue handlers, external service clients. Trace data transformation at boundaries."
+- ac:explore 2: "CONTEXT: Integration failure in [area]. GOAL: Find contract mismatches. DOWNSTREAM: Locate the exact mismatch point. REQUEST: Find request/response schemas, serialization code, validation rules at integration boundaries. Compare expected vs actual formats."
+- ac:librarian: "CONTEXT: Debugging integration with [external service/protocol]. GOAL: Verify correct API usage. DOWNSTREAM: Confirm whether our integration follows the spec. REQUEST: Find official API docs, protocol specs, known breaking changes, migration guides for the version in use."
+
+**Architecture intent**:
+Launch 1 ac:explore agent + 1 ac:librarian agent in parallel:
+
+- ac:explore: "CONTEXT: Investigating architectural concern in [area]. GOAL: Map module boundaries and dependency direction. DOWNSTREAM: Identify load-bearing abstractions and safe-to-change areas. REQUEST: Find module boundaries, dependency graph (who imports whom), circular dependencies, key abstractions, and any architectural decision records (ADRs)."
+- ac:librarian: "CONTEXT: Evaluating architectural pattern for [domain]. GOAL: Compare current approach against best practices. DOWNSTREAM: Recommend whether to restructure or extend. REQUEST: Find architectural pattern documentation, real-world case studies for this domain, common anti-patterns and failure modes. Skip generic pattern catalogs."
 
 ---
 
@@ -108,13 +115,13 @@ this phase.
 
 **Actions**:
 
-1. Load project coding rules — invoke `skill: "my-coding"` if it exists. This
-   ensures fix recommendations follow the project's coding standards
+1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards context. If not found, skip and note: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Form a primary hypothesis based on predictions (Phase 1) and agent findings (Phase 2)
 3. Verify against actual code — find the exact line where behavior diverges
 4. Distinguish root cause from symptoms
-5. If first hypothesis fails, form a second. After 3 failed hypotheses, report what
-   is known and what is unclear
+5. If first hypothesis fails, form a second. After 3 failed hypothesis-verify cycles,
+   stop investigating and deliver a partial report using the Unknown Root Cause template
+   (see Constraints)
 6. Evaluate minimum 2 fix approaches. Compare: correctness, scope, risk, effort
 7. Pick the recommended approach. Tag effort: Quick(<1h), Short(1-4h), Medium(1-2d),
    Large(3d+)
@@ -168,7 +175,22 @@ Include **Related Areas** section listing other files with the same problem patt
 - Read-only investigation. Do not create, modify, or delete files
 - All paths must be absolute with file:line references
 - Stop when root cause is identified. Do not over-research
-- If root cause cannot be determined after 3 hypotheses, state what is known
-  and what is still unclear
+- **Investigation ceiling**: Maximum 3 hypothesis-verify cycles. Each cycle: form hypothesis → gather evidence → verify. After 3 cycles without confirmed root cause, stop investigating and deliver a partial report using the Unknown Root Cause template below.
 - Do not ask the user questions. Research first — the problem description is your input
-- Maximum investigation depth: 3 rounds of evidence gathering
+
+**Unknown Root Cause Template**:
+```markdown
+## Investigation: [Target]
+
+**Status**: Inconclusive after 3 hypothesis-verify cycles
+
+**Eliminated Hypotheses**:
+1. [Hypothesis] — Eliminated because [evidence]
+2. [Hypothesis] — Eliminated because [evidence]
+3. [Hypothesis] — Eliminated because [evidence]
+
+**Remaining Leads**:
+- [Unexplored angle + why it wasn't tested]
+
+**Recommended Next Step**: [Specific action — e.g., "add logging at X to capture Y", "reproduce with Z conditions"]
+```

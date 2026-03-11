@@ -1,6 +1,7 @@
 ---
 description: Interactive global CLAUDE.md generator — interviews developer, detects skills, produces orchestration config
 argument-hint: enhance or overwrite (optional)
+model: opus
 ---
 
 # Setup Global CLAUDE.md
@@ -43,7 +44,7 @@ You are orchestrating an interactive session to build the developer's global `~/
 
    - Both `~/.claude/.mcp.json` and `~/.claude.json` can define global MCP servers
    - Parse each server: name, command, enabled status
-4. Runtime introspection — you already have access to your own available tools, skills, and MCP servers in the current session. Cross-reference file-detected items with your actual runtime capabilities to ensure completeness
+4. Cross-reference file-detected items with your current session capabilities — check if you can call specific MCP tools (e.g., try resolving a context7 library), verify agent names appear in your available agent list. This confirms detection accuracy against runtime state.
 5. Detect environment via Bash:
    - OS and architecture: `uname -ms`
    - Shell: `echo $SHELL`
@@ -58,6 +59,8 @@ You are orchestrating an interactive session to build the developer's global `~/
    - Parse `env.CLAUDE_CODE_ENABLE_TASKS`
    - Parse `teammateMode`
    - Mark missing keys for optional safe merge during install
+
+**Error Recovery**: If environment detection fails for any tool (command not found, permission denied), skip that tool entry and continue detection. Do not fail the entire discovery phase due to a single tool detection failure. Note skipped items for the interview phase.
 
 ---
 
@@ -137,6 +140,7 @@ You are orchestrating an interactive session to build the developer's global `~/
    - **Identity block**: Communication style from Q1
    - **Tech Stack**: From Q2 or detected from `my-coding` skill
    - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:deep"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
+   - **Workflow — Research**: Copy the Research BLOCKING block verbatim from the template. NEVER compress, soften, or summarize — the "Do NOT use Grep, Glob, Read, or WebSearch directly" prohibition must appear word-for-word. This is the primary mechanism that makes Claude delegate to `ac:explore` and `ac:librarian` agents.
    - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
    - **Skills section**: Include all detected skills from Phase 1. Use table format with skill name and "Load When" column. If additional skills approved in Q6, add them. If no skills detected, omit this section
     - **MCP section**: If user approved MCP references in Q6, add a concise MCP reference block listing server name and capability. Only enabled servers. Format: `MCP: <server> — <capability>`

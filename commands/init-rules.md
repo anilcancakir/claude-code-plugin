@@ -113,10 +113,17 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    - Path glob(s)
    - Content outline
 
-3. **Deduplication pass**:
-   - Compare proposed content against `~/.claude/CLAUDE.md` → remove overlaps
-   - Compare against `./CLAUDE.md` → remove overlaps
-   - Compare against `~/.claude/skills/my-coding` if exists → remove overlaps
+3. **Deduplication Algorithm**:
+
+   For each proposed rule, check against existing sources (project CLAUDE.md, global CLAUDE.md, my-coding skill) using this 4-step process:
+
+   1. **Exact match**: If identical text exists in any source → **skip** (already covered)
+   2. **Semantic overlap**: If a broader existing rule covers this specific case → **skip** (e.g., existing "use strict types" already covers proposed "type all function parameters")
+   3. **Conflict**: If proposed rule contradicts an existing rule → **flag for user decision** in Phase 3 interview (present both rules, ask which takes precedence)
+   4. **Complement**: If proposed rule adds specificity to an existing broad rule → **keep** (e.g., existing "use strict types" + proposed "use backed enums for status fields" — the enum rule adds value)
+
+   **Priority when conflicts arise**: Project-level CLAUDE.md > my-coding skill > proposed rule (most specific scope wins).
+
    - Compare across proposed rules → no rule-to-rule duplication
 
 4. Present as table with type, path, score, key content after dedup

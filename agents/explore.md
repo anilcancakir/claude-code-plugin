@@ -1,6 +1,19 @@
 ---
 name: explore
-description: Fast codebase search specialist for finding files, patterns, and code relationships. Answers "where is X?", "which files contain Y?", and "how does Z connect to W?" with structured, actionable results.
+description: |
+  Codebase search specialist — use proactively for ALL internal lookups instead of Grep, Glob, or Read directly. Answers "where is X?", "which files contain Y?", "how does Z connect to W?" with file:line references. Use before planning, architecture, or any codebase exploration.
+  <example>
+  Context: User needs to find where authentication is implemented
+  user: "Where is the auth middleware defined?"
+  assistant: "I'll launch an explore agent to find authentication-related files and trace the middleware chain."
+  <commentary>Triggered by "where is" question about codebase internals. Explore maps files, patterns, and relationships.</commentary>
+  </example>
+  <example>
+  Context: User is planning a refactor and needs to understand dependencies
+  user: "Which files import the UserService class?"
+  assistant: "Let me launch an explore agent to map all UserService dependencies and usage patterns."
+  <commentary>Triggered by "which files" dependency question. Explore traces imports, call sites, and dependency chains.</commentary>
+  </example>
 model: haiku
 tools: Glob, Grep, LS, Read, BashOutput
 color: cyan

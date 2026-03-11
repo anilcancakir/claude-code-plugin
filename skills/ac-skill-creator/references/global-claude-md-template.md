@@ -57,15 +57,11 @@ When in doubt between plan and deep, use ac:plan — it handles both building an
 
 ### Research
 
-For Standard and Complex tasks, delegate all research to agents. Do not perform codebase exploration or documentation lookup manually.
+BLOCKING — Do NOT use Grep, Glob, Read, or WebSearch directly. Delegate all research to agents:
+- **ac:explore** — internal codebase (files, patterns, structure, relationships)
+- **ac:librarian** — external docs, API references, best practices (context7 MCP → WebSearch fallback)
 
-- **ac:explore** — internal codebase (files, patterns, structure)
-- **ac:librarian** — external docs and best practices (context7 MCP → WebSearch fallback)
-
-Launch agents with structured prompts: CONTEXT, GOAL, DOWNSTREAM, REQUEST. Launch all in a single message for parallel execution. Read key files AFTER agents return — not before.
-
-**Wrong**: Manually reading project files one by one (Read, Glob, Grep) to build understanding before acting.
-**Right**: Launch 1-2 ac:explore agents to map the project structure and relevant areas in parallel.
+Launch with CONTEXT, GOAL, DOWNSTREAM, REQUEST prompts in one parallel message. Read files AFTER agents return, not before.
 
 ### Task Tracking
 
@@ -148,3 +144,4 @@ If `my-coding` skill exists and contains detailed rules, keep this section minim
 4. **Stack-agnostic workflow**: Verification says "project's test suite", not specific commands
 5. **Official tool names**: Use exact Claude Code system prompt terminology
 6. **No Haiku references**: Only Opus and Sonnet
+7. **Research BLOCKING must survive compression**: Copy the Research section verbatim — never soften or summarize the "Do NOT use Grep, Glob, Read" prohibition. This is the primary agent-triggering enforcement and must not be compressed.

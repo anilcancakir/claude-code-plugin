@@ -51,6 +51,8 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
    ac:explore 3 — **Context Docs + Code Patterns**:
    "CONTEXT: Generating project CLAUDE.md. GOAL: Extract conventions and anti-patterns. REQUEST: Read README.md, GEMINI.md, root AGENTS.md if they exist — extract conventions, architecture decisions, anti-patterns. Find linter/formatter configs and infer code style rules. Find DO NOT/NEVER/DEPRECATED/TODO comments in source. PRIORITY: Source code patterns over documentation claims. Report: conventions list + gotchas list."
 
+**Error Recovery**: If any ac:explore agent returns empty results (no commands found, no architecture detected, no context docs), proceed with partial data. Note the missing areas and ask targeted questions about them in Phase 2 interview. Partial discovery is better than blocked execution.
+
 2. While agents run, main session detects project config via Bash:
 
    ```bash
@@ -66,6 +68,7 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
    - If not exists: announce "Creating new CLAUDE.md"
    - Collect detected: skills list, MCP servers, custom agents
    - Collect existing hooks from settings.json (if any) — avoid duplicate proposals
+   - Cross-reference file-detected items with your current session capabilities — check if you can call specific MCP tools (e.g., try resolving a context7 library), verify agent names appear in your available agent list. This confirms detection accuracy against runtime state.
 
 3. Collect all agent results
 4. Merge into discovery summary: commands table + architecture map + conventions + gotchas
@@ -126,6 +129,14 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
 6. Token budget check: ≤2500 tokens (~100-120 lines)
    - Over limit → trim least-critical sections
    - Defer detailed conventions to `.claude/rules/` and mention in output
+
+**Token Budget Overflow**: If synthesized content exceeds ≤2500 tokens (~120 lines), trim in this priority order:
+1. Reduce examples in Commands table (keep command name + 1-line description only)
+2. Remove Gotchas entries (least critical)
+3. Condense Architecture details to 1-2 key patterns
+4. **Never trim**: Mission statement, Key Commands section, or Tech Stack
+
+After trimming, recount. If still over budget, split into CLAUDE.md (critical context) + CLAUDE.local.md (supplementary details).
 
 ---
 
@@ -279,7 +290,15 @@ Schema rules:
    - If doesn't exist: create `{ "hooks": { ... } }`
    - All commands end with `|| true` — hook failures must never block work
 
-3. Prepare hooks preview for Phase 5
+3. **Validation gate**: Before presenting hooks to user, validate the generated JSON:
+   1. Proper nesting: `settings.json` root → `hooks` object → event name arrays (e.g., `"PreToolUse"`, `"PostToolUse"`)
+   2. Each hook entry has `type` (string: "command"), `command` (string), and optionally `matcher` with valid glob pattern
+   3. All shell commands are properly escaped strings
+   4. No duplicate matchers within the same event array
+
+   If validation fails, present the hooks as formatted text for manual review instead of auto-installing. Explain which validation rule failed.
+
+4. Prepare hooks preview for Phase 5
 
 ---
 

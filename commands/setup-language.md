@@ -1,6 +1,7 @@
 ---
 description: Interactive writing style analyzer — scans existing articles, documentation, and written content, interviews the developer, generates a personalized my-language skill
 argument-hint: Path to writing samples or documentation directory (optional)
+model: opus
 ---
 
 # Setup My Language Style
@@ -52,12 +53,13 @@ You are orchestrating an interactive session to build a personalized writing and
    - **Tone differences**: How tone shifts between documentation vs. articles vs. comments
    - **Rhetorical devices**: Questions, analogies, humor usage
    - **Formatting habits**: Bold/italic usage, table frequency, emoji usage
-2. If a git repo is provided, additionally extract:
+2. **Git availability check**: Before extracting git patterns, verify: run `git --version` to confirm git is installed, then `git -C <path> rev-parse --git-dir` to confirm the path is a git repo with history. If git is unavailable or path is not a git repo, skip commit/PR pattern extraction entirely and note: "Git history unavailable — skipping commit style analysis."
+3. If a git repo is provided, additionally extract:
    - Commit message style (conventional commits? imperative? past tense?)
    - PR description patterns
    - Code comment voice
-3. Synthesize findings into a voice profile with direct quotes from the samples
-4. Present the profile:
+4. Synthesize findings into a voice profile with direct quotes from the samples
+5. Present the profile:
    - "Here's your writing voice profile — confirm what's accurate and flag what to adjust"
 
 ---
@@ -161,6 +163,8 @@ Read ${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/language-style-tem
 ```
 
 1. Review the generated output for voice accuracy
+
+**Error Recovery**: If ac-skill-creator produces empty or malformed output, retry once with a simplified prompt (reduce to core voice traits + 3 signature phrases only). If still fails, present raw interview findings to user and offer to write the skill file manually via direct Write.
 
 ---
 

@@ -1,6 +1,19 @@
 ---
 name: plan-analysis
-description: Analyzes plans for gaps, scope risks, and AI-slop patterns. Returns structured analysis report with gap classification, slop detection, and acceptance criteria audit.
+description: |
+  Plan quality auditor — use after plan generation, before presenting to user or handing to executor. Catches missing requirements, scope creep risks, AI-slop patterns, and unexecutable acceptance criteria.
+  <example>
+  Context: ac:plan has generated a plan and needs quality review before presenting
+  user: [invoked automatically by ac:plan's analysis gate]
+  assistant: "Launching plan-analysis agent to audit the plan for gaps, scope risks, and AI-slop patterns."
+  <commentary>Triggered after plan generation as mandatory quality gate. Catches issues before user sees the plan.</commentary>
+  </example>
+  <example>
+  Context: User wants to verify a plan's quality before committing resources
+  user: "Check this plan for gaps and scope creep"
+  assistant: "I'll launch the plan-analysis agent to audit for missing requirements, AI-slop, and vague acceptance criteria."
+  <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
+  </example>
 model: sonnet
 tools: Read, Grep, Glob, LS
 color: yellow
