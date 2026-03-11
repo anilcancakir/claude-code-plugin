@@ -22,12 +22,14 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── github-cli/               # Optional plugin — GitHub CLI skill
+│   └── github-cli/               # GitHub CLI skill plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       └── skills/
-│           └── github-cli/
-│               └── SKILL.md
+│       ├── skills/
+│       │   └── github-cli/
+│       │       └── SKILL.md      # Comprehensive gh reference (338 lines)
+│       ├── README.md
+│       └── LICENSE
 ├── CLAUDE.md                     # This file
 ├── README.md                     # Marketplace README
 ├── package.json
@@ -65,8 +67,12 @@ All agents are read-only. No write tools on advisory roles.
 
 ## Skills & MCP
 
+### ac plugin
 - `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
 - MCP: `context7` — Live documentation API via `@upstash/context7-mcp`
+
+### github-cli plugin
+- `github-cli` (Sonnet) — Comprehensive gh CLI reference: issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), jq patterns, scripting
 
 ## Design Principles
 

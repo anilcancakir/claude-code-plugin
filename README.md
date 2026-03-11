@@ -7,7 +7,7 @@ A curated marketplace of Claude Code plugins for structured development workflow
 | Plugin | Description | Category |
 |--------|-------------|----------|
 | **[ac](plugins/ac/)** | Structured development partner — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs. | productivity |
-| **[github-cli](plugins/github-cli/)** | GitHub CLI skill — teaches Claude Code effective gh usage patterns for issues, PRs, releases, and workflows. | productivity |
+| **[github-cli](plugins/github-cli/)** | GitHub CLI skill — comprehensive gh reference for issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), and scripting patterns. | productivity |
 
 ## Installation
 
@@ -47,8 +47,9 @@ After updating, sync your global config with new plugin features:
 │   └── github-cli/              # GitHub CLI skill plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       ├── skills/              # gh usage patterns
-│       └── README.md
+│       ├── skills/              # Comprehensive gh CLI reference
+│       ├── README.md
+│       └── LICENSE
 ├── README.md                    # This file
 └── LICENSE
 ```
