@@ -130,11 +130,11 @@ Opus investigates the codebase, traces root cause through hypothesis-first analy
 
 ### Personal Setup
 
-| Command | Description |
-|---------|-------------|
-| `/ac:setup-coding` | Scan your projects, interview on preferences, generate `~/.claude/skills/my-coding/` |
-| `/ac:setup-language` | Scan your writing, interview on voice, generate `~/.claude/skills/my-language/` |
-| `/ac:setup-global-claude-md` | Detect environment, interview, generate `~/.claude/CLAUDE.md` |
+| Command | Description | Model |
+|---------|-------------|-------|
+| `/ac:setup-coding` | Scan your projects, interview on preferences, generate `~/.claude/skills/my-coding/` | Opus |
+| `/ac:setup-language` | Scan your writing, interview on voice, generate `~/.claude/skills/my-language/` | Opus |
+| `/ac:setup-global-claude-md` | Detect environment, interview, generate `~/.claude/CLAUDE.md` | Opus |
 
 ## Agents
 
@@ -259,9 +259,9 @@ export CONTEXT7_API_KEY="your-api-key-here"
 
 Get a free key at [context7.com](https://context7.com).
 
-## Agent Teams & Background Agents (Troubleshooting)
+## Background Agents (Troubleshooting)
 
-If you see agent calls stuck at `Backgrounded agent` and no visible progress, check your global Claude Code settings.
+If background agents don't produce visible progress, check your global Claude Code settings.
 
 ### Required global settings
 
@@ -276,34 +276,13 @@ Add these keys in `~/.claude/settings.json` under `env`:
 }
 ```
 
-### iTerm2 + tmux notes
+### Reliability preflight
 
-If you want visible teammate panes, run Claude Code inside tmux:
+`/ac:execute` performs a preflight before launching parallel agents:
 
-```bash
-tmux -CC
-claude
-```
-
-- `teammateMode: "tmux"` needs tmux runtime.
-- If you prefer not to use tmux panes, keep `teammateMode: "in-process"`.
-- In `in-process` mode, teammates run in the same terminal session (no split panes).
-
-### Plan mode and permission mode transitions
-
-Claude Code may restore runtime permission behavior when leaving plan mode. In some sessions, after plan approval and exiting plan mode, tool permission behavior can differ from the initial CLI startup mode.
-
-To keep execution deterministic, `/ac:execute` now performs a reliability preflight before launching agents:
-
-- Captures an execution mode snapshot from available runtime evidence
-- Validates required task/agent-team environment keys
-- Detects `teammateMode` + tmux availability
+- Validates required environment keys
 - Checks permission/hook interference risk
-- Applies deterministic fallback (sequential foreground) on soft failures
-
-### Safe configuration principle
-
-`ac` should only add missing settings keys. It should never overwrite an existing `teammateMode` or replace user-defined values.
+- Falls back to sequential foreground execution on failures
 
 ## Requirements
 
