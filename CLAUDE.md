@@ -30,12 +30,21 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── SKILL.md      # Comprehensive gh reference (338 lines)
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── git-master/               # Git expert skill plugin
+│   ├── git-master/               # Git expert skill plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/
+│   │   │   └── git-master/
+│   │   │       └── SKILL.md      # Atomic commits, rebase, history archaeology
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── frontend-design/          # Frontend design skill plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── skills/
-│       │   └── git-master/
-│       │       └── SKILL.md      # Atomic commits, rebase, history archaeology
+│       │   └── frontend-design/
+│       │       ├── SKILL.md      # Design systems, hierarchy, aesthetics (429 lines)
+│       │       └── references/   # Deep-dive: hierarchy, color, mobile
 │       ├── README.md
 │       └── LICENSE
 ├── CLAUDE.md                     # This file
@@ -84,6 +93,9 @@ All agents are read-only. No write tools on advisory roles.
 
 ### git-master plugin
 - `git-master` (Sonnet) — Git expert: atomic commits with style detection, interactive rebase/squash, history archaeology (blame, bisect, pickaxe)
+
+### frontend-design plugin
+- `frontend-design` (Sonnet) — Production-grade UI for web and mobile: design systems (spacing/type/shadow/color), visual hierarchy, distinctive aesthetics, mobile patterns. Has `references/` for hierarchy, color system, and mobile components
 
 ## Design Principles
 

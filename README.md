@@ -9,6 +9,7 @@ A curated marketplace of Claude Code plugins for structured development workflow
 | **[ac](plugins/ac/)** | Structured development partner — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs. | productivity |
 | **[github-cli](plugins/github-cli/)** | GitHub CLI skill — comprehensive gh reference for issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), and scripting patterns. | productivity |
 | **[git-master](plugins/git-master/)** | Git expert skill — atomic commits with style detection, interactive rebase/squash, and history archaeology (blame, bisect, pickaxe). | productivity |
+| **[frontend-design](plugins/frontend-design/)** | Frontend design skill — production-grade UI for web and mobile with design systems, visual hierarchy, and distinctive aesthetics. | productivity |
 
 ## Installation
 
@@ -51,10 +52,17 @@ After updating, sync your global config with new plugin features:
 │   │   ├── skills/              # Comprehensive gh CLI reference
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── git-master/              # Git expert skill plugin
+│   ├── git-master/              # Git expert skill plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/              # Atomic commits, rebase, history
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── frontend-design/         # Frontend design skill plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       ├── skills/              # Atomic commits, rebase, history
+│       ├── skills/              # Design systems, hierarchy, aesthetics
+│       │   └── references/      # Deep-dive: hierarchy, color, mobile
 │       ├── README.md
 │       └── LICENSE
 ├── README.md                    # This file
