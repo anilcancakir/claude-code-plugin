@@ -1,7 +1,7 @@
 {
     "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
     "name": "ac",
-    "description": "Structured development partner — Opus-quality decisions at Sonnet-level costs",
+    "description": "Multi-plugin marketplace — structured development partner, git mastery, and GitHub CLI skills for Claude Code",
     "owner": {
         "name": "Anilcan Cakir",
         "email": "anilcan.cakir@gmail.com"
@@ -9,7 +9,7 @@
     "plugins": [
         {
             "name": "ac",
-            "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
+            "description": "[v2.0.0] Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
             "version": "2.0.0",
             "author": {
                 "name": "Anilcan Cakir",
@@ -28,7 +28,7 @@
         },
         {
             "name": "github-cli",
-            "description": "GitHub CLI skill — teaches Claude Code effective gh usage patterns for issues, PRs, releases, and workflows.",
+            "description": "[v0.1.0] GitHub CLI skill — teaches Claude Code effective gh usage patterns for issues, PRs, releases, and workflows.",
             "version": "0.1.0",
             "author": {
                 "name": "Anilcan Cakir",
@@ -43,6 +43,25 @@
                 "gh",
                 "pull-requests",
                 "issues"
+            ]
+        },
+        {
+            "name": "git-master",
+            "description": "[v0.1.0] Git expert skill — atomic commits with style detection, interactive rebase, and history archaeology for Claude Code.",
+            "version": "0.1.0",
+            "author": {
+                "name": "Anilcan Cakir",
+                "email": "anilcan.cakir@gmail.com"
+            },
+            "source": "./plugins/git-master",
+            "category": "productivity",
+            "homepage": "https://github.com/anilcancakir/claude-code-plugin",
+            "tags": [
+                "git",
+                "commits",
+                "rebase",
+                "atomic-commits",
+                "history"
             ]
         }
     ]

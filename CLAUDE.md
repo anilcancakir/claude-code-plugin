@@ -22,12 +22,20 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
 │   │   └── LICENSE
-│   └── github-cli/               # GitHub CLI skill plugin
+│   ├── github-cli/               # GitHub CLI skill plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/
+│   │   │   └── github-cli/
+│   │   │       └── SKILL.md      # Comprehensive gh reference (338 lines)
+│   │   ├── README.md
+│   │   └── LICENSE
+│   └── git-master/               # Git expert skill plugin
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── skills/
-│       │   └── github-cli/
-│       │       └── SKILL.md      # Comprehensive gh reference (338 lines)
+│       │   └── git-master/
+│       │       └── SKILL.md      # Atomic commits, rebase, history archaeology
 │       ├── README.md
 │       └── LICENSE
 ├── CLAUDE.md                     # This file
@@ -73,6 +81,9 @@ All agents are read-only. No write tools on advisory roles.
 
 ### github-cli plugin
 - `github-cli` (Sonnet) — Comprehensive gh CLI reference: issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), jq patterns, scripting
+
+### git-master plugin
+- `git-master` (Sonnet) — Git expert: atomic commits with style detection, interactive rebase/squash, history archaeology (blame, bisect, pickaxe)
 
 ## Design Principles
 

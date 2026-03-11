@@ -1,0 +1,5 @@
+{
+  "name": "git-master",
+  "description": "Git expert skill — atomic commits, interactive rebase, and history archaeology for Claude Code.",
+  "author": { "name": "Anilcan Cakir", "email": "anilcan.cakir@gmail.com" }
+}
