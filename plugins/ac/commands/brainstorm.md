@@ -26,6 +26,7 @@ Initial request: $ARGUMENTS
 
 **Actions**:
 
+0. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards context — it informs interview questions and feasibility framing. If not found, skip.
 1. Parse the raw idea — extract the core concept, target area, and any stated constraints
 2. Classify idea type:
    - **Feature**: New capability ("add", "build", "create")
@@ -53,16 +54,7 @@ Initial request: $ARGUMENTS
 
 ## Agent Routing
 
-When launching agents via the Agent tool, always use these exact `subagent_type` values:
-
-| Agent | `subagent_type` | NOT |
-|-------|----------------|-----|
-| ac:explore | `"ac:explore"` | `"Explore"` (builtin), `"explore"` |
-| ac:librarian | `"ac:librarian"` | `"librarian"` |
-| ac:challenger | `"ac:challenger"` | `"challenger"` |
-| ac:feasibility | `"ac:feasibility"` | `"feasibility"` |
-
-The `ac:` prefix routes to the plugin's custom agent definitions with specific tools and model routing. Without the prefix, Claude Code resolves to builtin agents with different behavior.
+Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CLAUDE.md` for the full routing reference and NOT column. This command uses: `ac:explore`, `ac:librarian`, `ac:challenger`, `ac:feasibility`.
 
 ---
 

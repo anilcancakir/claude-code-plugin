@@ -95,15 +95,15 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 ## Agents (ac plugin)
 
-| Agent | `subagent_type` | Model | Role | Tools |
-|-------|-----------------|-------|------|-------|
-| `explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
-| `librarian` | `"ac:librarian"` | Haiku | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
-| `linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
-| `plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
-| `plan-review` | `"ac:plan-review"` | Opus | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
-| `challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
-| `feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
+| Agent | `subagent_type` | NOT | Model | Color | Role | Tools |
+|-------|-----------------|-----|-------|-------|------|-------|
+| `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
+| `librarian` | `"ac:librarian"` | `"librarian"` | Haiku | blue | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
+| `linter` | `"ac:linter"` | `"linter"` | Haiku | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
+| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | yellow | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
+| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
+| `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
+| `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 
 All agents are read-only. No write tools on advisory roles. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
