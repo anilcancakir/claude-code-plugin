@@ -37,6 +37,11 @@ Initial request: $ARGUMENTS
    - ac:explore agent 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns already in the codebase. How has the team solved related problems?"
    - ac:librarian (if external tech involved): "CONTEXT: Evaluating [technology/approach]. GOAL: Best practices and common pitfalls. DOWNSTREAM: Inform interview questions. REQUEST: Find official docs, recommended patterns, and known issues."
 4. Once agents return, read key files to build understanding
+4b. **Compile research findings**: Compile explore agent findings into a `### Research Summary` section for the brainstorm document draft. Format:
+   - **Key Files**: file:line references with one-line descriptions
+   - **Patterns Found**: Architectural patterns, naming conventions, code organization
+   - **Dependencies**: External libraries, frameworks, or services identified
+   Store in the brainstorm document draft for downstream handoff to ac:plan. Maximum ~30 lines.
 5. Detect ambiguity dimensions — track clarity across 5 dimensions:
    - **Goal**: What exactly should this achieve? (0-100%)
    - **Scope**: What's in and what's out? (0-100%)
@@ -147,6 +152,17 @@ The `ac:` prefix routes to the plugin's custom agent definitions with specific t
 - **Prerequisites**: [list or "None"]
 - **Dependencies**: [affected files/modules]
 
+## Research Summary
+
+### Key Files
+- [file:line — description of what this file contains/does]
+
+### Patterns Found
+- [Architectural pattern, naming convention, or code organization discovered]
+
+### Dependencies
+- [External library, framework, or service identified]
+
 ## Alternative Approaches Considered
 - [Alternative 1]: [why not chosen]
 - [Alternative 2]: [why not chosen]
@@ -200,7 +216,7 @@ options:
 6. If user selects "Proceed to Plan" or "Plan Phase 1":
    - Read the saved brainstorm document
    - Invoke the `ac:plan` skill with the brainstorm content as context:
-     - For small: "Plan implementation based on brainstorm: [full brainstorm summary]"
-     - For large Phase 1: "Plan Phase 1 of multi-phase brainstorm: [Phase 1 details + overall context]"
+     - For small: "Plan implementation based on brainstorm at: [brainstorm-doc-path]. Research Summary section included. Skip Phase 2 research."
+     - For large Phase 1: "Plan Phase 1 of multi-phase brainstorm at: [brainstorm-doc-path]. Research Summary section included. Skip Phase 2 research."
 
 **IMPORTANT**: Do NOT write code or modify source files. This command produces documents only.

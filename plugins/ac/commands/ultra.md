@@ -105,7 +105,14 @@ The `ac:` prefix routes to the plugin's custom agent definitions with specific t
 | Plan has zero "probably" or "maybe"? | Yes / No |
 | Can explain exact steps to take? | Yes / No |
 
-4. If ANY check is "No":
+4. **Persist research findings**: Save research findings directly into the plan draft file's `### Research Summary` section (inline, same file — NOT a separate file). Format:
+   - **Key Files**: file:line references from explore agents with one-line descriptions
+   - **Patterns Found**: Architectural patterns, naming conventions, code organization
+   - **Dependencies**: External libraries, frameworks, or services identified
+
+   This is the canonical location for research context. Downstream commands (ac:plan, ac:execute) read from this section to avoid re-researching.
+
+5. If ANY check is "No":
    - Launch additional agents for the gap
    - OR use AskUserQuestion if the gap requires user input
    - Re-run certainty check
@@ -120,7 +127,7 @@ The `ac:` prefix routes to the plugin's custom agent definitions with specific t
 **Actions**:
 
 1. Route by intent:
-   - **Build / Refactor / Architecture** → Invoke `ac:plan` skill with the task description + research findings
+   - **Build / Refactor / Architecture** → Before invoking ac:plan, ensure Phase 2 research findings are saved in the plan draft file's `### Research Summary` section (see Phase 2, step 4). Then invoke `ac:plan` skill with: "Plan [task description]. Pre-researched context at: [plan-draft-file-path]. Skip Phase 2 research."
    - **Debug** → Invoke `ac:deep` skill with the error description + research findings
 
 2. Wait for skill output. The skill will:
@@ -164,8 +171,12 @@ options:
 3. Monitor execution:
    - If an agent fails, note the failure
    - If 3 agents fail on the same step → stop execution, invoke `ac:deep` for investigation
-   - If ac:deep resolves the issue, retry the failed step
-   - If ac:deep cannot resolve → stop and report blocker to user
+   - If ac:deep resolves the issue, retry the failed step once
+   - If ac:deep cannot resolve OR ac:deep reaches its investigation ceiling (3 hypothesis-verify cycles) → **stop immediately and report blocker** to user with:
+     (a) all eliminated hypotheses from ac:deep
+     (b) remaining investigation leads
+     (c) concrete manual investigation steps
+     Do NOT retry ac:deep or loop back to execution
 
 **Trivial task exception** (Simple complexity, 1 step): Execute directly without ac:execute delegation. Read files, make changes, proceed to Phase 5.
 

@@ -34,6 +34,8 @@ Plan identifier: $ARGUMENTS
 
    If Work Units section is missing, auto-analyze step independence based on file overlap (existing behavior). If plan format doesn't match expected structure, warn user and attempt best-effort parsing.
 
+6. **Extract conventions**: Parse the plan file for a `### Conventions` section. If present, store its content as PLAN_CONVENTIONS for injection into worker prompts. If absent, set PLAN_CONVENTIONS to: "Read existing files in your scope and match their patterns, naming, and style before modifying."
+
 ---
 
 ## Phase 2: Classify Execution Strategy
@@ -98,9 +100,12 @@ Apply this preflight before any agent launch. If preflight fails, do not start p
    - Current permission mode (if surfaced by system/runtime reminders)
    - Whether bypassPermissions appears active or disabled
    - Any explicit disable reason if bypass is inactive (settings/runtime gate reminders)
-2. Read `~/.claude/settings.json` if present and validate:
-   - `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS == "1"`
-   - `env.CLAUDE_CODE_ENABLE_TASKS == "true"`
+2. **Environment validation** (only for parallel execution strategy):
+   Only check these environment variables when the classified execution strategy (from Phase 2) requires parallel background agents. For sequential or direct execution, skip this check — these variables are only needed for background agent infrastructure.
+   - If strategy is parallel: Read `~/.claude/settings.json` if present and validate:
+     - `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS == "1"`
+     - `env.CLAUDE_CODE_ENABLE_TASKS == "true"`
+   - If strategy is sequential or direct: Skip this validation step
 3. Check permission posture before execution:
    - If workflow requires write/edit but permission mode or hooks block it, do not continue with background execution
    - Prefer explicit remediation over silent retries
@@ -159,7 +164,7 @@ Agent(
 [Done-when conditions from plan, verbatim]
 
 **Codebase Conventions** (follow these):
-[Any conventions discovered during planning — naming, patterns, structure]
+[Inject PLAN_CONVENTIONS extracted from plan file in Phase 1. If no conventions section was found in the plan, use: "Read existing files and match patterns before modifying."]
 
 ## Execution Rules
 

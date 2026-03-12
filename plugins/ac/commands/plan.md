@@ -63,6 +63,7 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 
 **Actions**:
 
+0. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
 1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
@@ -107,6 +108,12 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 
 1. Once agents return, read all key files identified by agents to build deep understanding
 2. Summarize findings: patterns found, files to modify, dependencies, external best practices discovered
+3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings:
+   - **Key Files**: file:line references with one-line descriptions of what each file contains
+   - **Patterns Found**: Architectural patterns, naming conventions, code organization discovered
+   - **Dependencies**: External libraries, frameworks, or services identified
+   - **Conventions**: Detected naming patterns, file organization style, coding conventions
+   Format must be structured (not raw agent output) — maximum ~30 lines total.
 
 **Error Recovery**: If ac:explore agents return empty or insufficient results, proceed to Phase 3 with reduced confidence. Note research gaps in the plan's Risks section and flag them to the user during review. Do not block planning due to incomplete research — partial data is better than no plan.
 
@@ -119,6 +126,7 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 **Actions**:
 
 1. Review research findings and the original request
+1b. If Research Summary contains Key Files, use them to ground interview questions in specific file references rather than abstract concepts.
 2. Identify underspecified aspects. Use AskUserQuestion with 2-4 clickable options per question:
    - **Simple**: 1 question max (or skip if clear)
    - **Standard**: 1-2 questions
@@ -161,6 +169,11 @@ Plans must follow this exact structure for ac:execute compatibility:
 - `### Work Units` — parallel decomposition with Unit entries containing Steps, Files, Verification
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
+- `### Research Summary` — structured findings from Phase 2:
+  - `Key Files` — file:line references with one-line description of what each contains
+  - `Patterns Found` — convention bullets (architecture, naming, code organization)
+  - `Dependencies` — external libraries, frameworks, or services identified
+- `### Conventions` — naming patterns, file organization, coding style detected from explore agents
 
 ### Symbol Verification (if LSP tool available)
 
