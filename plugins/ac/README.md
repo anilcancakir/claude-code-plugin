@@ -99,6 +99,14 @@ For smart commits with preflight checks:
 
 Runs linter and tests first, detects your project's commit conventions, and creates well-structured atomic commits. Delegates to `git-master:git-master` skill when available for style detection and intelligent splitting.
 
+For brainstorming and evaluating ideas before planning:
+
+```
+/ac:brainstorm <describe your idea>
+```
+
+Socratic interview refines your idea through targeted questions, then parallel challenger and feasibility agents stress-test it. Produces a mature concept document with gaps, risks, and alternatives — ready for `/ac:plan` handoff. Large ideas auto-decompose into phases.
+
 For critical tasks where partial delivery is unacceptable:
 
 ```
@@ -133,6 +141,7 @@ This updates workflow routing and skill references while preserving your persona
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
 | `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
 | `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
+| `/ac:brainstorm` | Socratic idea refinement — interview, challenge, and mature ideas before planning | Opus |
 
 ### Project Setup
 
@@ -160,6 +169,8 @@ All agents are **read-only** — advisory roles never have write tools. Commands
 | `ac:linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
 | `ac:plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
 | `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
+| `ac:challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches |
+| `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
 
 ## Skills
 
@@ -213,6 +224,16 @@ Request -> Context (git state + convention detection)
         -> Execute (create commits, optional push)
 ```
 
+### Brainstorm (`/ac:brainstorm`)
+
+```
+Idea -> Understand (classify + parallel ac:explore + ac:librarian research)
+     -> Interview (Socratic questioning, 3-7 rounds, clarity tracking)
+     -> Challenge (parallel ac:challenger + ac:feasibility agents)
+     -> Crystallize (mature document + multi-phase decomposition if large)
+     -> User choice: /ac:plan handoff or iterate more
+```
+
 ### Ultra Mode (`/ac:ultra`)
 
 ```
@@ -252,7 +273,7 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (context7)
-├── commands/                    # 10 user-invocable /ac:* commands
+├── commands/                    # 11 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
@@ -262,13 +283,16 @@ plugins/ac/
 │   ├── setup-coding.md          # /ac:setup-coding
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
-│   └── commit.md               # /ac:commit
-├── agents/                      # 5 read-only agent definitions
+│   ├── commit.md               # /ac:commit
+│   └── brainstorm.md           # /ac:brainstorm
+├── agents/                      # 7 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Haiku external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier
 │   ├── plan-analysis.md         # Sonnet plan auditor
-│   └── plan-review.md           # Opus plan reviewer
+│   ├── plan-review.md           # Opus plan reviewer
+│   ├── challenger.md            # Sonnet devil's advocate
+│   └── feasibility.md           # Sonnet feasibility evaluator
 ├── skills/
 │   └── ac-skill-creator/        # Component creation skill
 │       ├── SKILL.md

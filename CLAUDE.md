@@ -16,8 +16,8 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (context7)
-│   │   ├── commands/             # 10 user-invocable /ac:* commands
-│   │   ├── agents/               # 5 read-only agent definitions
+│   │   ├── commands/             # 11 user-invocable /ac:* commands
+│   │   ├── agents/               # 7 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
@@ -91,6 +91,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
+| `/ac:brainstorm` | Socratic idea refinement — interview, challenge, mature ideas before planning | Opus |
 
 ## Agents (ac plugin)
 
@@ -101,6 +102,8 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
 | `plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
 | `plan-review` | `"ac:plan-review"` | Opus | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
+| `challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
+| `feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 
 All agents are read-only. No write tools on advisory roles. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
