@@ -17,7 +17,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (context7)
 │   │   ├── commands/             # 11 user-invocable /ac:* commands
-│   │   ├── agents/               # 7 read-only agent definitions
+│   │   ├── agents/               # 8 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
