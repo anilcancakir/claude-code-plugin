@@ -83,7 +83,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 |---------|-------------|-------|
 | `/ac:plan` | Classify → research → interview → plan | Opus |
 | `/ac:deep` | Opus-powered root cause analysis for complex bugs and debugging | Opus |
-| `/ac:execute` | Execute approved plan (parallel background agents or sequential) | Sonnet |
+| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) | Sonnet |
 | `/ac:ultra` | End-to-end disciplined execution — certainty → plan → execute → verify | Opus |
 | `/ac:init-claude-md` | Generate/enhance project CLAUDE.md | Opus |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis | Opus |
