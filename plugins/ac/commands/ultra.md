@@ -224,6 +224,21 @@ Run after build/test/lint, as final gate before marking complete:
 
 If LSP tool is not available → omit evidence line, note "LSP unavailable" in report.
 
+### Code Review Gate (if complexity is Standard or Complex)
+
+After LSP verification, launch ac:code-reviewer when warranted:
+
+- If complexity is **Standard** or **Complex** (classified in Phase 1), OR modified files > 3:
+  ```
+  Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Check spec compliance and code quality.")
+  ```
+- **BLOCKED verdict** → fix CRITICAL issues before marking complete. Report IMPORTANT issues to user
+- **APPROVED verdict** → add to evidence: `Code review: ✅ APPROVED`
+- If complexity is **Simple** → skip this gate
+
+**Add this line to the evidence report**:
+- Code review: `✅ APPROVED` | `🚫 BLOCKED — [N] critical issues` | `⏭ Skipped (Simple)`
+
 4. If ANY verification fails:
    - Fix the issue (or delegate to an agent)
    - Re-run the failed verification

@@ -291,6 +291,14 @@ LSP(operation="findReferences", filePath=<file>, line=<symbol_line>, character=<
 
 If LSP tool is not available → skip this step, rely on lint output only.
 
+### Optional: Code Review (quality-critical tasks)
+
+For plans with significant code changes (5+ files modified or user-indicated quality-critical), consider:
+```
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].")
+```
+CRITICAL findings must be fixed before marking complete. IMPORTANT findings are reported to user.
+
 ---
 
 ## Error Handling

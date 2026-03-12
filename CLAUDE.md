@@ -104,6 +104,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
 | `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
+| `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
 
 All agents are read-only. No write tools on advisory roles. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
