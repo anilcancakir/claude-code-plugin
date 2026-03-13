@@ -33,10 +33,6 @@ Initial request: $ARGUMENTS
    - **Architecture**: System design decision ("should we", "how to structure", "migrate")
    - **Optimization**: Improve existing ("speed up", "reduce", "optimize")
    - **Integration**: Connect systems ("integrate", "connect", "sync")
-2b. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
-   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
-   - `LIBRARIAN_MODEL`: Override librarian agent model (default: sonnet if unset)
-   If a value is set, add `model: "[value]"` to the corresponding Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
 3. Launch research agents in parallel (single message, multiple Agent tool calls):
    - ac:explore agent 1: "CONTEXT: Evaluating idea: [idea]. GOAL: Map existing codebase state in target area. DOWNSTREAM: Feasibility assessment. REQUEST: Find existing implementations, patterns, and architecture in the area this idea would affect. Return file:line references."
    - ac:explore agent 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns already in the codebase. How has the team solved related problems?"

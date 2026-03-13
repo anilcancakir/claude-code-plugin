@@ -132,21 +132,31 @@ This updates workflow routing and skill references while preserving your persona
 
 ## Agent Model Customization
 
-By default, explore agents use **Haiku** (fast, cheap search) and librarian agents use **Sonnet** (quality external doc research). Override these defaults in `~/.claude/settings.json`:
+By default, explore agents use **Haiku** (fast, cheap search) and librarian agents use **Sonnet** (quality external doc research).
+
+Override agent models using Claude Code's native environment variables:
+
+```bash
+# In your shell profile or ~/.claude/settings.json env block
+ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-sonnet-4-6    # Upgrades all Haiku agents (explore, linter)
+ANTHROPIC_DEFAULT_SONNET_MODEL=claude-opus-4-6     # Upgrades all Sonnet agents (librarian, challenger, etc.)
+```
+
+Or in `~/.claude/settings.json`:
 
 ```json
 {
   "env": {
-    "EXPLORE_MODEL": "sonnet",
-    "LIBRARIAN_MODEL": "opus"
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-4-6"
   }
 }
 ```
 
-| Env Var | Agent | Default | When to Override |
-|---------|-------|---------|-----------------|
-| `EXPLORE_MODEL` | ac:explore | haiku | When you want deeper codebase analysis |
-| `LIBRARIAN_MODEL` | ac:librarian | sonnet | When you want faster/cheaper doc lookups (set to haiku) or deeper reasoning (set to opus) |
+| Agent | Default Model | Override Via |
+|-------|--------------|-------------|
+| explore, linter | Haiku | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
+| librarian, plan-analysis, challenger, feasibility, code-reviewer | Sonnet | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
+| plan-review | Opus | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
 
 ## Commands
 

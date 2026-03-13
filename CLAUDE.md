@@ -139,7 +139,7 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
 - **Model routing**: Haiku (search/fast), Sonnet (execution/analysis), Opus (planning/architecture/creation)
-- **Agent model customization**: Explore (default Haiku) and Librarian (default Sonnet) models configurable via `~/.claude/settings.json` env vars (`EXPLORE_MODEL`, `LIBRARIAN_MODEL`)
+- **Agent model customization**: Explore (default Haiku) and Librarian (default Sonnet) — override via Claude Code's native `ANTHROPIC_DEFAULT_HAIKU_MODEL` / `ANTHROPIC_DEFAULT_SONNET_MODEL` env vars
 - **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → references/ on demand
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install

@@ -55,10 +55,6 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 **Actions**:
 
 0. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
-0b. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
-   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
-   - `LIBRARIAN_MODEL`: Override librarian agent model (default: sonnet if unset)
-   If a value is set, add `model: "[value]"` to the corresponding Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
 1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
