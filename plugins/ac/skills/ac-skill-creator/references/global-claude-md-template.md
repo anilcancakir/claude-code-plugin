@@ -42,9 +42,9 @@ Before the first tool call, classify complexity in one line:
 
 | Complexity | Signals | Action |
 |------------|---------|--------|
-| **Simple** | 1-3 files, clear scope | Execute directly → verify |
-| **Standard** | 2-5 files, single module | Classify intent → invoke matching skill → verify |
-| **Complex** | 5+ files, cross-layer, design decisions | Classify intent → invoke matching skill → verify |
+| **Simple** | Single module, clear target, no design decisions | Execute directly → verify |
+| **Standard** | 1-2 modules, some ambiguity or scope to clarify | Classify intent → invoke matching skill → verify |
+| **Complex** | Cross-module, design decisions, or user signals complexity | Classify intent → invoke matching skill → verify |
 
 **BLOCKING REQUIREMENT for Standard and Complex**: After classifying complexity, determine intent and invoke the matching skill as your very first tool call. Do NOT call Read, Grep, Glob, Write, Edit, or any other tool before invoking the matching skill. "Already knowing what to do" is NOT a valid reason to skip.
 

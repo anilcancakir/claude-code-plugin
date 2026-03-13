@@ -44,9 +44,9 @@ Certainty-first, delegation-first, verification-guaranteed.
    - **Debug**: Error, crash, unexpected behavior
    - **Architecture**: System design, infrastructure decisions
 3. Classify complexity:
-   - **Simple** (1-3 files, clear scope): Skip Phase 2, go to Phase 3
-   - **Standard** (3-5 files, single module): All phases
-   - **Complex** (5+ files, cross-layer): All phases with deeper research
+   - **Simple** (single module, clear target, no design decisions): Skip Phase 2, go to Phase 3
+   - **Standard** (1-2 modules, some ambiguity or scope to clarify): All phases
+   - **Complex** (cross-module, design decisions, or user signals complexity): All phases with deeper research
 4. Check if `my-coding` skill exists (`~/.claude/skills/my-coding/SKILL.md`). If found, load it
 5. Define success criteria upfront — binary pass/fail conditions:
 
@@ -289,7 +289,7 @@ After LSP verification, launch ac:code-reviewer when warranted:
 
 ## Complexity Shortcuts
 
-**Simple** tasks (1-3 files, obvious change):
+**Simple** tasks (single module, obvious change):
 - Skip Phase 2 (certainty gate)
 - Phase 3: Create inline plan (3-4 steps via TodoWrite), skip ac:plan invoke
 - Phase 4: Execute directly, skip ac:execute invoke
