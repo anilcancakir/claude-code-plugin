@@ -39,6 +39,8 @@ Plan identifier: $ARGUMENTS
 
 7. **Extract escalation flags**: For each parsed step, read the `Escalate:` field. If `true`, mark the step for Opus model routing. If `false` or absent, default to Sonnet (current behavior — backward compatible with plans that lack this field).
 
+8. **Initialize wisdom accumulator**: Set ACCUMULATED_WISDOM to empty. This will be populated after each work unit completes and injected into subsequent worker prompts. Wisdom captures patterns, conventions, and decisions discovered during execution — preventing repeated discovery and pattern drift between workers.
+
 ---
 
 ## Phase 2: Classify Execution Strategy
@@ -175,6 +177,10 @@ Agent(
 [If step has Escalate: true, append this section:]
 **Escalation Context**: This step was flagged for Opus-level reasoning. Apply deeper analysis to cross-cutting concerns, edge cases, and architectural impact. Consider downstream effects on callers and dependents before modifying.
 
+[If ACCUMULATED_WISDOM is non-empty, append this section:]
+**Wisdom from prior steps** (patterns discovered by earlier workers — follow these):
+[Inject ACCUMULATED_WISDOM content here]
+
 ## Execution Rules
 
 1. Read existing files before modifying — match patterns and conventions
@@ -221,6 +227,15 @@ Before marking a work unit done:
    - `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit description]")`
    - BLOCKED verdict → fix errors before proceeding to next unit
    - CLEAN or LSP UNAVAILABLE verdict → mark unit done
+
+3. **Extract wisdom** from the completed worker's output. Scan the worker's "Changes Made" and "Issues" sections for:
+   - Naming patterns discovered (e.g., "services use `handle` prefix, not `process`")
+   - Dependency injection style (e.g., "constructor injection, not facades")
+   - File organization conventions (e.g., "one class per file, matching directory to namespace")
+   - Gotchas encountered (e.g., "migration requires `--seed` flag after running")
+   - Any convention the worker had to discover by reading existing code
+
+   Append extracted patterns to ACCUMULATED_WISDOM as bullet points (max 5 per unit, max 15 total). Skip if the worker's output contains no discoverable patterns. Do not accumulate verification results or generic statements — only actionable conventions that help the next worker avoid re-discovery.
 
 Do NOT mark a work unit complete with unresolved ERROR diagnostics.
 
