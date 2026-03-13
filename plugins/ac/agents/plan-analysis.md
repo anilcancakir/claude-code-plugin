@@ -15,7 +15,7 @@ description: |
   <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
   </example>
 model: sonnet
-tools: Read, Grep, Glob, LS
+tools: Read, Grep, Glob, LS, mcp__gemini-mcp-tool__ask-gemini
 color: yellow
 ---
 
@@ -67,6 +67,12 @@ Check if plan is structured for parallel execution via `ac:execute`:
 - **Independence test**: Can each unit be implemented with no shared state or file overlap?
 - **Uniform sizing**: Are units roughly equal in scope? Flag if one unit has 5 steps and another has 1
 
+### 6. Gemini Second Eye (Optional)
+
+When `mcp__gemini-mcp-tool__ask-gemini` tool is available, send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own analysis and merge any unique gaps into the report with `[Gemini]` prefix.
+
+If `mcp__gemini-mcp-tool__ask-gemini` is not available: skip this section entirely, produce no output for it.
+
 ---
 
 ## Output Format
@@ -108,6 +114,10 @@ Return your analysis in this exact format:
 - File conflicts: [None / "Unit X and Y share `file`"]
 - Independence: [All independent / "Unit X depends on Unit Y"]
 - Sizing: [Balanced / "Unit X is 5x larger than Unit Y"]
+
+### Gemini Cross-Check
+- [Gemini] [Gap/finding from Gemini's independent analysis]
+(or "Gemini MCP not available — skipped." or "No additional gaps found by Gemini.")
 ```
 
 Be concise. Focus on actionable findings. Do not pad the report with praise or filler.
