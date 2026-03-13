@@ -172,10 +172,10 @@ Question 7:
 
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/global-claude-md-template.md`
 
-2. **Update mode** (skip interview path): Reconstruct the file by combining:
-   - **User-managed sections** (verbatim from existing file): Identity block, Tech Stack, Rules
-   - **Plugin-managed sections** (regenerated from template + discovery): Workflow Protocol (intent gate, research, task tracking, execution, delegation, verification), Skills table, MCP references
-   - This ensures plugin updates (new commands, new agents, new skills) are reflected without losing user preferences
+2. **Update mode** (skip interview path): ALWAYS reconstruct the file from scratch by combining:
+   - **User-managed sections** (copy verbatim from existing file): Identity block (everything before `## Stack`), Tech Stack section, Rules section
+   - **Plugin-managed sections** (ALWAYS regenerate from template — never reuse existing text): Build the Workflow section fresh from the template's Workflow Protocol block. Build Skills table from detected skills. Build MCP table from detected servers. Build LSP section from template. Do NOT compare existing sections against template — always overwrite plugin-managed sections with template content populated with discovery data.
+   - **Diff report**: After composing the new file, compare it line-by-line against the existing file. Report every changed line to the user in Phase 5. If no lines differ, announce "No changes needed" and skip install.
 
 3. **Enhance/New mode** (interview path): Build all sections from interview answers + detected data:
    - **Identity block**: Communication style from Q1
@@ -236,7 +236,7 @@ CRITICAL: Do not install without user approval.
 
 1. Present the generated CLAUDE.md content to the developer
 2. Highlight: line count, detected skills referenced, number of rules
-3. In update mode: highlight what changed — "Updated: Workflow routing (added ac:ultra), Skills table (added X). Preserved: Identity, Stack, Rules."
+3. In update mode: show a concrete diff of what changed. For each changed line, show `- old line` / `+ new line`. If no lines changed, announce "No changes detected — your CLAUDE.md is already in sync with the current plugin template." and stop (do not present file or ask for approval).
 4. Use AskUserQuestion for review:
    - question: "Review the CLAUDE.md above. What needs adjustment?"
    - header: "Review"

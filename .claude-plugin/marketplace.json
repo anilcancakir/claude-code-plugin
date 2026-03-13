@@ -10,7 +10,7 @@
         {
             "name": "ac",
             "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents with customizable model routing.",
-            "version": "2.11.1",
+            "version": "2.11.2",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
