@@ -60,7 +60,7 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
    cat ~/.claude.json 2>/dev/null
    ```
 
-   - `~/.claude/.mcp.json` — plugin-installed MCP servers (e.g., context7 installed by `ac` plugin)
+   - `~/.claude/.mcp.json` — MCP servers installed by plugins or by the user (e.g., context7, gemini-mcp-tool)
    - `~/.claude.json` — user-global MCP servers: parse the full `mcpServers` object, not just a grep preview
    - For each server: extract name, infer capability from command/args (one-line description), check enabled status
    - Cross-reference with your session's available MCP tools (look for `mcp__<server>__*` tool patterns to confirm active servers)
