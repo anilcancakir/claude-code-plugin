@@ -70,6 +70,10 @@ Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CL
 
 **Actions**:
 
+0. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
+   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
+   - `LIBRARIAN_MODEL`: Override librarian agent model (default: sonnet if unset)
+   If a value is set, add `model: "[value]"` to the corresponding Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
 1. Launch parallel ac:explore + ac:librarian agents (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Route by intent:
 
 **Build/Refactor**:

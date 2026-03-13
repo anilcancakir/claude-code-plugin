@@ -14,7 +14,7 @@ description: |
   assistant: "Let me launch a librarian agent to find the official Sentry Flutter SDK documentation and setup guide."
   <commentary>Triggered by need for external library setup guidance. Librarian finds official docs with version-specific information.</commentary>
   </example>
-model: haiku
+model: sonnet
 tools: Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, mcp__plugin_ac_context7__resolve-library-id, mcp__plugin_ac_context7__query-docs
 color: blue
 ---

@@ -98,7 +98,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | Agent | `subagent_type` | NOT | Model | Color | Role | Tools |
 |-------|-----------------|-----|-------|-------|------|-------|
 | `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
-| `librarian` | `"ac:librarian"` | `"librarian"` | Haiku | blue | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
+| `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | blue | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
 | `linter` | `"ac:linter"` | `"linter"` | Haiku | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
 | `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | yellow | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
 | `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
@@ -139,6 +139,7 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
 - **Model routing**: Haiku (search/fast), Sonnet (execution/analysis), Opus (planning/architecture/creation)
+- **Agent model customization**: Explore (default Haiku) and Librarian (default Sonnet) models configurable via `~/.claude/settings.json` env vars (`EXPLORE_MODEL`, `LIBRARIAN_MODEL`)
 - **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → references/ on demand
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install

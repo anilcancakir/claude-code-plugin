@@ -35,9 +35,9 @@ Initial request: $ARGUMENTS
    - **Integration**: API, compatibility, migration issues ("connect", "upgrade", "compatibility")
    - **Architecture**: Design, structure, pattern decisions ("decouple", "restructure", "approach")
 2. Assess scope:
-   - **Focused** (1-2 files, clear target): 2 ac:explore agents
-   - **Scoped** (3-5 files, single module): 3 ac:explore agents
-   - **Broad** (cross-module, architectural): 3 ac:explore agents + 1 ac:librarian
+   - **Focused** (single module, clear target — e.g., one function, one config): 2 ac:explore agents
+   - **Scoped** (1-2 modules, related files): 3 ac:explore agents
+   - **Broad** (cross-module, architectural scope): 3 ac:explore agents + 1 ac:librarian
 3. Predict 3-5 most likely problem areas BEFORE reading any code
 4. Announce classification, scope, and predictions to the user in 2-3 lines
 
@@ -79,6 +79,10 @@ and has no false positives. Fall back to Grep for pattern matching.
 Known position + known symbol → LSP first.
 Unknown files + pattern search → Grep.
 
+0. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
+   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
+   - `LIBRARIAN_MODEL`: Override librarian agent model (default: sonnet if unset)
+   If a value is set, add `model: "[value]"` to the corresponding Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
 1. Launch 2-3 ac:explore agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"`).
    Each agent targets a different aspect based on intent type
 2. Launch 1 ac:librarian agent (with `subagent_type: "ac:librarian"`) if external libraries or frameworks are involved

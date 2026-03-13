@@ -4,7 +4,7 @@
 
 `ac` learns how you code, how you write, and how you think about architecture — then applies that knowledge to every task. It plans before coding, researches before asking, delegates to specialized agents, and never forgets your conventions.
 
-Designed for **Sonnet as your daily driver**. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Haiku agents handle fast search. Then Sonnet picks up execution. Opus-quality decisions at Sonnet-level costs.
+Designed for **Sonnet as your daily driver** — but optimized for **any model**. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Search and documentation agents are customizable per user. **Structured workflows that scale with your model choice.**
 
 ## Why This Plugin
 
@@ -129,6 +129,24 @@ This updates workflow routing and skill references while preserving your persona
 /ac:init-claude-md update
 /ac:init-rules update
 ```
+
+## Agent Model Customization
+
+By default, explore agents use **Haiku** (fast, cheap search) and librarian agents use **Sonnet** (quality external doc research). Override these defaults in `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "EXPLORE_MODEL": "sonnet",
+    "LIBRARIAN_MODEL": "opus"
+  }
+}
+```
+
+| Env Var | Agent | Default | When to Override |
+|---------|-------|---------|-----------------|
+| `EXPLORE_MODEL` | ac:explore | haiku | When you want deeper codebase analysis |
+| `LIBRARIAN_MODEL` | ac:librarian | sonnet | When you want faster/cheaper doc lookups (set to haiku) or deeper reasoning (set to opus) |
 
 ## Commands
 

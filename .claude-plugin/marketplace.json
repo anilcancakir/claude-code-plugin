@@ -9,7 +9,7 @@
     "plugins": [
         {
             "name": "ac",
-            "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents. Opus-quality decisions at Sonnet-level costs.",
+            "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents with customizable model routing.",
             "version": "2.10.0",
             "author": {
                 "name": "Anilcan Cakir",

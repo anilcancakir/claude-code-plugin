@@ -35,9 +35,9 @@ Initial request: $ARGUMENTS
    - **Architecture**: System design, infrastructure decisions ("how should we structure")
    - **Research**: Investigation needed, path unclear ("explore", "evaluate")
 2. Classify complexity:
-   - **Simple** (1-2 files, clear scope): Skip to Phase 3
-   - **Standard** (2-5 files, single module): Phase 2 + 3
-   - **Complex** (5+ files, cross-layer, design decisions): All phases
+   - **Simple** (single module, clear target, no design decisions needed — e.g., rename a field, update a config value): Skip to Phase 3
+   - **Standard** (1-2 modules, some ambiguity or scope to clarify): Phase 2 + 3
+   - **Complex** (cross-module, design decisions required, or user explicitly signals complexity): All phases
 3. Announce intent and complexity to the user in one line
 
 ## Agent Routing
@@ -55,6 +55,10 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 **Actions**:
 
 0. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
+0b. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
+   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
+   - `LIBRARIAN_MODEL`: Override librarian agent model (default: sonnet if unset)
+   If a value is set, add `model: "[value]"` to the corresponding Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
 1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
@@ -270,7 +274,7 @@ CRITICAL: Do not write code or modify source files during planning. Only produce
 
 ## Complexity Shortcuts
 
-For **Simple** requests:
+For **Simple** requests (single module, clear target, no design decisions):
 
 1. Skip Phase 2 (research)
 2. Identify affected files directly
@@ -278,11 +282,11 @@ For **Simple** requests:
 4. **Analysis gate: skip for Simple** (1-2 step plans don't need gap analysis)
 5. Save and present to user
 
-For **Standard** requests:
+For **Standard** requests (1-2 modules, some ambiguity or scope to clarify):
 
 - Run Phase 2 with 1-2 ac:explore agents + 1 ac:librarian agent (if external docs relevant), then Phase 3
 
-For **Complex** requests:
+For **Complex** requests (cross-module, design decisions required, or user explicitly signals complexity):
 
 - Run all phases with 2-3 ac:explore agents + 1-2 ac:librarian agents and deeper interview
 - Add Risks section with specific failure scenarios

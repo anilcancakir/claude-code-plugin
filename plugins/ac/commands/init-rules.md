@@ -57,6 +57,10 @@ Stack and domain globs can overlap — stack provides general conventions, domai
 
 **Actions**:
 
+0. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
+   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
+   If a value is set, add `model: "[value]"` to each ac:explore Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
+
 1. Launch 3 ac:explore agents in a **single message** (parallel):
 
    ac:explore 1 — **Tech Stack Detection**:

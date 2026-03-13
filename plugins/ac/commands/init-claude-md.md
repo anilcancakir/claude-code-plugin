@@ -53,6 +53,10 @@ Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every convers
 
 **Actions**:
 
+0. **Agent model override**: Before launching research agents, check `~/.claude/settings.json` for `env` overrides:
+   - `EXPLORE_MODEL`: Override explore agent model (default: haiku if unset)
+   If a value is set, add `model: "[value]"` to each ac:explore Agent() call. If unset, omit the model parameter — the agent's frontmatter default applies.
+
 1. Launch 3 ac:explore agents in a **single message** (parallel, multiple Agent tool calls):
 
    ac:explore 1 — **Commands + Build + Dev Tools**:
