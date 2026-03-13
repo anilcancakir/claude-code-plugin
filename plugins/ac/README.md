@@ -193,7 +193,7 @@ All agents are **read-only** — advisory roles never have write tools. Commands
 | Agent | `subagent_type` | Model | Role |
 |-------|----------------|-------|------|
 | `ac:explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
-| `ac:librarian` | `"ac:librarian"` | Haiku | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
+| `ac:librarian` | `"ac:librarian"` | Sonnet | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
 | `ac:linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
 | `ac:plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
 | `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
@@ -315,7 +315,7 @@ plugins/ac/
 │   └── brainstorm.md           # /ac:brainstorm
 ├── agents/                      # 7 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
-│   ├── librarian.md             # Haiku external docs
+│   ├── librarian.md             # Sonnet external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier
 │   ├── plan-analysis.md         # Sonnet plan auditor
 │   ├── plan-review.md           # Opus plan reviewer
