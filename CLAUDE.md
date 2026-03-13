@@ -15,9 +15,9 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   ├── ac/                       # Main plugin
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
-│   │   ├── .mcp.json             # MCP server configs (context7)
+│   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
 │   │   ├── commands/             # 11 user-invocable /ac:* commands
-│   │   ├── agents/               # 8 read-only agent definitions
+│   │   ├── agents/               # 9 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
@@ -105,6 +105,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
+| `gemini-vision` | `"ac:gemini-vision"` | — | Sonnet | cyan | Multimodal analysis — screenshots, video, design mockups via Gemini | Read, Glob, LS, gemini-mcp-tool |
 
 All agents are read-only. No write tools on advisory roles. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -112,7 +113,8 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 
 ### ac plugin
 - `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
-- MCP: `context7` — Live documentation API via `@upstash/context7-mcp`
+- MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
+- MCP: `gemini-mcp-tool` (optional, user-installed) — Gemini CLI bridge for multimodal, large context, brainstorm
 
 ### github-cli plugin
 - `github-cli` (Sonnet) — Comprehensive gh CLI reference: issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), jq patterns, scripting
@@ -144,6 +146,7 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
 - **Certainty-first** (ultra): End-to-end discipline — no implementation without certainty, no completion without evidence
+- **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 
 ## Key Files
 

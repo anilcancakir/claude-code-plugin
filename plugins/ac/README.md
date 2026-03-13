@@ -199,6 +199,7 @@ All agents are **read-only** — advisory roles never have write tools. Commands
 | `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
 | `ac:challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches |
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
+| `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | Multimodal analysis — screenshots, video, design mockups via Gemini |
 
 ## Skills
 
@@ -300,7 +301,7 @@ Daily work (Sonnet) -> Complex task detected
 plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
-├── .mcp.json                    # MCP server config (context7)
+├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
 ├── commands/                    # 11 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
@@ -313,7 +314,7 @@ plugins/ac/
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   ├── commit.md               # /ac:commit
 │   └── brainstorm.md           # /ac:brainstorm
-├── agents/                      # 7 read-only agent definitions
+├── agents/                      # 8 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Sonnet external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier
@@ -337,19 +338,29 @@ plugins/ac/
 
 All components are pure markdown with YAML frontmatter. No compiled code, no runtime dependencies.
 
-## MCP Servers
+## Optional MCP Integrations
 
-| Server | Purpose |
-|--------|---------|
-| `context7` | Live documentation API for 18+ frameworks. Used by `ac:librarian` before falling back to WebSearch |
+ac agents can leverage external MCP servers for enhanced capabilities. These are **not bundled** — install them separately for optional features.
 
-The plugin ships with context7 pre-configured in `.mcp.json`. Add your API key to your shell profile:
+### context7 — Live Documentation
+
+Provides version-aware library documentation lookup. Used by the **librarian** agent.
 
 ```bash
-export CONTEXT7_API_KEY="your-api-key-here"
+claude mcp add context7 -- npx -y @upstash/context7-mcp
 ```
 
-Get a free key at [context7.com](https://context7.com).
+### gemini-mcp-tool — Gemini CLI Bridge
+
+Provides multimodal analysis (images, video), large context analysis (1M tokens), and structured brainstorming. Used by **gemini-vision**, **plan-analysis**, and **librarian** agents.
+
+```bash
+npm install -g gemini-mcp-tool
+# Then add to Claude Code:
+claude mcp add gemini-mcp-tool -- gemini-mcp-tool
+```
+
+**Conditional routing**: When these MCP servers are installed, agents automatically detect and use them. When not installed, agents gracefully fall back to standard tools (WebSearch, local analysis). No configuration needed — just install and agents adapt.
 
 ## Background Agents (Troubleshooting)
 
