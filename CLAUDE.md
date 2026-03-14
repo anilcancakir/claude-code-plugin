@@ -92,6 +92,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
 | `/ac:brainstorm` | Socratic idea refinement — interview, challenge, mature ideas before planning. Supports `--loop` to pass loop-mode to execution | Opus |
+| `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + phase files). Supports `--loop` for autonomous phase-by-phase plan → execute | Opus |
 
 ## Agents (ac plugin)
 
@@ -155,6 +156,7 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 - `plugins/ac/skills/ac-skill-creator/references/language-style-template.md` — Template for `my-language` skill generation
 - `plugins/ac/skills/ac-skill-creator/references/global-claude-md-template.md` — Template for global CLAUDE.md generation
 - `plugins/ac/skills/ac-skill-creator/references/project-claude-md-template.md` — Template for project CLAUDE.md generation
+- `plugins/ac/skills/ac-skill-creator/references/prd-template.md` — Template for PRD document generation (overview + phase files)
 
 ## Adding a New Plugin
 

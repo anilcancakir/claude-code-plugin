@@ -1,5 +1,5 @@
 ---
-description: Socratic idea refinement — interactively evaluate, challenge, and mature a raw idea through gap analysis, feasibility assessment, and multi-perspective critique before planning. Use when exploring a feature idea, evaluating an approach, or stress-testing a proposal. Supports optional `--loop` flag to enable loop-mode execution after planning.
+description: Socratic idea refinement — interactively evaluate, challenge, and mature a raw idea through gap analysis, feasibility assessment, and multi-perspective critique before planning. Use for technical approach decisions and feature design. For product-level requirements with phase decomposition, use /ac:prd instead. Supports optional `--loop` flag to enable loop-mode execution after planning.
 argument-hint: Raw idea or feature concept
 model: opus
 ---
