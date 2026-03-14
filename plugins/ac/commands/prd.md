@@ -1,5 +1,5 @@
 ---
-description: Product requirements document — interactive PRD creation with phase decomposition for large-scale planning. Use for defining WHAT to build (features, logic, business rules) before HOW (technical implementation). Use when starting a new project, planning a major feature, or breaking down large-scale work into plannable phases.
+description: Product requirements document — interactive PRD creation with phase decomposition for large-scale planning. Use for defining WHAT to build (features, logic, business rules) before HOW (technical implementation). Use when starting a new project, planning a major feature, or breaking down large-scale work into plannable phases. Supports optional `--loop` flag to automatically plan and execute all phases sequentially after PRD generation.
 argument-hint: Project or feature description
 model: opus
 ---
@@ -37,6 +37,7 @@ Initial request: $ARGUMENTS
    - ac:explore agent 2: "CONTEXT: Creating PRD for [project]. GOAL: Understand current feature set. DOWNSTREAM: PRD phases must build on existing foundation. REQUEST: Find implemented features, user-facing flows, configuration patterns."
 5. If **greenfield**: Skip codebase research. Note: "Greenfield project — no existing constraints to discover."
 6. Set initial clarity scores for all 5 dimensions based on how much $ARGUMENTS already specifies
+7. If `$ARGUMENTS` contains `--loop`: announce loop mode active, note that phases will be automatically planned and executed sequentially after PRD generation, strip `--loop` from arguments before passing to downstream phases
 
 ## Agent Routing
 
@@ -136,14 +137,46 @@ header: "Next Step"
 options:
   - label: "Plan Phase 1 (Recommended)"
     description: "Hand off Phase 1 to ac:plan for technical planning. Each phase gets fresh codebase research."
+  - label: "Execute All Phases"
+    description: "Plan and execute all phases sequentially. Each phase gets fresh research, planning, and execution."
   - label: "Save & Exit"
     description: "Documents saved. Return later with /ac:plan pointing to a phase file."
 ```
 
-8. If user selects "Plan Phase 1":
+If `--loop` was detected in Phase 1, OR user selects "Execute All Phases": skip step 8, proceed directly to Phase 5.
+
+8. If user selects "Plan Phase 1" (single phase only):
    - Read the phase-1 file
    - Invoke the `ac:plan` skill with: "Plan implementation based on PRD phase at: [phase-1-file-path]. This is a product requirements document — run full codebase research (Phase 2) to discover technical patterns and constraints."
    - Do NOT append "Skip Phase 2 research" — intentionally forces fresh research per phase
+
+---
+
+## Phase 5: Orchestrate
+
+**Goal**: Plan and execute all PRD phases sequentially
+
+**Actions**:
+
+1. Read overview.md Phase Tracking checklist to determine pending phases
+2. For each pending phase sequentially:
+   a. Update overview.md checklist: `- [~] Phase N: Title — planning`
+   b. Read the `phase-x-$shortTitle.md` file
+   c. Invoke ac:plan skill: "Plan implementation based on PRD phase at: [phase-file-path]. This is a product requirements document — run full codebase research (Phase 2) to discover technical patterns and constraints."
+   d. Update overview.md checklist: `- [~] Phase N: Title — executing`
+   e. Invoke ac:execute skill with the generated plan
+   f. Verify execution: check if ac:execute reported all steps completed
+   g. If succeeded: update overview.md checklist: `- [x] Phase N: Title — done`
+   h. If failed: increment retry counter for this phase. If retries < 3: log failure reason, re-invoke ac:plan with failure context ("Previous attempt failed: [reason]. Adjust plan to address: [specific failures]"), return to step (e). If retries >= 3: update overview.md: `- [!] Phase N: Title — failed (3 attempts)`, stop execution, present failure report to user
+3. After all phases complete (or a phase fails after 3 retries):
+   - Present summary: phases completed, phases failed, total execution
+   - Suggest checkpoint commit (never auto-commit)
+
+Status markers for overview.md checklist:
+- `[ ]` — pending (not started)
+- `[~]` — in progress (planning or executing)
+- `[x]` — done (verified)
+- `[!]` — failed (max retries exceeded)
 
 ---
 
