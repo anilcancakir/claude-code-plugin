@@ -46,8 +46,8 @@ After updating, sync your global config with new plugin features:
 │   ├── ac/                      # Main plugin — structured development partner
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/            # 10 /ac:* commands
-│   │   ├── agents/              # 5 read-only agents
+│   │   ├── commands/            # 12 /ac:* commands
+│   │   ├── agents/              # 9 read-only agents
 │   │   ├── skills/              # Component creation skill
 │   │   └── README.md
 │   ├── github-cli/              # GitHub CLI skill plugin

@@ -170,6 +170,7 @@ Or in `~/.claude/settings.json`:
 | `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
 | `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
 | `/ac:brainstorm` | Socratic idea refinement — interview, challenge, and mature ideas before planning | Opus |
+| `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + phase files). Supports `--loop` | Opus |
 
 ### Project Setup
 
@@ -303,11 +304,12 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 11 user-invocable /ac:* commands
+├── commands/                    # 12 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
 │   ├── ultra.md                 # /ac:ultra
+│   ├── prd.md                   # /ac:prd
 │   ├── init-claude-md.md        # /ac:init-claude-md
 │   ├── init-rules.md            # /ac:init-rules
 │   ├── setup-coding.md          # /ac:setup-coding
