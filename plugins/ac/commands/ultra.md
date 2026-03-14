@@ -1,5 +1,5 @@
 ---
-description: End-to-end disciplined execution — certainty-first, delegation-first, verification-guaranteed workflow for critical tasks. Use for important features, complex refactors, or any task where partial delivery is unacceptable. Chains plan → execute → verify with ultrawork discipline.
+description: End-to-end disciplined execution — certainty-first, delegation-first, verification-guaranteed workflow for critical tasks. Use for important features, complex refactors, or any task where partial delivery is unacceptable. Chains plan → execute → verify with ultrawork discipline. Supports optional `--loop` flag to repeat the execute → verify cycle autonomously (max 3 iterations) until all criteria pass.
 argument-hint: Task description (feature, refactor, or investigation)
 model: opus
 ---
@@ -55,6 +55,8 @@ Certainty-first, delegation-first, verification-guaranteed.
 1. [Observable outcome] — [how to verify]
 2. [Observable outcome] — [how to verify]
 ```
+
+6. If `$ARGUMENTS` contains `--loop`: announce loop mode active, note that failed items will be retried up to 3 times, strip `--loop` from arguments before passing to downstream phases
 
 Present classification and criteria to the user in 3-4 lines.
 
@@ -207,6 +209,22 @@ options:
 - Manual QA: [what was tested] → [what was observed]
 ```
 
+### Criteria Status
+
+After collecting verification evidence, produce a structured status block for each success criterion defined in Phase 1:
+
+```
+### Criteria Status
+- ✅ PASS: [criterion] — [evidence]
+- ❌ FAIL: [criterion] — [reason]
+```
+
+One line per criterion. Every criterion from Phase 1's Success Criteria must appear here with either PASS or FAIL.
+
+### Shared File Warnings
+
+List any files touched by both passing and failing steps. These files carry risk — a fix for a failing criterion may regress a passing one.
+
 ### LSP Verification (if LSP tool available)
 
 Run after build/test/lint, as final gate before marking complete:
@@ -283,7 +301,13 @@ After LSP verification, launch ac:code-reviewer when warranted:
 - [Criterion 2]: ✅ [evidence]
 ```
 
-5. Suggest checkpoint commit (never auto-commit)
+5. **Loop logic**:
+
+When `--loop` was NOT specified: behavior is identical to current Phase 6 — no loop logic applies.
+
+If `--loop` was specified in Phase 1: (1) Read the Criteria Status block. (2) If ALL items show ✅ PASS → complete normally. (3) If ANY item shows ❌ FAIL → this is loop iteration N of 3. If N < 3: create an inline remediation plan targeting ONLY the failed criteria, invoke ac:execute on it, then return to Phase 5 and re-verify ALL criteria (not just previously failed). If N >= 3: surface full failure report to user and stop.
+
+6. Suggest checkpoint commit (never auto-commit)
 
 ---
 

@@ -84,14 +84,14 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:plan` | Classify → research → interview → plan | Opus |
 | `/ac:deep` | Opus-powered root cause analysis for complex bugs and debugging | Opus |
 | `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) | Sonnet |
-| `/ac:ultra` | End-to-end disciplined execution — certainty → plan → execute → verify | Opus |
+| `/ac:ultra` | End-to-end disciplined execution — certainty → plan → execute → verify. Supports `--loop` for autonomous retry (max 3 iterations) | Opus |
 | `/ac:init-claude-md` | Generate/enhance project CLAUDE.md | Opus |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis | Opus |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill | Opus |
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
-| `/ac:brainstorm` | Socratic idea refinement — interview, challenge, mature ideas before planning | Opus |
+| `/ac:brainstorm` | Socratic idea refinement — interview, challenge, mature ideas before planning. Supports `--loop` to pass loop-mode to execution | Opus |
 
 ## Agents (ac plugin)
 

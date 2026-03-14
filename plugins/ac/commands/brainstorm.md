@@ -1,5 +1,5 @@
 ---
-description: Socratic idea refinement — interactively evaluate, challenge, and mature a raw idea through gap analysis, feasibility assessment, and multi-perspective critique before planning. Use when exploring a feature idea, evaluating an approach, or stress-testing a proposal.
+description: Socratic idea refinement — interactively evaluate, challenge, and mature a raw idea through gap analysis, feasibility assessment, and multi-perspective critique before planning. Use when exploring a feature idea, evaluating an approach, or stress-testing a proposal. Supports optional `--loop` flag to enable loop-mode execution after planning.
 argument-hint: Raw idea or feature concept
 model: opus
 ---
@@ -210,5 +210,6 @@ options:
    - Invoke the `ac:plan` skill with the brainstorm content as context:
      - For small: "Plan implementation based on brainstorm at: [brainstorm-doc-path]. Research Summary section included. Skip Phase 2 research."
      - For large Phase 1: "Plan Phase 1 of multi-phase brainstorm at: [brainstorm-doc-path]. Research Summary section included. Skip Phase 2 research."
+   - If `$ARGUMENTS` contains `--loop`: when handing off to ac:plan, append to the prompt: "After planning, execute in loop mode: retry failed items up to 3 times. Verify ALL criteria after each retry."
 
 **IMPORTANT**: Do NOT write code or modify source files. This command produces documents only.
