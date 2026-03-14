@@ -199,6 +199,7 @@ All agents are **read-only** — advisory roles never have write tools. Commands
 | `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
 | `ac:challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches |
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
+| `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
 | `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | Multimodal analysis — screenshots, video, design mockups via Gemini |
 
 ## Skills
@@ -314,14 +315,16 @@ plugins/ac/
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   ├── commit.md               # /ac:commit
 │   └── brainstorm.md           # /ac:brainstorm
-├── agents/                      # 8 read-only agent definitions
+├── agents/                      # 9 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Sonnet external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier
 │   ├── plan-analysis.md         # Sonnet plan auditor
 │   ├── plan-review.md           # Opus plan reviewer
 │   ├── challenger.md            # Sonnet devil's advocate
-│   └── feasibility.md           # Sonnet feasibility evaluator
+│   ├── feasibility.md           # Sonnet feasibility evaluator
+│   ├── code-reviewer.md         # Sonnet spec + quality reviewer
+│   └── gemini-vision.md         # Sonnet multimodal via Gemini
 ├── skills/
 │   └── ac-skill-creator/        # Component creation skill
 │       ├── SKILL.md
@@ -344,7 +347,7 @@ ac agents can leverage external MCP servers for enhanced capabilities. These are
 
 ### context7 — Live Documentation
 
-Provides version-aware library documentation lookup. Used by the **librarian** agent.
+Version-aware library and framework documentation lookup. When installed, the **librarian** agent queries context7 first for official docs before falling back to WebSearch — faster and more accurate than web scraping.
 
 ```bash
 claude mcp add context7 -- npx -y @upstash/context7-mcp
@@ -352,15 +355,39 @@ claude mcp add context7 -- npx -y @upstash/context7-mcp
 
 ### gemini-mcp-tool — Gemini CLI Bridge
 
-Provides multimodal analysis (images, video), large context analysis (1M tokens), and structured brainstorming. Used by **gemini-vision**, **plan-analysis**, and **librarian** agents.
+Bridges Claude Code to Google Gemini's unique capabilities. Three tools:
+
+- **ask-gemini** — Multimodal analysis (screenshots, design mockups, video) and large context analysis (1M tokens vs Claude's 200k). Used by **gemini-vision** for visual analysis, **librarian** for large codebase research.
+- **brainstorm** — Structured ideation with 6 methodologies (SCAMPER, design thinking, lateral thinking, etc.)
+- **fetch-chunk** — Chunked retrieval for large Gemini responses
+
+Used by **gemini-vision**, **plan-analysis** (second-eye gap analysis), and **librarian** (large context delegation) agents.
 
 ```bash
 npm install -g gemini-mcp-tool
-# Then add to Claude Code:
 claude mcp add gemini-mcp-tool -- gemini-mcp-tool
 ```
 
-**Conditional routing**: When these MCP servers are installed, agents automatically detect and use them. When not installed, agents gracefully fall back to standard tools (WebSearch, local analysis). No configuration needed — just install and agents adapt.
+### skillsmp-mcp-server — Skill Marketplace
+
+Search, discover, and install AI coding skills from the [SkillsMP marketplace](https://skillsmp.com). Five tools:
+
+- **skillsmp_search** — Keyword search across the marketplace
+- **skillsmp_ai_search** — Semantic search with natural language queries
+- **skillsmp_get_skill_content** — Preview a skill's SKILL.md before installing
+- **skillsmp_list_repo_skills** — List all skills in a GitHub repository
+- **skillsmp_install_skill** — Install skills to your agent (Claude Code, Codex, Cursor, etc.)
+
+```bash
+npm install -g skillsmp-mcp-server
+claude mcp add skillsmp-mcp-server -- skillsmp-mcp-server
+```
+
+> Requires a `SKILLSMP_API_KEY` — get one at [skillsmp.com](https://skillsmp.com).
+
+### How conditional routing works
+
+When these MCP servers are installed, agents automatically detect and use them. When not installed, agents gracefully fall back to standard tools (WebSearch, local analysis). No configuration needed — just install and agents adapt.
 
 ## Background Agents (Troubleshooting)
 
