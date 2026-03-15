@@ -16,6 +16,7 @@ description: |
   </example>
 model: haiku
 tools: Glob, Grep, LS, Read, BashOutput
+disallowedTools: Write, Edit
 color: green
 ---
 

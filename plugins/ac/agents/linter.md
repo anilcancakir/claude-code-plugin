@@ -18,6 +18,7 @@ description: |
   </example>
 model: haiku
 tools: LSP, Glob, Read
+disallowedTools: Write, Edit
 color: yellow
 ---
 

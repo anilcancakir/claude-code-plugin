@@ -16,6 +16,7 @@ description: |
   </example>
 model: sonnet
 tools: Read, Glob, LS, mcp__gemini-mcp-tool__ask-gemini
+disallowedTools: Write, Edit
 color: cyan
 ---
 

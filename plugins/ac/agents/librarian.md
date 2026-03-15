@@ -16,6 +16,7 @@ description: |
   </example>
 model: sonnet
 tools: Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__gemini-mcp-tool__ask-gemini
+disallowedTools: Write, Edit
 color: blue
 ---
 

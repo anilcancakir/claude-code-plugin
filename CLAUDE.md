@@ -108,7 +108,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
 | `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | Multimodal analysis — screenshots, video, design mockups via Gemini | Read, Glob, LS, gemini-mcp-tool |
 
-All agents are read-only. No write tools on advisory roles. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
+All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
 ## Skills & MCP
 
@@ -147,6 +147,7 @@ All agents are read-only. No write tools on advisory roles. Always use the `ac:`
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
 - **Certainty-first** (ultra): End-to-end discipline — no implementation without certainty, no completion without evidence
+- **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 
 ## Key Files

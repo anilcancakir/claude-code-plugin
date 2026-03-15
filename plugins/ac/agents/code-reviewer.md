@@ -16,6 +16,7 @@ description: |
   </example>
 model: sonnet
 tools: Glob, Grep, LS, Read
+disallowedTools: Write, Edit
 color: yellow
 ---
 

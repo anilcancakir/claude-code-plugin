@@ -16,6 +16,7 @@ description: |
   </example>
 model: opus
 tools: Read, Grep, Glob, LS
+disallowedTools: Write, Edit
 color: green
 ---
 
