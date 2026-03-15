@@ -189,7 +189,7 @@ Or in `~/.claude/settings.json`:
 
 ## Agents
 
-All agents are **read-only** — advisory roles never have write tools. Commands invoke agents via the Agent tool with explicit `subagent_type` values (`"ac:explore"`, `"ac:librarian"`, etc.) to avoid routing to builtin agents.
+All agents are **read-only** — advisory roles never have write tools. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Commands invoke agents via the Agent tool with explicit `subagent_type` values (`"ac:explore"`, `"ac:librarian"`, etc.) to avoid routing to builtin agents.
 
 | Agent | `subagent_type` | Model | Role |
 |-------|----------------|-------|------|
@@ -293,7 +293,9 @@ Daily work (Sonnet) -> Complex task detected
 
 **Progressive disclosure** — Plugin metadata is always in context (~100 words per component). SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant.
 
-**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review) never have write tools. Only execution agents spawned by `/ac:execute` get full tool access.
+**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review) never have write tools. All 9 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
+
+**Subagent-only architecture** — All agents use the subagent execution model (fresh context, custom model/tools). The fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory).
 
 **Plan-first** — All commands follow the same pattern: classify, research, interview, generate, review, install. No code is written during planning.
 
