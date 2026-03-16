@@ -16,7 +16,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
-│   │   ├── commands/             # 14 user-invocable /ac:* commands
+│   │   ├── commands/             # 13 user-invocable /ac:* commands
 │   │   ├── agents/               # 9 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
@@ -91,7 +91,6 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
-| `/ac:review` | On-demand code review — staged changes, commits, or specified files | Sonnet |
 | `/ac:brainstorm` | Socratic idea refinement — interview, challenge, mature ideas before planning. Supports `--loop` to pass loop-mode to execution | Opus |
 | `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + task files). Supports `--loop` for autonomous phase-by-phase plan → execute | Opus |
 | `/ac:pm` | Product management — turn raw customer requests or meeting notes into structured, Jira-ready task files via interactive interview. Supports single requests and bulk mode. Supports `--loop` | Opus |

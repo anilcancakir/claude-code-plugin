@@ -169,7 +169,6 @@ Or in `~/.claude/settings.json`:
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
 | `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
 | `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
-| `/ac:review` | On-demand code review — staged changes, commits, or specified files | Sonnet |
 | `/ac:brainstorm` | Socratic idea refinement — interview, challenge, and mature ideas before planning | Opus |
 | `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + task files). Supports `--loop` | Opus |
 | `/ac:pm` | Product management — turn raw customer requests or meeting notes into structured, Jira-ready task files via interactive interview. Supports single requests and bulk mode. Supports `--loop` | Opus |
@@ -277,15 +276,6 @@ Request -> Intake (classify single vs bulk, detect --loop)
          -> Handoff (plan this task / plan all / save & exit)
 ```
 
-### Code Review (`/ac:review`)
-
-```
-Request -> Detect scope (staged changes / commits / files / plan)
-        -> Parallel: ac:code-reviewer + ac:linter
-        -> Unified report (APPROVED / NEEDS WORK / BLOCKED)
-        -> Actionable next steps
-```
-
 ### Ultra Mode (`/ac:ultra`)
 
 ```
@@ -327,7 +317,7 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 14 user-invocable /ac:* commands
+├── commands/                    # 13 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
@@ -340,7 +330,6 @@ plugins/ac/
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   ├── commit.md               # /ac:commit
-│   ├── review.md               # /ac:review
 │   └── brainstorm.md           # /ac:brainstorm
 ├── agents/                      # 9 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
