@@ -169,8 +169,10 @@ Or in `~/.claude/settings.json`:
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
 | `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
 | `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
+| `/ac:review` | On-demand code review — staged changes, commits, or specified files | Sonnet |
 | `/ac:brainstorm` | Socratic idea refinement — interview, challenge, and mature ideas before planning | Opus |
-| `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + phase files). Supports `--loop` | Opus |
+| `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + task files). Supports `--loop` | Opus |
+| `/ac:pm` | Product management — turn raw customer requests or meeting notes into structured, Jira-ready task files via interactive interview. Supports single requests and bulk mode. Supports `--loop` | Opus |
 
 ### Project Setup
 
@@ -242,7 +244,7 @@ Load plan -> Decompose into Work Units
           -> Dependent units -> sequential agents
           -> After each unit: check <new-diagnostics>, delegate to ac:linter
           -> Track progress per wave
-          -> Final verification (build + test + lint + LSP navigation check)
+          -> Final verification (build + test + lint + LSP navigation check + code review gate)
 ```
 
 ### Smart Commit (`/ac:commit`)
@@ -263,6 +265,25 @@ Idea -> Understand (classify + parallel ac:explore + ac:librarian research)
      -> Challenge (parallel ac:challenger + ac:feasibility agents)
      -> Crystallize (mature document + multi-phase decomposition if large)
      -> User choice: /ac:plan handoff or iterate more
+```
+
+### Product Management (`/ac:pm`)
+
+```
+Request -> Intake (classify single vs bulk, detect --loop)
+         -> Triage (bulk only — parse items, present table, user confirms)
+         -> Interview (AskUserQuestion, 3-5 rounds single / 2-3 per unclear bulk item)
+         -> Generate (task files in pm-base format, INVEST validation)
+         -> Handoff (plan this task / plan all / save & exit)
+```
+
+### Code Review (`/ac:review`)
+
+```
+Request -> Detect scope (staged changes / commits / files / plan)
+        -> Parallel: ac:code-reviewer + ac:linter
+        -> Unified report (APPROVED / NEEDS WORK / BLOCKED)
+        -> Actionable next steps
 ```
 
 ### Ultra Mode (`/ac:ultra`)
@@ -306,18 +327,20 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 12 user-invocable /ac:* commands
+├── commands/                    # 14 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
 │   ├── ultra.md                 # /ac:ultra
 │   ├── prd.md                   # /ac:prd
+│   ├── pm.md                    # /ac:pm
 │   ├── init-claude-md.md        # /ac:init-claude-md
 │   ├── init-rules.md            # /ac:init-rules
 │   ├── setup-coding.md          # /ac:setup-coding
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   ├── commit.md               # /ac:commit
+│   ├── review.md               # /ac:review
 │   └── brainstorm.md           # /ac:brainstorm
 ├── agents/                      # 9 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
@@ -337,7 +360,8 @@ plugins/ac/
 │           ├── coding-style-template.md
 │           ├── language-style-template.md
 │           ├── project-claude-md-template.md
-│           └── global-claude-md-template.md
+│           ├── global-claude-md-template.md
+│           └── pm-base.md
 ├── CLAUDE.md
 ├── README.md
 └── LICENSE
