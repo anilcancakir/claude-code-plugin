@@ -54,7 +54,13 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 
 **Actions**:
 
-0. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
+0. **Task file detection**: If $ARGUMENTS contains `/tasks/` in the path OR points to a file whose YAML frontmatter has `type:` matching `story`, `bug`, `spike`, or `chore` (pm-base types), enter **task mode**:
+   - Read the task file and extract `User Story` + `Acceptance Criteria` sections as the plan's requirements
+   - Force Phase 2 research — do NOT skip even if the task file contains a `### Research Summary` section
+   - Announce: "Task file detected — entering task mode. Using [task title] as plan input with fresh research."
+   - Carry the task's metadata (type, size, priority, status, source path) forward — include a `### Task Context` section in the final plan output showing the source task file path and extracted requirements
+   - Then continue to step 1 (skip the skip-research gate below)
+0b. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
 1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
@@ -169,6 +175,7 @@ Plans must follow this exact structure for ac:execute compatibility:
   - `Patterns Found` — convention bullets (architecture, naming, code organization)
   - `Dependencies` — external libraries, frameworks, or services identified
 - `### Conventions` — naming patterns, file organization, coding style detected from explore agents
+- `### Task Context` — (task mode only) source task file path, type, size, priority, extracted User Story + Acceptance Criteria
 
 ### Symbol Verification (if LSP tool available)
 

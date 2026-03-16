@@ -102,81 +102,94 @@ Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CL
 
 ## Phase 4: Generate
 
-**Goal**: Produce the final PRD document family
+**Goal**: Produce overview.md and task files in pm-base format
 
 **Actions**:
 
 1. Read PRD template from `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/prd-template.md`
-2. Generate `overview.md` in `prd/$prdName/` following the Overview Template:
+2. Read task file format from `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/pm-base.md`
+3. Generate `overview.md` in `prd/$prdName/` following the Overview Template:
    - Vision from interview
    - Requirements in REQ-ID format (REQ-001, REQ-002...) with priority (must/should/could) and v1/future/out-of-scope categorization
    - Constraints from interview + brownfield research
    - Decisions made during interview + challenge with rationale
    - Gaps & Risks from challenge phase (CRITICAL/IMPORTANT/MINOR with mitigation)
-3. Decompose into phases (max 6) based on:
+4. Decompose into phases (max 6) based on:
    - Dependency ordering (foundation → features → polish)
    - Independent deployability where possible
    - Each phase scoped to be plannable by ac:plan in one session
    - Each phase maps to specific REQ-IDs from overview
-4. Generate `phase-x-$shortTitle.md` files following the Phase Template:
-   - Goal, scope, requirements (REQ-IDs), product-level acceptance criteria, dependencies
+5. Derive tasks storage path: your auto memory directory appears in your system prompt (e.g., `/Users/user/.claude/projects/-Users-user-Code-project/memory/`). Replace the trailing `memory/` with `tasks/` to get the tasks directory.
+6. For each phase, generate task files in the tasks directory following pm-base.md task file format:
+   - Filename: `$prdName-phase-N-$taskSlug.md` (e.g., `myapp-phase-1-setup-auth.md`)
+   - YAML frontmatter must include `project: $prdName` and `phase: N` fields
+   - Set `type:` (story/bug/spike/chore), `size:` (XS-XL), `priority:` from REQ priority mapping, `status: ready`, `design:` as appropriate, `created:` date
+   - Body sections per pm-base.md: User Story, Context, Acceptance Criteria (Given/When/Then), Scope (In/Out), Open Questions, Notes
    - Must NOT include `### Research Summary` heading (forces ac:plan to run fresh research)
-5. Add Phase Tracking checklist to overview.md:
+   - Each task must be independently plannable — one ac:plan cycle per task
+   - Split any scope that exceeds size L into multiple tasks within the same phase
+7. Add Phase Tracking checklist to overview.md:
    ```
    ## Phase Tracking
-   - [ ] Phase 1: [Title] — pending
-   - [ ] Phase 2: [Title] — pending
+   - [ ] Phase 1: [Title] — pending ([N] tasks)
+   - [ ] Phase 2: [Title] — pending ([N] tasks)
    ...
    ```
-6. Present summary to user: phase count, requirements per phase, estimated scope
-7. Offer next steps via AskUserQuestion:
+8. Present summary to user: phase count, task count per phase, estimated scope
+9. Offer next steps via AskUserQuestion:
 
 ```
 question: "PRD complete. How would you like to proceed?"
 header: "Next Step"
 options:
   - label: "Plan Phase 1 (Recommended)"
-    description: "Hand off Phase 1 to ac:plan for technical planning. Each phase gets fresh codebase research."
+    description: "Hand off Phase 1 tasks to ac:plan for technical planning. Each task gets fresh codebase research."
   - label: "Execute All Phases"
-    description: "Plan and execute all phases sequentially. Each phase gets fresh research, planning, and execution."
+    description: "Plan and execute all phases sequentially. Each task gets fresh research, planning, and execution."
   - label: "Save & Exit"
-    description: "Documents saved. Return later with /ac:plan pointing to a phase file."
+    description: "Documents saved. Return later with /ac:plan pointing to a task file."
 ```
 
-If `--loop` was detected in Phase 1, OR user selects "Execute All Phases": skip step 8, proceed directly to Phase 5.
+If `--loop` was detected in Phase 1, OR user selects "Execute All Phases": skip step 10, proceed directly to Phase 5.
 
-8. If user selects "Plan Phase 1" (single phase only):
-   - Read the phase-1 file
-   - Invoke the `ac:plan` skill with: "Plan implementation based on PRD phase at: [phase-1-file-path]. This is a product requirements document — run full codebase research (Phase 2) to discover technical patterns and constraints."
-   - Do NOT append "Skip Phase 2 research" — intentionally forces fresh research per phase
+10. If user selects "Plan Phase 1" (first task of phase 1 only):
+    - Collect all task files with `phase: 1` and `project: $prdName`
+    - Read the first task file (lowest task slug alphabetically)
+    - Invoke the `ac:plan` skill with: "Plan implementation based on PRD task at: [task-file-path]. This is a product requirements document task — run full codebase research (Phase 2) to discover technical patterns and constraints."
+    - Do NOT append "Skip Phase 2 research" — intentionally forces fresh research per task
 
 ---
 
 ## Phase 5: Orchestrate
 
-**Goal**: Plan and execute all PRD phases sequentially
+**Goal**: Plan and execute all PRD tasks phase-by-phase
 
 **Actions**:
 
 1. Read overview.md Phase Tracking checklist to determine pending phases
 2. For each pending phase sequentially:
-   a. Update overview.md checklist: `- [~] Phase N: Title — planning`
-   b. Read the `phase-x-$shortTitle.md` file
-   c. Invoke ac:plan skill: "Plan implementation based on PRD phase at: [phase-file-path]. This is a product requirements document — run full codebase research (Phase 2) to discover technical patterns and constraints."
-   d. Update overview.md checklist: `- [~] Phase N: Title — executing`
-   e. Invoke ac:execute skill with the generated plan
-   f. Verify execution: check if ac:execute reported all steps completed
-   g. If succeeded: update overview.md checklist: `- [x] Phase N: Title — done`
-   h. If failed: increment retry counter for this phase. If retries < 3: log failure reason, re-invoke ac:plan with failure context ("Previous attempt failed: [reason]. Adjust plan to address: [specific failures]"), return to step (e). If retries >= 3: update overview.md: `- [!] Phase N: Title — failed (3 attempts)`, stop execution, present failure report to user
-3. After all phases complete (or a phase fails after 3 retries):
-   - Present summary: phases completed, phases failed, total execution
+   a. Update overview.md checklist: `- [~] Phase N: Title — in progress`
+   b. Collect all task files with `phase: N` and `project: $prdName` from the tasks directory
+   c. For each task file in the phase:
+      1. Read the task file
+      2. Invoke ac:plan skill with the individual task: "Plan implementation based on PRD task at: [task-file-path]. This is a product requirements document task — run full codebase research (Phase 2) to discover technical patterns and constraints."
+      3. Invoke ac:execute skill with the generated plan
+      > **Review gates**: Each `ac:execute` invocation triggers `ac:linter` after work units (when LSP is available) and `ac:code-reviewer` for Standard/Complex plans or 3+ modified files. No manual review configuration needed.
+      4. Verify execution: check if ac:execute reported all steps completed
+      5. If succeeded: update task frontmatter `status: done`
+      6. If failed: increment retry counter for this task. If retries < 3: log failure reason, re-invoke ac:plan with failure context ("Previous attempt for task [task-file] failed: [reason]. Adjust plan to address: [specific failures]"), return to step (3). If retries >= 3: update task frontmatter `status: failed`, log failure, continue to next task in phase
+   d. After all tasks in phase processed:
+      - If all tasks `status: done`: update overview.md checklist: `- [x] Phase N: Title — done`
+      - If any tasks failed: update overview.md checklist: `- [!] Phase N: Title — partial ([M] of [N] tasks done)`, present failed task list to user, ask whether to continue to next phase or stop
+3. After all phases complete (or user stops):
+   - Present summary: phases completed, tasks completed/failed per phase, total execution
    - Suggest checkpoint commit (never auto-commit)
 
 Status markers for overview.md checklist:
 - `[ ]` — pending (not started)
-- `[~]` — in progress (planning or executing)
-- `[x]` — done (verified)
-- `[!]` — failed (max retries exceeded)
+- `[~]` — in progress (tasks being planned/executed)
+- `[x]` — done (all tasks verified)
+- `[!]` — partial or failed (some tasks failed after max retries)
 
 ---
 

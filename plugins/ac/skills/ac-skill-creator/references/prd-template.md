@@ -60,38 +60,14 @@ Priority: must / should / could. Scope: v1 / future / out-of-scope.
 - [ ] Phase 3: [Short Title] — pending (if applicable)
 ```
 
-## Phase Template
+## Task Files
 
-Generate as `phase-N-$shortTitle.md` for each phase. Filename: `phase-1-core-auth.md`.
+Phases now map to task files with `phase:` frontmatter field. Each phase decomposes into N individual task files stored in the tasks directory.
 
-```markdown
-# Phase [N]: [Short Title]
+Generate task files following the format defined in `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/pm-base.md`. Key rules:
 
-## Goal
-
-[What this phase delivers. Product perspective — observable user/system outcome.]
-
-## Scope
-
-[Which features, modules, or user flows this phase covers.]
-
-## Requirements
-
-- REQ-001: [title]
-- REQ-002: [title]
-
-## Acceptance Criteria
-
-- [Observable product behavior, not implementation detail]
-- [User can do X / System produces Y]
-- [Measurable outcome]
-
-## Dependencies (if applicable)
-
-- Phase [N-1]: [title] must be complete
-
-## Out of Scope
-
-- [What this phase explicitly does NOT cover]
-- [Deferred to Phase N+1 or future]
-```
+- Filename: `$prdName-phase-N-$taskSlug.md` (e.g., `myapp-phase-1-setup-auth.md`)
+- Frontmatter must include `project: $prdName` and `phase: N` to link tasks back to the PRD
+- Each task must be independently plannable — one ac:plan cycle per task
+- Split any scope exceeding size L into multiple tasks within the same phase
+- Do NOT include `### Research Summary` — forces ac:plan to run fresh codebase research
