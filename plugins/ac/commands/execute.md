@@ -93,46 +93,7 @@ Proceed? [Execute / Adjust Wave Grouping / Cancel]
 
 ---
 
-## Phase 3: Reliability Preflight (MANDATORY)
-
-**Goal**: Prevent stuck or non-deterministic execution before launching agents.
-
-Apply this preflight before any agent launch. If preflight fails, do not start parallel background execution.
-
-**Actions**:
-
-1. Capture and report an execution mode snapshot before any launch using available runtime evidence:
-   - Current permission mode (if surfaced by system/runtime reminders)
-   - Whether bypassPermissions appears active or disabled
-   - Any explicit disable reason if bypass is inactive (settings/runtime gate reminders)
-2. **Environment validation** (only for parallel execution strategy):
-   Only check these environment variables when the classified execution strategy (from Phase 2) requires parallel background agents. For sequential or direct execution, skip this check — these variables are only needed for background agent infrastructure.
-   - If strategy is parallel: Read `~/.claude/settings.json` if present and validate:
-     - `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS == "1"`
-     - `env.CLAUDE_CODE_ENABLE_TASKS == "true"`
-   - If strategy is sequential or direct: Skip this validation step
-3. Check permission posture before execution:
-   - If workflow requires write/edit but permission mode or hooks block it, do not continue with background execution
-   - Prefer explicit remediation over silent retries
-5. Check hook interference risk:
-   - If PreToolUse hooks can block required tools (Write/Edit/Bash), switch to deterministic fallback mode
-6. Enforce execution policy:
-
-| Preflight Result | Allowed Strategy |
-|------------------|------------------|
-| PASS | Planned strategy (parallel/sequential) |
-| SOFT FAIL (recoverable) | Sequential foreground fallback |
-| HARD FAIL (blocking) | Stop and provide remediation |
-
-**Remediation message requirements** (when preflight fails):
-- State exactly what failed (missing env key, permission denied, hook block)
-- Include mode snapshot details from available evidence (permission mode, bypassPermissions active/inactive, disable reason if known)
-- State why execution cannot proceed safely
-- Provide concrete fix steps
-
----
-
-## Phase 4: Execute
+## Phase 3: Execute
 
 **Goal**: Launch agents and track progress with deterministic behavior.
 
@@ -241,7 +202,7 @@ Do NOT mark a work unit complete with unresolved ERROR diagnostics.
 
 ---
 
-## Phase 5: Track Progress
+## Phase 4: Track Progress
 
 **Goal**: Monitor agent completion and report status.
 
@@ -266,7 +227,7 @@ When all agents complete, render the final table and summary.
 
 ---
 
-## Phase 6: Final Verification
+## Phase 5: Final Verification
 
 **Goal**: Verify the full plan was executed correctly.
 
@@ -327,10 +288,7 @@ CRITICAL findings must be fixed before marking complete. IMPORTANT findings are 
 
 ## Error Handling
 
-- **Preflight hard fail**: Stop execution before agent launch. Provide explicit remediation steps
 - **Agent fails**: Log failure, continue other agents. Report in final summary
-- **Permission denied in don't-ask mode**: Attempt only reasonable alternatives; if required capability remains blocked, stop and explain why permission is essential
-- **Execution stopped by PreToolUse hook**: Report the hook stop reason and switch to sequential fallback when possible
 - **Plan file not found**: Inform user, suggest running `/ac:plan` first
 - **No independent steps found**: Fall back to sequential execution
 - **Not a git repo**: Fall back to sequential execution

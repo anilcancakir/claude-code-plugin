@@ -158,7 +158,6 @@ options:
 1. Invoke `ac:execute` skill with the plan file path
 2. ac:execute will:
    - Parse plan into work units
-   - Run reliability preflight
    - Launch parallel background agents or sequential agents
    - Track progress and report completion
 3. Monitor execution:
