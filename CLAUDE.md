@@ -47,6 +47,15 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── references/   # Deep-dive: hierarchy, color, mobile
 │   │   ├── README.md
 │   │   └── LICENSE
+│   ├── designer/                 # Stitch UI design orchestrator plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/
+│   │   │   └── designer/
+│   │   │       ├── SKILL.md      # Stitch MCP orchestrator (334 lines)
+│   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI
+│   │   ├── README.md
+│   │   └── LICENSE
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
@@ -126,6 +135,9 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 
 ### frontend-design plugin
 - `frontend-design` (Sonnet) — Production-grade UI for web and mobile: design systems (spacing/type/shadow/color), visual hierarchy, distinctive aesthetics, mobile patterns. Has `references/` for hierarchy, color system, and mobile components
+
+### designer plugin
+- `designer` (Sonnet) — Stitch UI design orchestrator: project setup, design foundation extraction, Gemini-optimized prompts with Refactoring UI principles, multi-page iteration. Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup). Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema
 
 ### dart-lsp plugin
 - LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.

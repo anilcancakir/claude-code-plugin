@@ -1,0 +1,8 @@
+{
+    "name": "designer",
+    "description": "Stitch UI design orchestrator — manages design projects with Refactoring UI principles and Gemini-optimized prompts via Google Stitch MCP.",
+    "author": {
+        "name": "Anilcan Cakir",
+        "email": "anilcan.cakir@gmail.com"
+    }
+}
