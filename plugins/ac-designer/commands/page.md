@@ -77,11 +77,11 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
 **Actions**:
 
 1. If user provides a visual reference (screenshot, sketch, mockup):
-   - **Pasted image (no file path)** — Claude already sees the image in this context:
-     - For basic review: describe the visual reference's design language inline — colors, layout, component styles. Merge into the generation prompt
-     - For detailed design tokens: call `mcp__gemini-cli__ask-gemini` with: `Analyze this UI screenshot for design tokens: list all colors with hex values, typography (family, sizes, weights), spacing scale, border radius, shadows, and component styles.` Merge findings into the generation prompt
-   - **File path provided**: Spawn ac:gemini-vision subagent with the file path for detailed analysis — merge result into generation prompt
-   - **If gemini-cli MCP unavailable**: Analyze inline with Claude — describe visual design language from the visible image
+
+   **CRITICAL routing rule**: Pasted images exist only in Claude's parent context (base64 in-memory). They CANNOT be forwarded to subagents or MCP tools — the image data is lost. Only Claude inline can see pasted images.
+
+   - **Pasted image (no file path)** — analyze inline with Claude only. Do NOT spawn ac:gemini-vision (loses image). Do NOT call mcp__gemini-cli__ask-gemini (cannot receive image). Claude describes: colors with hex values, layout structure, typography, spacing, border radius, shadows, component styles. Merge into the generation prompt
+   - **File path provided**: Spawn ac:gemini-vision subagent with the file path for detailed analysis — or call `mcp__gemini-cli__ask-gemini` with `@filepath` syntax. Merge result into generation prompt
    - After visual analysis (any path): invoke the **Stitch Web Bridge** procedure from prompt-engine — save enhanced prompt to `/tmp/stitch-prompt-{page-name}.md`, present Manual (upload to stitch.withgoogle.com) / Auto (text-only) options
 2. Run the **Prompt Enhancement Pipeline** (Steps 1-7 from prompt-engine):
    - Step 1 (Assess Input): Evaluate page description for missing elements
@@ -152,7 +152,7 @@ Compatible agents (soft dependency — graceful fallback when absent):
 | gemini-vision | `ac:gemini-vision` | Phase 3, Step 1 | File-based visual analysis (video, multi-image). For pasted images: parent analyzes inline or calls gemini-cli MCP directly |
 
 If ac:explore is unavailable, skip codebase context injection — CODEBASE CONTEXT block is omitted from the prompt, and **Consistency Check** is skipped.
-If ac:gemini-vision is unavailable, skip subagent spawn — analyze pasted images inline with Claude, or call `mcp__gemini-cli__ask-gemini` directly if gemini-cli MCP is available. The **Stitch Web Bridge** manual path still supports image upload directly in the Stitch web UI.
+If ac:gemini-vision is unavailable, skip subagent spawn — analyze file-path images via `mcp__gemini-cli__ask-gemini` with `@filepath` syntax if gemini-cli MCP is available. For pasted images: always analyze inline with Claude (subagents and MCP tools cannot see pasted images). The **Stitch Web Bridge** manual path still supports image upload directly in the Stitch web UI.
 
 ---
 

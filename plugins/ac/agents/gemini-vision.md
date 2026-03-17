@@ -1,7 +1,7 @@
 ---
 name: gemini-vision
 description: |
-  Use for file-based visual analysis — video recordings, multi-image comparison, large image directories. Do NOT spawn for pasted images or basic screenshot review — Claude can analyze those inline in parent context.
+  ONLY for file-path-based visual analysis — video recordings, multi-image comparison, large image directories. NEVER spawn for pasted images — pasted image data is base64 in parent memory, it CANNOT be forwarded to subagents or MCP tools. Pasted images must be analyzed inline by Claude in parent context.
   <example>
   Context: User provides a video recording (file path) of their app for UX review
   user: "Here's a screen recording of the onboarding flow — what UX issues do you see?"
