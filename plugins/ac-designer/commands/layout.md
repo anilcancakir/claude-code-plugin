@@ -12,7 +12,7 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
 
 ## Core Principles
 
-- **DESIGN.md is the consistency contract**: Every layout prompt includes the full design system block from DESIGN.md — this is how layouts stay visually coherent without `generate_variants`
+- **DESIGN.md is the consistency contract**: Every layout prompt includes the DESIGN SYSTEM BLOCK section from `.stitch/DESIGN.md` copied verbatim — this ensures Gemini receives the exact same token constraints on every generation
 - **Pro model for layouts**: Layouts always use GEMINI_3_PRO — structural decisions need deeper reasoning
 - **Chrome first, content later**: Layout shells define navigation structure and chrome elements; content areas are placeholders
 - **One layout at a time**: Generate, review, approve, then move to the next — never batch-generate without user checkpoint
@@ -73,7 +73,7 @@ For each layout in the approved plan, execute this sequence:
 1. Load `.stitch/DESIGN.md` for design system context
 2. Run the **Prompt Enhancement Pipeline** (Steps 1-6 from prompt-engine SKILL.md) to build the generation prompt:
    - Layout-specific prompt emphasis: navigation structure, chrome elements (header, tab bar, sidebar, FAB), content area as placeholder region, responsive behavior
-   - MUST include the full DESIGN SYSTEM block from DESIGN.md — this is the consistency mechanism
+   - MUST include the DESIGN SYSTEM BLOCK section — copy it verbatim from `.stitch/DESIGN.md` between the vibe line and PAGE STRUCTURE
    - PAGE STRUCTURE section should describe chrome elements with specific dimensions and positions, and a clearly marked content placeholder area
    - MUST NOT section should include: "Do not fill the content area with real content — use a single placeholder card or empty state"
 3. Check if user has provided a visual reference (screenshot, sketch, mockup):

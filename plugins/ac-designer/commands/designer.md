@@ -19,7 +19,7 @@ Load the baton schema for baton file format:
 - **Conductor, not duplicator**: Reference sub-commands (`/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`) by name — never inline their workflows
 - **User approval between pages**: Never autonomously proceed to the next page — present, review, approve, then continue
 - **Baton is the contract**: Every page generation starts with a `.stitch/next-prompt.md` baton that the user reviews before generation
-- **DESIGN SYSTEM block is mandatory**: Every baton prompt includes the full design system from DESIGN.md — this is the visual consistency mechanism
+- **DESIGN SYSTEM BLOCK required**: Every baton prompt includes the DESIGN SYSTEM BLOCK section from `.stitch/DESIGN.md` copied verbatim — this is the visual consistency mechanism
 - **Single pipeline per page**: Run the **Prompt Enhancement Pipeline** exactly once per page generation — no duplicate runs
 
 ---
@@ -86,7 +86,7 @@ For each pending page in the approved roadmap order:
      ---
      ```
    - Body: run the **Prompt Enhancement Pipeline** (Steps 1-7 from prompt-engine) to build the full enhanced prompt:
-     - MUST include the DESIGN SYSTEM block from `.stitch/DESIGN.md` verbatim
+     - MUST include the DESIGN SYSTEM BLOCK section — copy it verbatim from `.stitch/DESIGN.md`
      - MUST include page-specific content: page type, sections, components derived from the SITE.md entry and user context
      - Include layout reference via Step 7 if a matching layout exists in metadata.json
      - If codebase exists at project root: run Step 2b (Codebase Context Injection) via ac:explore agent to extract UI-relevant context for this specific page
@@ -127,7 +127,7 @@ For each pending page in the approved roadmap order:
 
 - **Asset Download Procedure** is MANDATORY after every `generate_screen_from_text` or `edit_screens` call — do NOT present results until files are saved locally
 - User approval is required between pages — do NOT autonomously proceed to the next page
-- Baton MUST include the DESIGN SYSTEM block from DESIGN.md — generation without design tokens produces inconsistent results
+- Baton MUST include the DESIGN SYSTEM BLOCK section copied verbatim from `.stitch/DESIGN.md` — generation without exact token constraints produces inconsistent results
 - **Prompt Enhancement Pipeline** runs exactly once per page generation — no duplicate runs
 - Do NOT inline workflows from `/ac-designer:init` or `/ac-designer:layout` — reference them by command path
 - Do NOT dump raw source code into Stitch prompts — use the structured CODEBASE CONTEXT block from Step 2b only
@@ -170,10 +170,10 @@ Compatible agents (soft dependency — graceful fallback when absent):
 | Agent | `subagent_type` | Used In | Purpose |
 |-------|-----------------|---------|---------|
 | explore | `ac:explore` | Phase 3, Step 1 (baton building) | Codebase context extraction for CODEBASE CONTEXT injection in enhanced prompts |
-| gemini-vision | `ac:gemini-vision` | Phase 3, Step 3 (screenshot review) | Screenshot analysis for visual import when user provides reference images |
+| gemini-vision | `ac:gemini-vision` | Phase 3, Step 3 (screenshot review) | file-based visual analysis (video, multi-image). Pasted screenshots analyzed inline by parent or via direct gemini-cli MCP call |
 
 If ac:explore is unavailable, skip codebase context injection — omit the CODEBASE CONTEXT block from baton prompts. Design proceeds with DESIGN.md tokens and user-provided context only.
-If ac:gemini-vision is unavailable, skip visual analysis — rely on user's verbal feedback for iteration.
+If ac:gemini-vision is unavailable, skip subagent spawn — analyze pasted images inline with Claude or call `mcp__gemini-cli__ask-gemini` directly if gemini-cli MCP is available.
 
 ---
 

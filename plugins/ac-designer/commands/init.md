@@ -104,7 +104,12 @@ Determine the generation path based on available inputs. Paths are additive — 
 **Path A — Screenshot available** (user provides screenshot, mockup, or visual reference):
 
 1. **Stitch Web Bridge** (best quality): Invoke the **Stitch Web Bridge** procedure from prompt-engine — save enhanced prompt to `/tmp/stitch-prompt-foundation.md`, present Manual (upload to stitch.withgoogle.com) / Auto (text-only) options
-2. **+ Gemini vision augmentation** (if gemini-cli MCP available): Spawn ac:gemini-vision agent with: `"CONTEXT: Initializing design foundation from screenshot. GOAL: Describe the visual design in detail — colors, typography, layout structure, component styles, spacing, shadows. DOWNSTREAM: Enriching Stitch generation prompt. REQUEST: Provide a detailed text description of this screenshot's visual design language."` — merge the visual description into the generation prompt as additional context. This augments Path A, not a separate fallback
+2. **+ Visual analysis routing** — analyze the visual reference and merge findings into the generation prompt:
+   - **Pasted image (no file path)** — Claude already sees the image in this context:
+     - For basic review: describe colors, layout, typography, component styles inline — merge into generation prompt
+     - For detailed design token extraction (recommended for init foundation): `Write` image to `/tmp/stitch-vision-foundation.png` if needed, then call `mcp__gemini-cli__ask-gemini` with: `Analyze this UI screenshot for design tokens: list all colors with hex values, typography (family, sizes, weights), spacing scale, border radius values, shadows, and component styles. Be precise and exhaustive.` — merge Gemini's response into generation prompt
+   - **File path provided** (user gives a path like `~/Downloads/screen.png`): Spawn ac:gemini-vision subagent with the file path for detailed analysis — merge result into generation prompt
+   - **If gemini-cli MCP unavailable**: Analyze pasted images inline with Claude — describe visual design language from the visible image
 
 **Path B — No screenshot** (greenfield or text-only):
 
@@ -121,13 +126,8 @@ Determine the generation path based on available inputs. Paths are additive — 
    - `deviceType`: from user preference or project context (MOBILE for Flutter/mobile apps, DESKTOP for web apps, AGNOSTIC if unclear)
 3. Run **Asset Download Procedure** from prompt-engine — saves HTML + screenshot to `.stitch/designs/pages/foundation.*`
 4. Run **Consistency Check** from prompt-engine — only if Step 2b (codebase analysis) produced a CODEBASE CONTEXT block. Skip for greenfield projects
-5. Run **Design Token Extraction** from prompt-engine on the downloaded HTML — produces the 5-section token set:
-   - Visual Theme & Atmosphere
-   - Color Palette & Roles
-   - Typography Rules
-   - Component Stylings
-   - Layout Principles
-6. Write `.stitch/DESIGN.md` with the extracted tokens
+5. Run **Design Token Extraction** from prompt-engine on the downloaded HTML — load `references/design-tokens-v2.md` for extraction rules and output format. Produces DESIGN.md with two sections: DESIGN SYSTEM BLOCK (verbatim-injectable prompt fragment) and Token Reference (structured token table).
+6. Write `.stitch/DESIGN.md` with the extracted tokens in v2 format — two sections: `## DESIGN SYSTEM BLOCK` and `## Token Reference`.
 7. Update `.stitch/metadata.json` screens map with the foundation screen entry
 8. Present screenshot to user via `Read` (after download is confirmed):
    - "Here is your design foundation. Review the visual direction and extracted design tokens."
@@ -144,7 +144,7 @@ Determine the generation path based on available inputs. Paths are additive — 
 
 1. Verify all required files exist:
    - `.stitch/metadata.json` — has `projectId` and `name` fields
-   - `.stitch/DESIGN.md` — has all 5 sections (Visual Theme, Color Palette, Typography, Component Stylings, Layout Principles)
+   - `.stitch/DESIGN.md` — has `## DESIGN SYSTEM BLOCK` section and `## Token Reference` section
    - `.stitch/SITE.md` — has Vision, Sitemap, and Roadmap sections
    - `.stitch/designs/layouts/` — directory exists
    - `.stitch/designs/pages/` — directory exists
@@ -169,10 +169,10 @@ Compatible agents (soft dependency — graceful fallback when absent):
 | Agent | `subagent_type` | Used In | Purpose |
 |-------|-----------------|---------|---------|
 | explore | `ac:explore` | Phase 3, Path B | Codebase theme tokens, routes, components for CODEBASE CONTEXT injection |
-| gemini-vision | `ac:gemini-vision` | Phase 3, Path A | Screenshot analysis for visual description enrichment |
+| gemini-vision | `ac:gemini-vision` | Phase 3, Path A | File-based visual analysis (video, multi-image). For pasted images: parent analyzes inline or calls gemini-cli MCP directly |
 
 If ac:explore is unavailable, skip codebase analysis — fall back to user interview for design direction.
-If ac:gemini-vision is unavailable, skip vision augmentation — the **Stitch Web Bridge** manual path still supports image upload directly in the Stitch web UI.
+If ac:gemini-vision is unavailable, skip subagent spawn — analyze pasted images inline with Claude, or call `mcp__gemini-cli__ask-gemini` directly if gemini-cli MCP is available. The **Stitch Web Bridge** manual path still supports image upload directly in the Stitch web UI.
 
 ---
 

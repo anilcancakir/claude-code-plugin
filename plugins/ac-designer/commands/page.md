@@ -13,7 +13,7 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
 ## Core Principles
 
 - **Strategy Selection drives everything**: The generation approach depends entirely on whether a layout exists and whether the page is new or existing — get this right before touching Stitch
-- **DESIGN.md is the consistency contract**: Every page prompt includes the full design system block — this is how pages stay visually coherent across the project
+- **DESIGN.md is the consistency contract**: Every page prompt includes the DESIGN SYSTEM BLOCK section from `.stitch/DESIGN.md` copied verbatim — Gemini receives the exact same token constraints on every page generation
 - **Layout Reference preserves chrome**: When a layout exists, the prompt describes ONLY content area changes — layout shell elements (header, tab bar, nav) come from the layout HTML reference
 - **Pro for critical, Flash for regular**: GEMINI_3_PRO for hero/landing/dashboard pages, GEMINI_3_FLASH for everything else and all edits
 - **Reference, don't duplicate**: Procedures from prompt-engine are invoked by name, not re-implemented here
@@ -77,10 +77,16 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
 
 **Actions**:
 
-1. If user provides a visual reference (screenshot, sketch, mockup): invoke the **Stitch Web Bridge** procedure from prompt-engine — save enhanced prompt to `/tmp/stitch-prompt-{page-name}.md`, present Manual (upload to stitch.withgoogle.com) / Auto (text-only) options
+1. If user provides a visual reference (screenshot, sketch, mockup):
+   - **Pasted image (no file path)** — Claude already sees the image in this context:
+     - For basic review: describe the visual reference's design language inline — colors, layout, component styles. Merge into the generation prompt
+     - For detailed design tokens: call `mcp__gemini-cli__ask-gemini` with: `Analyze this UI screenshot for design tokens: list all colors with hex values, typography (family, sizes, weights), spacing scale, border radius, shadows, and component styles.` Merge findings into the generation prompt
+   - **File path provided**: Spawn ac:gemini-vision subagent with the file path for detailed analysis — merge result into generation prompt
+   - **If gemini-cli MCP unavailable**: Analyze inline with Claude — describe visual design language from the visible image
+   - After visual analysis (any path): invoke the **Stitch Web Bridge** procedure from prompt-engine — save enhanced prompt to `/tmp/stitch-prompt-{page-name}.md`, present Manual (upload to stitch.withgoogle.com) / Auto (text-only) options
 2. Run the **Prompt Enhancement Pipeline** (Steps 1-7 from prompt-engine):
    - Step 1 (Assess Input): Evaluate page description for missing elements
-   - Step 2 (Load Design Context): Inject full DESIGN.md design system block
+   - Step 2 (Load Design Context): Locate the DESIGN SYSTEM BLOCK section in `.stitch/DESIGN.md` for verbatim copy in Step 6
    - Step 2b (Codebase Context Injection): If source code exists at project root, spawn ac:explore for routes, models, components relevant to this page. Skip for greenfield projects
    - Steps 3-6 (Refine, Inject Principles, Optimize, Format): Build the complete enhanced prompt
    - Step 7 (Layout Reference Injection): If strategy is "layout-referenced", inject the layout HTML reference block after CRITICAL REMINDER. Skip for "full generation" strategy
@@ -141,10 +147,10 @@ Compatible agents (soft dependency — graceful fallback when absent):
 | Agent | `subagent_type` | Used In | Purpose |
 |-------|-----------------|---------|---------|
 | explore | `ac:explore` | Phase 3, Step 2b | Codebase context for routes, models, components — feeds CODEBASE CONTEXT injection |
-| gemini-vision | `ac:gemini-vision` | Phase 3, Step 1 | Screenshot analysis for visual reference enrichment |
+| gemini-vision | `ac:gemini-vision` | Phase 3, Step 1 | File-based visual analysis (video, multi-image). For pasted images: parent analyzes inline or calls gemini-cli MCP directly |
 
 If ac:explore is unavailable, skip codebase context injection — CODEBASE CONTEXT block is omitted from the prompt, and **Consistency Check** is skipped.
-If ac:gemini-vision is unavailable, skip vision augmentation — the **Stitch Web Bridge** manual path still supports image upload directly in the Stitch web UI.
+If ac:gemini-vision is unavailable, skip subagent spawn — analyze pasted images inline with Claude, or call `mcp__gemini-cli__ask-gemini` directly if gemini-cli MCP is available. The **Stitch Web Bridge** manual path still supports image upload directly in the Stitch web UI.
 
 ---
 
