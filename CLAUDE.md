@@ -50,7 +50,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   ├── ac-designer/              # Stitch UI design orchestrator plugin (command-based)
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/             # Coming Phase 2-3: init, layout, page, designer
+│   │   ├── commands/             # init, layout (+ page, designer in Phase 3)
 │   │   ├── skills/
 │   │   │   └── prompt-engine/    # Shared prompt enhancement (not user-invocable)
 │   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, Web Bridge
