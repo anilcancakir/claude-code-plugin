@@ -50,11 +50,11 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   ├── ac-designer/              # Stitch UI design orchestrator plugin (command-based)
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/             # init, layout, page, designer
+│   │   ├── commands/             # init, layout, page, designer, audit
 │   │   ├── skills/
 │   │   │   └── prompt-engine/    # Shared prompt enhancement (not user-invocable)
-│   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, Web Bridge
-│   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI, baton schema
+│   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, drift detection, Web Bridge, stitch-skills reference
+│   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI, baton schema, DESIGN.md v2, drift detection, stitch-skills
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
@@ -138,8 +138,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `frontend-design` (Sonnet) — Production-grade UI for web and mobile: design systems (spacing/type/shadow/color), visual hierarchy, distinctive aesthetics, mobile patterns. Has `references/` for hierarchy, color system, and mobile components
 
 ### ac-designer plugin
-- `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, design token extraction, Stitch Web Bridge. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema
-- Commands: `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`
+- `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, drift detection, design token extraction, Stitch Web Bridge, stitch-skills reference. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema, DESIGN.md v2 format, drift detection, and embedded Google stitch-skills
+- Commands: `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`, `/ac-designer:audit`
 - Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup) (official, 8 tools at `stitch.googleapis.com/mcp`)
 
 ### dart-lsp plugin

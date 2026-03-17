@@ -25,10 +25,11 @@ claude plugin add ./plugins/ac-designer
 
 | Command | Description | Status |
 |---------|-------------|--------|
-| `/ac-designer:init` | Initialize Stitch project — create or connect project, generate design foundation, build DESIGN.md | Active |
-| `/ac-designer:layout` | Generate layout shells — determines needed layouts from codebase or interview, generates with DESIGN.md injection | Active |
-| `/ac-designer:page` | Generate a single page — strategy selection (full or layout-referenced), prompt enhancement, consistency check, iteration | Active |
-| `/ac-designer:designer` | Full orchestrator — auto-detects state, directs missing phases, generates all pages with baton-driven iteration | Active |
+| `/ac-designer:init` | Initialize Stitch project — create or connect project, generate design foundation, build DESIGN.md with DESIGN SYSTEM BLOCK + Token Reference | Active |
+| `/ac-designer:layout` | Generate layout shells — determines needed layouts from codebase or interview, generates with DESIGN.md injection and STYLE ANCHOR | Active |
+| `/ac-designer:page` | Generate a single page — strategy selection (full or layout-referenced), prompt enhancement, consistency check, drift detection, iteration | Active |
+| `/ac-designer:designer` | Full orchestrator — auto-detects state, directs missing phases, generates all pages with baton-driven iteration and quota display | Active |
+| `/ac-designer:audit` | Cross-page consistency audit — extracts tokens from all page HTML, compares against DESIGN.md Token Reference, outputs drift matrix with category summary | Active |
 
 ## Shared Skill
 
@@ -43,17 +44,26 @@ claude plugin add ./plugins/ac-designer
 | `references/gemini-prompt-rules.md` | Gemini-targeted prompt optimization rules |
 | `references/refactoring-ui-injection.md` | Refactoring UI design tokens and principles |
 | `references/baton-schema.md` | Multi-page iteration state tracking format |
+| `references/prompt-pipeline.md` | 8-step prompt enhancement pipeline (DESIGN.md injection, codebase context, layout reference) |
+| `references/asset-procedures.md` | Asset download procedure and Stitch Web Bridge |
+| `references/design-tokens-v2.md` | DESIGN.md v2 format spec — DESIGN SYSTEM BLOCK + Token Reference extraction rules |
+| `references/drift-detection.md` | Per-page and cross-page token drift detection procedures |
+| `references/stitch-skills.md` | Google stitch-skills patterns — version-pinned embedding of design-md, enhance-prompt, stitch-loop, stitch-design |
 
 ## Key Features
 
 - **Codebase-aware design** — ac:explore scans routes, models, widgets, and theme before each page generation, injecting structured context into Stitch prompts
 - **Layout-referenced generation** — injects layout shell constraints (header, tab bar, FAB) into every page prompt via DESIGN.md, keeping chrome elements pixel-identical across pages
+- **DESIGN.md v2** — prompt-fragment format with DESIGN SYSTEM BLOCK (verbatim-injectable) and Token Reference (structured tables for drift detection)
+- **Drift detection** — per-page token comparison against DESIGN.md Token Reference after every generation; cross-page audit via `/ac-designer:audit`. Non-blocking: warns and lets user decide
+- **STYLE ANCHOR** — text directive injected into layout/page/designer prompts when a foundation screen exists, reinforcing DESIGN SYSTEM BLOCK consistency
+- **Embedded stitch-skills reference** — version-pinned Google stitch-skills patterns (design-md, enhance-prompt, stitch-loop, stitch-design) available as on-demand reference
 - Prompt enhancement pipeline with Refactoring UI design tokens (spacing, type, shadow, color scales)
 - Gemini-targeted prompt formatting (MUST/MUST NOT imperatives, hex-precise colors, section ordering)
-- Model routing: GEMINI_3_PRO for layouts and critical pages, GEMINI_3_FLASH for regular pages and variants
+- Model routing: GEMINI_3_PRO for all generation; GEMINI_3_FLASH for in-place edits
 - Mandatory asset download — HTML + screenshots saved locally after every generation or edit
 - Post-generation consistency check — verifies design matches codebase reality (model fields, navigation, states)
-- State management via `.stitch/` directory (metadata.json, DESIGN.md, SITE.md, baton files)
+- State management via `.stitch/` directory (metadata.json, DESIGN.md, SITE.md, baton files, designs/)
 
 ## Note on Stitch Web Bridge
 

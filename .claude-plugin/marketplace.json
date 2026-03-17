@@ -85,8 +85,8 @@
         },
         {
             "name": "ac-designer",
-            "description": "Stitch UI design orchestrator — command-based plugin with init, layout, page, and designer commands. Uses Refactoring UI principles, Gemini-optimized prompts, and codebase-aware design via Google Stitch MCP.",
-            "version": "1.0.1",
+            "description": "Stitch UI design orchestrator — 5 commands (init, layout, page, designer, audit) with DESIGN.md v2, drift detection, STYLE ANCHOR visual anchoring, and embedded Google stitch-skills reference.",
+            "version": "1.1.0",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
