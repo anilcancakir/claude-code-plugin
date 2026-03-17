@@ -15,7 +15,7 @@ description: |
   <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
   </example>
 model: sonnet
-tools: Read, Grep, Glob, LS, mcp__gemini-mcp-tool__ask-gemini
+tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: yellow
 ---
@@ -70,9 +70,9 @@ Check if plan is structured for parallel execution via `ac:execute`:
 
 ### 6. Gemini Second Eye (Optional)
 
-When `mcp__gemini-mcp-tool__ask-gemini` tool is available, send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own analysis and merge any unique gaps into the report with `[Gemini]` prefix.
+When `mcp__gemini-cli__ask-gemini` tool is available, send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own analysis and merge any unique gaps into the report with `[Gemini]` prefix.
 
-If `mcp__gemini-mcp-tool__ask-gemini` is not available: skip this section entirely, produce no output for it.
+If `mcp__gemini-cli__ask-gemini` is not available: skip this section entirely, produce no output for it.
 
 ---
 

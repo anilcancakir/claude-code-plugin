@@ -370,7 +370,7 @@ Version-aware library and framework documentation lookup. When installed, the **
 claude mcp add context7 -- npx -y @upstash/context7-mcp
 ```
 
-### gemini-mcp-tool — Gemini CLI Bridge
+### gemini-cli — Gemini CLI Bridge
 
 Bridges Claude Code to Google Gemini's unique capabilities. Three tools:
 
@@ -382,7 +382,7 @@ Used by **gemini-vision**, **plan-analysis** (second-eye gap analysis), and **li
 
 ```bash
 npm install -g gemini-mcp-tool
-claude mcp add gemini-mcp-tool -- gemini-mcp-tool
+claude mcp add gemini-cli -- gemini-mcp-tool
 ```
 
 ### skillsmp-mcp-server — Skill Marketplace

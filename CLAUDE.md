@@ -117,7 +117,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
-| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | Multimodal analysis — screenshots, video, design mockups via Gemini | Read, Glob, LS, gemini-mcp-tool |
+| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | Multimodal analysis — screenshots, video, design mockups via Gemini | Read, Glob, LS, gemini-cli |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -126,7 +126,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 ### ac plugin
 - `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
-- MCP: `gemini-mcp-tool` (optional, user-installed) — Gemini CLI bridge for multimodal, large context, brainstorm
+- MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm
 
 ### github-cli plugin
 - `github-cli` (Sonnet) — Comprehensive gh CLI reference: issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), jq patterns, scripting

@@ -10,7 +10,7 @@
         {
             "name": "ac",
             "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents with customizable model routing.",
-            "version": "2.15.1",
+            "version": "2.15.2",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
@@ -86,7 +86,7 @@
         {
             "name": "ac-designer",
             "description": "Stitch UI design orchestrator — command-based plugin with init, layout, page, and designer commands. Uses Refactoring UI principles, Gemini-optimized prompts, and codebase-aware design via Google Stitch MCP.",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"

@@ -19,7 +19,7 @@ claude plugin add ./plugins/ac-designer
 
 - **ac plugin** (soft dependency) — provides `ac:explore` for codebase scanning (routes, models, widgets, theme) and `ac:gemini-vision` for screenshot analysis. The plugin works without it but loses codebase-aware design capabilities.
 
-- **gemini-mcp-tool** (optional) — enables Gemini vision for design import from screenshots. Useful for recreating existing designs in Stitch.
+- **gemini-cli** (optional, npm: gemini-mcp-tool) — enables Gemini vision for design import from screenshots. Useful for recreating existing designs in Stitch.
 
 ## Commands
 

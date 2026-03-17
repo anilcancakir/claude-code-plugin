@@ -104,7 +104,7 @@ Determine the generation path based on available inputs. Paths are additive — 
 **Path A — Screenshot available** (user provides screenshot, mockup, or visual reference):
 
 1. **Stitch Web Bridge** (best quality): Invoke the **Stitch Web Bridge** procedure from prompt-engine — save enhanced prompt to `/tmp/stitch-prompt-foundation.md`, present Manual (upload to stitch.withgoogle.com) / Auto (text-only) options
-2. **+ Gemini vision augmentation** (if gemini-mcp-tool available): Spawn ac:gemini-vision agent with: `"CONTEXT: Initializing design foundation from screenshot. GOAL: Describe the visual design in detail — colors, typography, layout structure, component styles, spacing, shadows. DOWNSTREAM: Enriching Stitch generation prompt. REQUEST: Provide a detailed text description of this screenshot's visual design language."` — merge the visual description into the generation prompt as additional context. This augments Path A, not a separate fallback
+2. **+ Gemini vision augmentation** (if gemini-cli MCP available): Spawn ac:gemini-vision agent with: `"CONTEXT: Initializing design foundation from screenshot. GOAL: Describe the visual design in detail — colors, typography, layout structure, component styles, spacing, shadows. DOWNSTREAM: Enriching Stitch generation prompt. REQUEST: Provide a detailed text description of this screenshot's visual design language."` — merge the visual description into the generation prompt as additional context. This augments Path A, not a separate fallback
 
 **Path B — No screenshot** (greenfield or text-only):
 

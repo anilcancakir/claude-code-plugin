@@ -61,7 +61,7 @@ When in doubt between plan and deep, use ac:plan — it handles both building an
 
 BLOCKING — Do NOT use Grep, Glob, Read, or WebSearch directly. Delegate all research to agents:
 - **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, structure, relationships)
-- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API references, best practices (context7 MCP → WebSearch fallback). For large context analysis, delegate to Gemini via gemini-mcp-tool when installed
+- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API references, best practices (context7 MCP → WebSearch fallback). For large context analysis, delegate to Gemini via gemini-cli MCP when installed
 
 CRITICAL: Always use the `ac:` prefixed `subagent_type` values. `"Explore"` (builtin) and `"explore"` route to different agents with different tools and models.
 
@@ -125,7 +125,7 @@ Load relevant skills before starting any task:
 | Server | Capability |
 |--------|------------|
 | `context7` | Live framework docs — version-aware library reference (user-installed) |
-| `gemini-mcp-tool` | Gemini CLI bridge — multimodal analysis, large context, brainstorm |
+| `gemini-cli` | Gemini CLI bridge — multimodal analysis, large context, brainstorm |
 | `<server>` | <one-line capability — infer from command/args if no description> |
 ```
 

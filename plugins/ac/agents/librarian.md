@@ -15,7 +15,7 @@ description: |
   <commentary>Triggered by need for external library setup guidance. Librarian finds official docs with version-specific information.</commentary>
   </example>
 model: sonnet
-tools: Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__gemini-mcp-tool__ask-gemini
+tools: Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: blue
 ---
@@ -94,7 +94,7 @@ For every claim, cite the source:
 
 When a research request involves analyzing large files or entire codebases that exceed typical context limits (~50k tokens), delegate to Gemini's 1M token context window.
 
-**Prerequisite**: Requires gemini-mcp-tool MCP server. Install via `npm install -g gemini-mcp-tool` then `claude mcp add gemini-mcp-tool -- gemini-mcp-tool`.
+**Prerequisite**: Requires gemini-cli MCP server (npm: gemini-mcp-tool). Install via `npm install -g gemini-mcp-tool` then configure in Claude Code.
 
 **When to delegate**:
 - "Analyze this entire codebase/directory" requests
@@ -103,7 +103,7 @@ When a research request involves analyzing large files or entire codebases that 
 - Any request where the combined file content exceeds what you can process in one pass
 
 **How to delegate**:
-1. Call `mcp__gemini-mcp-tool__ask-gemini` with a prompt using `@` syntax for file references:
+1. Call `mcp__gemini-cli__ask-gemini` with a prompt using `@` syntax for file references:
    - Single file: `@path/to/large-file.ts analyze the architecture`
    - Directory: `@src/**/*.ts find all API endpoints and their dependencies`
    - Multiple files: `@file1.ts @file2.ts compare these implementations`
@@ -115,7 +115,7 @@ When a research request involves analyzing large files or entire codebases that 
 - Gemini → for large codebase/file analysis exceeding context limits
 - WebSearch → for web resources, blog posts, Stack Overflow
 
-**If gemini-mcp-tool is not installed**: Continue with standard WebSearch/WebFetch flow. Do not report an error — simply use the available tools.
+**If gemini-cli is not installed**: Continue with standard WebSearch/WebFetch flow. Do not report an error — simply use the available tools.
 
 ## Output Guidance
 
