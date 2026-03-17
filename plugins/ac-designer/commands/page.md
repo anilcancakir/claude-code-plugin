@@ -95,21 +95,22 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
    - **In-place edit**: `edit_screens` with `projectId`, `selectedScreenIds` containing the page's screenId, and the change prompt. Use GEMINI_3_FLASH
 4. Run **Asset Download Procedure** from prompt-engine — saves HTML + PNG to `.stitch/designs/pages/{page-name}.html` and `.stitch/designs/pages/{page-name}.png`
 5. Run **Consistency Check** from prompt-engine — only if Step 2b produced a CODEBASE CONTEXT block. Skip for greenfield projects. Report mismatches as warnings — user decides whether to address them
-6. Present screenshot to user via `Read` on the downloaded PNG
-7. **Iteration loop**: Ask user for feedback:
+6. Run **Drift Detection** from prompt-engine (Per-Page procedure) on the generated page HTML at `.stitch/designs/pages/{page-name}.html`, comparing against `.stitch/DESIGN.md` Token Reference. Non-blocking: present drift warnings to user. User decides whether to fix via `edit_screens` or accept as-is
+7. Present screenshot to user via `Read` on the downloaded PNG
+8. **Iteration loop**: Ask user for feedback:
    - "How does this page look?"
    - Options: "Approve" / "Request changes" / "Regenerate from scratch"
-   - **Request changes**: Gather feedback → `edit_screens` with the page's screenId and change prompt (GEMINI_3_FLASH) → re-run **Asset Download Procedure** → re-present screenshot → loop
+   - **Request changes**: Gather feedback → `edit_screens` with the page's screenId and change prompt (GEMINI_3_FLASH) → re-run **Asset Download Procedure** → re-run **Drift Detection** (Per-Page procedure) → re-present screenshot → loop
    - **Regenerate**: Return to step 2 with adjusted prompt
-   - **Approve**: Continue to step 8
-8. After approval, update `metadata.json` screens map with the page entry:
+   - **Approve**: Continue to step 9
+9. After approval, update `metadata.json` screens map with the page entry:
    - Screen ID from Stitch
    - `type: "page"`
    - `name`: page name slug
    - `layout`: layout name reference (if layout-referenced strategy was used, omit for full generation)
    - `files`: paths to HTML and PNG
    - `generationStrategy`: "full" | "layout-referenced" | "in-place-edit"
-9. Update `.stitch/SITE.md` sitemap — mark page as done: `- [x] /{page-name}`
+10. Update `.stitch/SITE.md` sitemap — mark page as done: `- [x] /{page-name}`
 
 ---
 
@@ -133,6 +134,7 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
    - Layout reference: {layout-name or 'none'}
    - Screenshot: .stitch/designs/pages/{page-name}.png
    - Consistency check: {passed / N warnings / skipped (greenfield)}
+   - Drift detection: {clean / N tokens drifting / skipped}
    ```
 4. Suggest next step:
    - If SITE.md has more pending pages: "Run `/ac-designer:page` for the next page ({next-page-name})"

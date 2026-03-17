@@ -71,6 +71,12 @@ Run after **Asset Download Procedure** if Step 2b produced a CODEBASE CONTEXT bl
 3. Report mismatches as **warnings** to the user — do NOT auto-fix or block the workflow
 4. The user decides whether to address mismatches via `edit_screens` or accept the design as-is
 
+## Drift Detection
+
+Compare generated HTML tokens against DESIGN.md Token Reference to detect color, typography, geometry, spacing, and shadow drift.
+
+Load `references/drift-detection.md` for the full procedure.
+
 ## Design Token Extraction
 
 Extract design tokens from downloaded screen HTML to build or update DESIGN.md.
@@ -96,4 +102,5 @@ Load these files from `references/` as needed during the enhancement pipeline:
 | `references/baton-schema.md` | Creating and validating baton files for multi-page iteration | Multi-page workflows |
 | `references/prompt-pipeline.md` | Full Prompt Enhancement Pipeline Steps 1-7 | Pipeline execution |
 | `references/asset-procedures.md` | Asset Download Procedure + Stitch Web Bridge | After generation |
+| `references/drift-detection.md` | Comparing generated HTML tokens against DESIGN.md Token Reference | Drift Detection |
 | `references/design-tokens-v2.md` | DESIGN.md v2 format spec + extraction rules | Token extraction, Design Token Extraction |

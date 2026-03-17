@@ -107,11 +107,12 @@ For each pending page in the approved roadmap order:
      - `deviceType`: from metadata.json
    - Run **Asset Download Procedure** from prompt-engine — saves HTML + PNG to `.stitch/designs/pages/{page-name}.html` and `.stitch/designs/pages/{page-name}.png`
    - Run **Consistency Check** from prompt-engine — only if Step 2b produced a CODEBASE CONTEXT block. Skip for greenfield projects
+   - Run **Drift Detection** from prompt-engine (Per-Page procedure) on the generated page HTML at `.stitch/designs/pages/{page-name}.html`, comparing against `.stitch/DESIGN.md` Token Reference. Non-blocking: present drift warnings to user alongside the screenshot
    - Present screenshot to user via `Read` on the downloaded PNG (only after Asset Download Procedure confirms files exist)
 
 4. **Iteration**: User reviews the generated page:
    - **Approve**: Continue to step 5
-   - **Request changes**: Gather feedback → `edit_screens` with the page's screenId and change prompt → re-run **Asset Download Procedure** → re-present screenshot → loop until approved
+   - **Request changes**: Gather feedback → `edit_screens` with the page's screenId and change prompt → re-run **Asset Download Procedure** → re-run **Drift Detection** from prompt-engine (Per-Page procedure) → re-present screenshot → loop until approved
    - **Regenerate**: Return to step 3 with adjusted prompt
 
 5. **Mark done**:
@@ -132,6 +133,7 @@ For each pending page in the approved roadmap order:
 - Do NOT inline workflows from `/ac-designer:init` or `/ac-designer:layout` — reference them by command path
 - Do NOT dump raw source code into Stitch prompts — use the structured CODEBASE CONTEXT block from Step 2b only
 - Do NOT present screenshots or proceed until **Asset Download Procedure** step 6 confirms files exist
+- **Drift Detection** is non-blocking — present token drift warnings but do NOT prevent page approval or block the workflow. User decides whether to fix via `edit_screens` or accept
 
 ---
 
