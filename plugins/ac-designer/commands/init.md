@@ -63,11 +63,9 @@ Load the prompt-engine skill for all procedures referenced in this command:
        "customColor": "#hex",
        "saturation": 3
      },
-     "proUsage": { "count": 0, "monthStart": "YYYY-MM" },
      "screens": {}
    }
    ```
-   Set `proUsage.monthStart` to the current month from conversation context (format `YYYY-MM`, e.g., `2026-03`). This tracks GEMINI_3_PRO usage for downstream quota enforcement.
 5. Create `.stitch/SITE.md`:
    ```markdown
    # [Project Title]
@@ -121,22 +119,16 @@ Determine the generation path based on available inputs. Paths are additive — 
 ### Generation
 
 1. Run **Prompt Enhancement Pipeline** (Steps 1-6 from prompt-engine) for the foundation screen — use all available context from the import strategy above
-2. **GEMINI_3_PRO Quota Check** — read `proUsage` from `.stitch/metadata.json` before generation:
-   - If `proUsage.monthStart` does not match the current month (from conversation context, format `YYYY-MM`): reset `proUsage.count` to 0 and update `monthStart` to current month
-   - If `proUsage.count >= 50`: switch `modelId` to GEMINI_3_FLASH and warn user: "GEMINI_3_PRO monthly limit reached. Switching to GEMINI_3_FLASH."
-   - If `proUsage.count >= 45`: warn user: "Approaching GEMINI_3_PRO monthly limit (~50). Consider using GEMINI_3_FLASH for non-critical screens." — proceed with GEMINI_3_PRO
-   - Otherwise: proceed with GEMINI_3_PRO silently
-3. `generate_screen_from_text` with:
+2. `generate_screen_from_text` with:
    - `projectId`: from metadata.json
    - `prompt`: the enhanced prompt from the pipeline
-   - `modelId`: GEMINI_3_PRO (foundation screen is critical — use pro model) — or GEMINI_3_FLASH if quota exceeded per step 2
+   - `modelId`: GEMINI_3_PRO (foundation screen is critical)
    - `deviceType`: from user preference or project context (MOBILE for Flutter/mobile apps, DESKTOP for web apps, AGNOSTIC if unclear)
-4. **Update proUsage** — if step 3 used GEMINI_3_PRO: increment `proUsage.count` by 1 in `.stitch/metadata.json` and write immediately
-5. Run **Asset Download Procedure** from prompt-engine — saves HTML + screenshot to `.stitch/designs/pages/foundation.*`
-6. Run **Consistency Check** from prompt-engine — only if Step 2b (codebase analysis) produced a CODEBASE CONTEXT block. Skip for greenfield projects
-7. Run **Design Token Extraction** from prompt-engine on the downloaded HTML — load `references/design-tokens-v2.md` for extraction rules and output format. Produces DESIGN.md with two sections: DESIGN SYSTEM BLOCK (verbatim-injectable prompt fragment) and Token Reference (structured token table).
-8. Write `.stitch/DESIGN.md` with the extracted tokens in v2 format — two sections: `## DESIGN SYSTEM BLOCK` and `## Token Reference`.
-9. **Store foundationScreen** in `.stitch/metadata.json` — used by downstream commands (layout.md, page.md, designer.md) as STYLE ANCHOR for text directives:
+3. Run **Asset Download Procedure** from prompt-engine — saves HTML + screenshot to `.stitch/designs/pages/foundation.*`
+4. Run **Consistency Check** from prompt-engine — only if Step 2b (codebase analysis) produced a CODEBASE CONTEXT block. Skip for greenfield projects
+5. Run **Design Token Extraction** from prompt-engine on the downloaded HTML — load `references/design-tokens-v2.md` for extraction rules and output format. Produces DESIGN.md with two sections: DESIGN SYSTEM BLOCK (verbatim-injectable prompt fragment) and Token Reference (structured token table).
+6. Write `.stitch/DESIGN.md` with the extracted tokens in v2 format — two sections: `## DESIGN SYSTEM BLOCK` and `## Token Reference`.
+7. **Store foundationScreen** in `.stitch/metadata.json` — used by downstream commands (layout.md, page.md, designer.md) as STYLE ANCHOR for text directives:
    ```json
    "foundationScreen": {
      "screenName": "projects/{id}/screens/{screenId}",
@@ -144,8 +136,8 @@ Determine the generation path based on available inputs. Paths are additive — 
      "pngPath": ".stitch/designs/pages/foundation.png"
    }
    ```
-10. Update `.stitch/metadata.json` screens map with the foundation screen entry
-11. Present screenshot to user via `Read` (after download is confirmed):
+8. Update `.stitch/metadata.json` screens map with the foundation screen entry
+9. Present screenshot to user via `Read` (after download is confirmed):
    - "Here is your design foundation. Review the visual direction and extracted design tokens."
    - If user wants changes: `edit_screens` with user feedback → re-run **Asset Download Procedure** → re-run **Design Token Extraction** → update DESIGN.md and foundationScreen entry
    - Iterate until user approves
@@ -159,7 +151,7 @@ Determine the generation path based on available inputs. Paths are additive — 
 **Actions**:
 
 1. Verify all required files exist:
-   - `.stitch/metadata.json` — has `projectId`, `name`, `proUsage`, and `foundationScreen` fields
+   - `.stitch/metadata.json` — has `projectId`, `name`, and `foundationScreen` fields
    - `.stitch/DESIGN.md` — has `## DESIGN SYSTEM BLOCK` section and `## Token Reference` section
    - `.stitch/SITE.md` — has Vision, Sitemap, and Roadmap sections
    - `.stitch/designs/layouts/` — directory exists

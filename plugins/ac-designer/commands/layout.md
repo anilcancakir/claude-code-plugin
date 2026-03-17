@@ -77,32 +77,27 @@ For each layout in the approved plan, execute this sequence:
    - **STYLE ANCHOR**: If `.stitch/metadata.json` has a `foundationScreen` entry, append this text directive to the prompt: "STYLE ANCHOR — This layout MUST match the foundation screen's visual language exactly — same color palette, typography weights, border radii, and component shapes as defined in the DESIGN SYSTEM BLOCK above. Any deviation from these tokens is a bug."
    - PAGE STRUCTURE section should describe chrome elements with specific dimensions and positions, and a clearly marked content placeholder area
    - MUST NOT section should include: "Do not fill the content area with real content — use a single placeholder card or empty state"
-3. **Quota check**: Load `proUsage` from `.stitch/metadata.json` before calling GEMINI_3_PRO:
-   - If `proUsage.monthStart` doesn't match the current month (YYYY-MM format) → reset `proUsage.count` to 0, update `monthStart` to current month
-   - If `proUsage.count >= 50`: switch `modelId` to **GEMINI_3_FLASH** and warn user: "GEMINI_3_PRO monthly limit reached. Switching to GEMINI_3_FLASH."
-   - Else if `proUsage.count >= 45`: warn user: "Approaching GEMINI_3_PRO monthly limit (~50). Consider using GEMINI_3_FLASH for non-critical layouts."
-4. Check if user has provided a visual reference (screenshot, sketch, mockup):
+3. Check if user has provided a visual reference (screenshot, sketch, mockup):
    - **Visual reference provided**: Invoke the **Stitch Web Bridge** procedure — user uploads reference + pastes enhanced prompt via Stitch web UI
    - **No visual reference**: Call `generate_screen_from_text` with:
      - `projectId`: from metadata.json
      - `prompt`: the enhanced prompt from step 2
      - `deviceType`: from metadata.json
-     - `modelId`: **GEMINI_3_PRO** (or GEMINI_3_FLASH if quota fallback triggered in step 3)
-5. **Quota increment**: If step 4 used GEMINI_3_PRO, increment `proUsage.count` by 1 and write back to `.stitch/metadata.json`
-6. Run the **Asset Download Procedure** — saves HTML + PNG to `.stitch/designs/layouts/{layout-name}.html` and `.stitch/designs/layouts/{layout-name}.png`
-7. Present the screenshot to user via `Read` on the downloaded PNG
-8. **Iteration loop**: Ask user for feedback via AskUserQuestion:
+     - `modelId`: **GEMINI_3_PRO**
+4. Run the **Asset Download Procedure** — saves HTML + PNG to `.stitch/designs/layouts/{layout-name}.html` and `.stitch/designs/layouts/{layout-name}.png`
+5. Present the screenshot to user via `Read` on the downloaded PNG
+6. **Iteration loop**: Ask user for feedback via AskUserQuestion:
    - "How does this layout look?"
    - Options: "Approve" / "Request changes" / "Regenerate from scratch"
    - **Request changes**: Gather feedback → `edit_screens` with the layout's screenId and change prompt → re-run **Asset Download Procedure** → re-present screenshot → loop
    - **Regenerate**: Return to step 2 with adjusted prompt
-   - **Approve**: Continue to step 9
-9. Update `metadata.json` screens map with the layout entry:
+   - **Approve**: Continue to step 7
+7. Update `metadata.json` screens map with the layout entry:
    - Screen ID from Stitch
    - `type: "layout"`
    - `name`: layout name
    - `files`: paths to HTML and PNG
-10. Update `.stitch/SITE.md` sitemap with the layout entry
+8. Update `.stitch/SITE.md` sitemap with the layout entry
 
 Repeat for each layout in the plan.
 

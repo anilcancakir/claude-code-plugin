@@ -15,7 +15,7 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
 - **Strategy Selection drives everything**: The generation approach depends entirely on whether a layout exists and whether the page is new or existing — get this right before touching Stitch
 - **DESIGN.md is the consistency contract**: Every page prompt includes the DESIGN SYSTEM BLOCK section from `.stitch/DESIGN.md` copied verbatim — Gemini receives the exact same token constraints on every page generation
 - **Layout Reference preserves chrome**: When a layout exists, the prompt describes ONLY content area changes — layout shell elements (header, tab bar, nav) come from the layout HTML reference
-- **Pro for critical, Flash for regular**: GEMINI_3_PRO for hero/landing/dashboard pages, GEMINI_3_FLASH for everything else and all edits
+- **GEMINI_3_PRO for all generation**: Use GEMINI_3_PRO for all `generate_screen_from_text` calls. GEMINI_3_FLASH is reserved for `edit_screens` (targeted changes need less reasoning)
 - **Reference, don't duplicate**: Procedures from prompt-engine are invoked by name, not re-implemented here
 
 ---
@@ -60,13 +60,8 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
    - Gather user's change description
    - Skip to Phase 3 edit path (no full generation needed)
 5. Model routing:
-   - **GEMINI_3_PRO**: Critical pages — hero, landing, dashboard, onboarding, any page the user flags as important
-   - **GEMINI_3_FLASH**: Regular pages — settings, profile, list views, detail views, forms
+   - **GEMINI_3_PRO**: All `generate_screen_from_text` calls
    - **GEMINI_3_FLASH**: All `edit_screens` calls (targeted changes, less reasoning needed)
-   - **Quota check** (before selecting GEMINI_3_PRO): Read `proUsage` from `.stitch/metadata.json` (`proUsage.count`, `proUsage.monthStart`):
-     - If `monthStart` doesn't match the current month (YYYY-MM format) → reset `count` to 0, update `monthStart` to current month, write back to metadata.json
-     - If `proUsage.count >= 50`: Override to GEMINI_3_FLASH with warning: "GEMINI_3_PRO monthly limit reached. Switching to GEMINI_3_FLASH."
-     - If `proUsage.count >= 45`: Warn user: "Approaching GEMINI_3_PRO monthly limit (~50). Consider using GEMINI_3_FLASH." — user can still choose PRO
 6. Present strategy to user for confirmation:
    - "Strategy: {Full generation / Layout-referenced / In-place edit}"
    - "Model: {GEMINI_3_PRO / GEMINI_3_FLASH}"
@@ -98,7 +93,6 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
 3. Generate the page:
    - **Full generation / Layout-referenced**: `generate_screen_from_text` with `projectId` from metadata.json, enhanced prompt, selected `modelId`, and `deviceType` from metadata.json
    - **In-place edit**: `edit_screens` with `projectId`, `selectedScreenIds` containing the page's screenId, and the change prompt. Use GEMINI_3_FLASH
-   - **Quota increment**: After every `generate_screen_from_text` or `edit_screens` call that used GEMINI_3_PRO — increment `proUsage.count` in `.stitch/metadata.json` and write back immediately
 4. Run **Asset Download Procedure** from prompt-engine — saves HTML + PNG to `.stitch/designs/pages/{page-name}.html` and `.stitch/designs/pages/{page-name}.png`
 5. Run **Consistency Check** from prompt-engine — only if Step 2b produced a CODEBASE CONTEXT block. Skip for greenfield projects. Report mismatches as warnings — user decides whether to address them
 6. Run **Drift Detection** from prompt-engine (Per-Page procedure) on the generated page HTML at `.stitch/designs/pages/{page-name}.html`, comparing against `.stitch/DESIGN.md` Token Reference. Non-blocking: present drift warnings to user. User decides whether to fix via `edit_screens` or accept as-is

@@ -35,11 +35,9 @@ aspects:       LAYOUT | COLOR_SCHEME | IMAGES | TEXT_FONT | TEXT_CONTENT
 
 | Context | Model | Rationale |
 |---------|-------|-----------|
-| Layout generation | GEMINI_3_PRO | Structural decisions need deeper reasoning |
-| Critical pages (hero, landing) | GEMINI_3_PRO | Quality over speed |
-| Regular pages | GEMINI_3_FLASH | Fast — layout already established |
-| Variants | GEMINI_3_FLASH | Speed for multiple generations |
-| Edits | GEMINI_3_FLASH | Targeted changes, less reasoning needed |
+| All `generate_screen_from_text` calls | GEMINI_3_PRO | Best quality output for all generation |
+| All `edit_screens` calls | GEMINI_3_FLASH | Targeted changes need less reasoning |
+| All `generate_variants` calls | GEMINI_3_FLASH | Speed for multiple alternative generations |
 
 ## Prompt Enhancement Pipeline
 
