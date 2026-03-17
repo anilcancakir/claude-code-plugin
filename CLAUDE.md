@@ -50,7 +50,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   ├── ac-designer/              # Stitch UI design orchestrator plugin (command-based)
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/             # init, layout (+ page, designer in Phase 3)
+│   │   ├── commands/             # init, layout, page, designer
 │   │   ├── skills/
 │   │   │   └── prompt-engine/    # Shared prompt enhancement (not user-invocable)
 │   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, Web Bridge
@@ -139,7 +139,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 
 ### ac-designer plugin
 - `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, design token extraction, Stitch Web Bridge. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema
-- Commands (Phase 2-3): `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`
+- Commands: `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`
 - Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup) (official, 8 tools at `stitch.googleapis.com/mcp`)
 
 ### dart-lsp plugin

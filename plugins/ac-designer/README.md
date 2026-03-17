@@ -27,8 +27,8 @@ claude plugin add ./plugins/ac-designer
 |---------|-------------|--------|
 | `/ac-designer:init` | Initialize Stitch project — create or connect project, generate design foundation, build DESIGN.md | Active |
 | `/ac-designer:layout` | Generate layout shells — determines needed layouts from codebase or interview, generates with DESIGN.md injection | Active |
-| `/ac-designer:page` | Generate individual pages with strategy selection | Coming in Phase 3 |
-| `/ac-designer:designer` | Full orchestration — multi-page iteration with baton tracking | Coming in Phase 3 |
+| `/ac-designer:page` | Generate a single page — strategy selection (full or layout-referenced), prompt enhancement, consistency check, iteration | Active |
+| `/ac-designer:designer` | Full orchestrator — auto-detects state, directs missing phases, generates all pages with baton-driven iteration | Active |
 
 ## Shared Skill
 
