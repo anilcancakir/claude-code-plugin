@@ -47,13 +47,14 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── references/   # Deep-dive: hierarchy, color, mobile
 │   │   ├── README.md
 │   │   └── LICENSE
-│   ├── designer/                 # Stitch UI design orchestrator plugin
+│   ├── ac-designer/              # Stitch UI design orchestrator plugin (command-based)
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
+│   │   ├── commands/             # Coming Phase 2-3: init, layout, page, designer
 │   │   ├── skills/
-│   │   │   └── designer/
-│   │   │       ├── SKILL.md      # Stitch MCP orchestrator (334 lines)
-│   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI
+│   │   │   └── prompt-engine/    # Shared prompt enhancement (not user-invocable)
+│   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, Web Bridge
+│   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI, baton schema
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
@@ -136,8 +137,10 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 ### frontend-design plugin
 - `frontend-design` (Sonnet) — Production-grade UI for web and mobile: design systems (spacing/type/shadow/color), visual hierarchy, distinctive aesthetics, mobile patterns. Has `references/` for hierarchy, color system, and mobile components
 
-### designer plugin
-- `designer` (Sonnet) — Stitch UI design orchestrator: project setup, design foundation extraction, Gemini-optimized prompts with Refactoring UI principles, codebase-aware page generation via ac:explore, layout-referenced variant generation, mandatory asset download procedure, post-generation consistency checks, multi-page iteration. Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup). Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema
+### ac-designer plugin
+- `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, design token extraction, Stitch Web Bridge. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema
+- Commands (Phase 2-3): `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`
+- Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup) (official, 8 tools at `stitch.googleapis.com/mcp`)
 
 ### dart-lsp plugin
 - LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.
@@ -191,3 +194,4 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - Commands use `${CLAUDE_PLUGIN_ROOT}` for template paths — set by Claude Code at runtime to the plugin's actual directory
 - Commands delegate to `ac-skill-creator` for file generation — they don't write files directly
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
+- ac-designer has a soft dependency on ac plugin for `ac:explore` (codebase scanning) and `ac:gemini-vision` (screenshot analysis) — graceful fallback when absent

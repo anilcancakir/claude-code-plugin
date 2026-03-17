@@ -84,14 +84,14 @@
             ]
         },
         {
-            "name": "designer",
-            "description": "Stitch UI design orchestrator — manages design projects with Refactoring UI principles and Gemini-optimized prompts via Google Stitch MCP.",
-            "version": "0.3.0",
+            "name": "ac-designer",
+            "description": "Stitch UI design orchestrator — command-based plugin with init, layout, page, and designer commands. Uses Refactoring UI principles, Gemini-optimized prompts, and codebase-aware design via Google Stitch MCP.",
+            "version": "1.0.0",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
             },
-            "source": "./plugins/designer",
+            "source": "./plugins/ac-designer",
             "category": "productivity",
             "homepage": "https://github.com/anilcancakir/claude-code-plugin",
             "tags": [
@@ -99,7 +99,8 @@
                 "design",
                 "ui-ux",
                 "gemini",
-                "refactoring-ui"
+                "refactoring-ui",
+                "commands"
             ]
         },
         {
