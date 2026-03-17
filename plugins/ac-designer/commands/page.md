@@ -63,6 +63,10 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
    - **GEMINI_3_PRO**: Critical pages — hero, landing, dashboard, onboarding, any page the user flags as important
    - **GEMINI_3_FLASH**: Regular pages — settings, profile, list views, detail views, forms
    - **GEMINI_3_FLASH**: All `edit_screens` calls (targeted changes, less reasoning needed)
+   - **Quota check** (before selecting GEMINI_3_PRO): Read `proUsage` from `.stitch/metadata.json` (`proUsage.count`, `proUsage.monthStart`):
+     - If `monthStart` doesn't match the current month (YYYY-MM format) → reset `count` to 0, update `monthStart` to current month, write back to metadata.json
+     - If `proUsage.count >= 50`: Override to GEMINI_3_FLASH with warning: "GEMINI_3_PRO monthly limit reached. Switching to GEMINI_3_FLASH."
+     - If `proUsage.count >= 45`: Warn user: "Approaching GEMINI_3_PRO monthly limit (~50). Consider using GEMINI_3_FLASH." — user can still choose PRO
 6. Present strategy to user for confirmation:
    - "Strategy: {Full generation / Layout-referenced / In-place edit}"
    - "Model: {GEMINI_3_PRO / GEMINI_3_FLASH}"
@@ -89,10 +93,12 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/prompt-engine/SKILL.md` for all referenced pr
    - Step 2 (Load Design Context): Locate the DESIGN SYSTEM BLOCK section in `.stitch/DESIGN.md` for verbatim copy in Step 6
    - Step 2b (Codebase Context Injection): If source code exists at project root, spawn ac:explore for routes, models, components relevant to this page. Skip for greenfield projects
    - Steps 3-6 (Refine, Inject Principles, Optimize, Format): Build the complete enhanced prompt
+   - Step 6b (STYLE ANCHOR Injection): If `.stitch/metadata.json` has a `foundationScreen` entry, append a **STYLE ANCHOR** text directive to the enhanced prompt after the DESIGN SYSTEM BLOCK: "This page MUST match the foundation screen's visual language exactly — same color palette, typography weights, border radii, and component shapes as defined in the DESIGN SYSTEM BLOCK above. Any deviation from these tokens is a bug."
    - Step 7 (Layout Reference Injection): If strategy is "layout-referenced", inject the layout HTML reference block after CRITICAL REMINDER. Skip for "full generation" strategy
 3. Generate the page:
    - **Full generation / Layout-referenced**: `generate_screen_from_text` with `projectId` from metadata.json, enhanced prompt, selected `modelId`, and `deviceType` from metadata.json
    - **In-place edit**: `edit_screens` with `projectId`, `selectedScreenIds` containing the page's screenId, and the change prompt. Use GEMINI_3_FLASH
+   - **Quota increment**: After every `generate_screen_from_text` or `edit_screens` call that used GEMINI_3_PRO — increment `proUsage.count` in `.stitch/metadata.json` and write back immediately
 4. Run **Asset Download Procedure** from prompt-engine — saves HTML + PNG to `.stitch/designs/pages/{page-name}.html` and `.stitch/designs/pages/{page-name}.png`
 5. Run **Consistency Check** from prompt-engine — only if Step 2b produced a CODEBASE CONTEXT block. Skip for greenfield projects. Report mismatches as warnings — user decides whether to address them
 6. Run **Drift Detection** from prompt-engine (Per-Page procedure) on the generated page HTML at `.stitch/designs/pages/{page-name}.html`, comparing against `.stitch/DESIGN.md` Token Reference. Non-blocking: present drift warnings to user. User decides whether to fix via `edit_screens` or accept as-is

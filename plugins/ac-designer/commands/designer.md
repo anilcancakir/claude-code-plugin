@@ -39,12 +39,13 @@ Load the baton schema for baton file format:
 4. Check `.stitch/SITE.md`:
    - If missing or the Sitemap/Roadmap section is empty: interview user about pages needed, then write `.stitch/SITE.md` with Vision, Sitemap (checkbox list of pages), and Roadmap sections
 5. **STOP if prerequisites missing**: If any of steps 1-3 produced a missing prerequisite, list ALL missing steps clearly and STOP. Do NOT attempt to inline the init or layout workflows. The user must run the referenced commands first and return
-6. If all prerequisites exist: load project metadata (projectId, title, designTheme, screens map), design tokens from DESIGN.md, layout list from `designs/layouts/`, and completed pages from SITE.md
+6. If all prerequisites exist: load project metadata (projectId, title, designTheme, screens map, proUsage), design tokens from DESIGN.md, layout list from `designs/layouts/`, and completed pages from SITE.md
 7. Present state summary to user:
    ```
    Project: {title} ({projectId})
    Layouts: {count} generated ({layout-names})
    Pages: {completed}/{total} — {pending-count} pending
+   PRO quota: {proUsage.count}/50 this month
    ```
 
 ---
@@ -90,6 +91,7 @@ For each pending page in the approved roadmap order:
      - MUST include page-specific content: page type, sections, components derived from the SITE.md entry and user context
      - Include layout reference via Step 7 if a matching layout exists in metadata.json
      - If codebase exists at project root: run Step 2b (Codebase Context Injection) via ac:explore agent to extract UI-relevant context for this specific page
+     - **STYLE ANCHOR**: If `foundationScreen` entry exists in metadata.json, append this text directive to the baton prompt body: "This page MUST match the foundation screen's visual language exactly — same color palette, typography weights, border radii, and component shapes as defined in the DESIGN SYSTEM BLOCK above. Any deviation from these tokens is a bug."
    - Validate baton against rules in `references/baton-schema.md` before presenting
 
 2. **Present baton to user**: "Next page: **{page-name}**. Review the planned prompt below and confirm to generate:"
@@ -99,12 +101,18 @@ For each pending page in the approved roadmap order:
    - Do NOT proceed to generation until user explicitly approves
 
 3. **Generate page**:
-   - Determine model: GEMINI_3_PRO for critical pages (hero, landing, home), GEMINI_3_FLASH for regular pages — per the Model Strategy in prompt-engine
+   - **Quota check** before model selection:
+     - Load `proUsage` from `.stitch/metadata.json`
+     - If `proUsage.monthStart` doesn't match current month (`YYYY-MM`): reset `proUsage.count` to 0, update `proUsage.monthStart` to current month, write back to metadata.json
+     - If `proUsage.count >= 50`: override model to GEMINI_3_FLASH with warning "GEMINI_3_PRO monthly limit reached. Switching to GEMINI_3_FLASH."
+     - If `proUsage.count >= 45`: warn user "Approaching GEMINI_3_PRO monthly limit (~50). Consider using GEMINI_3_FLASH for non-critical pages."
+   - Determine model: GEMINI_3_PRO for critical pages (hero, landing, home), GEMINI_3_FLASH for regular pages — per the Model Strategy in prompt-engine (subject to quota override above)
    - Call `generate_screen_from_text` with:
      - `projectId`: from metadata.json
      - `prompt`: the approved baton body
      - `modelId`: per model strategy above
      - `deviceType`: from metadata.json
+   - After every `generate_screen_from_text` call with GEMINI_3_PRO: increment `proUsage.count` and write back to `.stitch/metadata.json`
    - Run **Asset Download Procedure** from prompt-engine — saves HTML + PNG to `.stitch/designs/pages/{page-name}.html` and `.stitch/designs/pages/{page-name}.png`
    - Run **Consistency Check** from prompt-engine — only if Step 2b produced a CODEBASE CONTEXT block. Skip for greenfield projects
    - Run **Drift Detection** from prompt-engine (Per-Page procedure) on the generated page HTML at `.stitch/designs/pages/{page-name}.html`, comparing against `.stitch/DESIGN.md` Token Reference. Non-blocking: present drift warnings to user alongside the screenshot

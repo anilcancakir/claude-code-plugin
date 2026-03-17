@@ -89,6 +89,12 @@ Bridges Stitch's text-only API with its image-capable web UI for visual referenc
 
 Load `references/asset-procedures.md` for the Web Bridge procedure.
 
+## Stitch Skills Reference
+
+Official Google stitch-skills patterns embedded as version-pinned reference. Contains design-md, enhance-prompt, stitch-loop, and stitch-design skills with their reference materials.
+
+Load `references/stitch-skills.md` for the full embedded skills content.
+
 ## References
 
 Load these files from `references/` as needed during the enhancement pipeline:
@@ -104,3 +110,4 @@ Load these files from `references/` as needed during the enhancement pipeline:
 | `references/asset-procedures.md` | Asset Download Procedure + Stitch Web Bridge | After generation |
 | `references/drift-detection.md` | Comparing generated HTML tokens against DESIGN.md Token Reference | Drift Detection |
 | `references/design-tokens-v2.md` | DESIGN.md v2 format spec + extraction rules | Token extraction, Design Token Extraction |
+| `references/stitch-skills.md` | Consulting official Google Stitch patterns and workflows | Stitch Skills Reference |
