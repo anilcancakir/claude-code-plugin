@@ -117,7 +117,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
-| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | Multimodal analysis — screenshots, video, design mockups via Gemini | Read, Glob, LS, gemini-cli |
+| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline | Read, Glob, LS, gemini-cli |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -194,4 +194,4 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - Commands use `${CLAUDE_PLUGIN_ROOT}` for template paths — set by Claude Code at runtime to the plugin's actual directory
 - Commands delegate to `ac-skill-creator` for file generation — they don't write files directly
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
-- ac-designer has a soft dependency on ac plugin for `ac:explore` (codebase scanning) and `ac:gemini-vision` (screenshot analysis) — graceful fallback when absent
+- ac-designer has a soft dependency on ac plugin for `ac:explore` (codebase scanning) and `ac:gemini-vision` (file-based visual analysis — video, multi-image). Pasted images are analyzed inline by Claude or via direct `mcp__gemini-cli__ask-gemini` call — graceful fallback when absent

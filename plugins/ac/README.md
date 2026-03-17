@@ -202,7 +202,7 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 | `ac:challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches |
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
 | `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
-| `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | Multimodal analysis — screenshots, video, design mockups via Gemini |
+| `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline |
 
 ## Skills
 
