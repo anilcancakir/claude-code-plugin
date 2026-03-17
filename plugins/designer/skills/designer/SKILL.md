@@ -66,7 +66,7 @@ aspects:       LAYOUT | COLOR_SCHEME | IMAGES | TEXT_FONT | TEXT_CONTENT
 
 ## Prompt Enhancement Pipeline
 
-Run this pipeline before EVERY `generate_screen_from_text` or `edit_screens` call. Do NOT skip steps.
+Run this pipeline before EVERY `generate_screen_from_text`, `edit_screens`, or `generate_variants` call. Do NOT skip steps. Step 7 only applies when a layout exists.
 
 ### Step 1: Assess Input
 
@@ -149,6 +149,32 @@ MUST NOT:
 CRITICAL REMINDER: [Reinforce the single most important visual constraint]
 ```
 
+### Step 7: Layout Reference Injection
+
+**Skip this step** if no layout exists in `metadata.json` or the generation strategy is "full".
+
+When generating a page that references an existing layout:
+
+1. Load the layout's HTML from `.stitch/designs/layouts/{layout-name}.html`
+2. Extract the layout shell elements: header, navigation, tab bar, FAB, sidebar, footer
+3. Append this block to the prompt (after CRITICAL REMINDER, before sending to Stitch):
+
+```
+LAYOUT REFERENCE: This page uses the [{layout-name}] layout shell.
+Keep these elements PIXEL-IDENTICAL to the reference:
+- Header: [extracted from layout HTML — structure, height, elements]
+- Tab Bar: [extracted from layout HTML — items, style, active indicator]
+- FAB: [extracted from layout HTML — position, shape, icon]
+- Navigation: [extracted from layout HTML — type, position, items]
+
+ACTIVE TAB: "{tab-name}" — move the active indicator (gradient pill / underline / highlight) to this tab.
+
+CONTENT CHANGES ONLY:
+[The rest of the enhanced prompt describes only the main content area]
+```
+
+4. When using `generate_variants`, the layout reference block reinforces consistency — Gemini sees both the visual base (selectedScreenIds) AND the text constraint (this block)
+
 ## Phase 0: Stitch Project Setup
 
 1. `list_projects` with `filter: "view=owned"` — check for an existing project matching the user's intent
@@ -179,6 +205,8 @@ CRITICAL REMINDER: [Reinforce the single most important visual constraint]
       "sourceScreen": "projects/{id}/screens/{screen-id-2}",
       "type": "page",
       "layout": "app-shell",
+      "generationStrategy": "variant-from-layout",
+      "variantBase": "screen-id",
       "x": 549, "y": 0, "width": 1440, "height": 1200
     }
   }
@@ -231,15 +259,54 @@ Screenshot download: append `=w{width}` to `screenshot.downloadUrl` for full res
 
 Trigger: user request or SITE.md roadmap item.
 
-1. Identify the relevant layout from metadata.json
+### Strategy Selection
+
+Choose the generation strategy based on existing project state:
+
+| Condition | Strategy | Tool | Rationale |
+|-----------|----------|------|-----------|
+| No layout in metadata.json | Full generation | `generate_screen_from_text` | No layout shell to reference |
+| Layout exists, new page from layout | Variant from layout | `generate_variants` with layout screenId | Layout shell stays pixel-identical |
+| Layout exists, similar page exists | Variant from closest page | `generate_variants` with closest page screenId | Reuse sibling page structure |
+| Editing existing page | In-place edit | `edit_screens` with page screenId | Targeted changes only |
+
+### Full Generation Flow (no layout)
+
+1. Run the full **Prompt Enhancement Pipeline** (Steps 1-7)
+2. `generate_screen_from_text` with modelId based on page importance (see Model Strategy)
+3. `generate_variants` if user wants alternatives
+4. `edit_screens` for iteration based on user feedback
+5. Save to `.stitch/designs/pages/{page}.html` and `.png`
+6. Update `metadata.json` with `"type": "page"`, `"generationStrategy": "full"`
+7. Update SITE.md sitemap (mark page as done)
+
+### Variant-Based Generation Flow (layout exists)
+
+1. Load `metadata.json` → find the approved layout screen ID (or closest existing page ID)
 2. Load the layout's design tokens from DESIGN.md
-3. Run the full **Prompt Enhancement Pipeline** (Steps 1-6), referencing the layout structure
-4. `generate_screen_from_text` with modelId based on page importance (see Model Strategy)
-5. `generate_variants` if user wants alternatives
-6. `edit_screens` for iteration based on user feedback
-7. Save to `.stitch/designs/pages/{page}.html` and `.png`
-8. Update `metadata.json` with `"type": "page"` and `"layout": "{layout-name}"`
-9. Update SITE.md sitemap (mark page as done)
+3. Run the **Prompt Enhancement Pipeline** (Steps 1-7) — Step 7 injects layout reference automatically
+4. Build the prompt focusing ONLY on content area changes — do NOT re-describe the layout shell
+5. Call `generate_variants` with:
+   - `selectedScreenIds`: [layout screen ID] or [closest existing page screen ID]
+   - `prompt`: the enhanced prompt from the pipeline (content-only, layout shell inherited)
+   - `variantOptions.creativeRange`: **REFINE** (stay close to layout structure)
+   - `variantOptions.aspects`: [LAYOUT, TEXT_CONTENT] (change content, keep colors/fonts)
+   - `variantOptions.variantCount`: 1 (or 2 if user wants options)
+6. Download screenshot — compare layout shell elements (header, tab bar, nav) against the approved layout
+7. If inconsistencies found: `edit_screens` to fix layout shell drift
+8. `edit_screens` for iteration based on user feedback
+9. Save to `.stitch/designs/pages/{page}.html` and `.png`
+10. Update `metadata.json` with `"type": "page"`, `"layout": "{layout-name}"`, `"generationStrategy": "variant-from-layout"`, `"variantBase": "{base-screen-id}"`
+11. Update SITE.md sitemap (mark page as done)
+
+### Multi-Screen Reference
+
+When both a layout AND an existing page are relevant (e.g., "make Templates look like Resumes but with a grid"):
+
+1. Select the closest existing page as the variant base (not the layout)
+2. In the prompt, describe only the DIFFERENCES from the selected base
+3. Use `creativeRange: "EXPLORE"` for structural changes, `"REFINE"` for content-only changes
+4. Update `metadata.json` with `"generationStrategy": "variant-from-page"`, `"variantBase": "{sibling-page-screen-id}"`
 
 ## Phase 4: Multi-Page Iteration
 
@@ -324,6 +391,7 @@ Load these files from `references/` as needed during the enhancement pipeline an
 - **User approval**: present each design to user before proceeding to the next step
 - **Descriptive language**: use natural language ("generous whitespace", "pill-shaped") with hex precision
 - **Single pipeline**: run the enhancement pipeline exactly once per generation — never double-inject
+- **Layout-first variants**: when a layout exists, prefer `generate_variants` from the layout screen over `generate_screen_from_text` — the layout shell stays pixel-identical and prompts focus only on content changes
 
 ### Guardrails
 
