@@ -116,7 +116,13 @@ Agent(
 )
 ```
 
-**Model routing**: Map each step's tier to a model: `quick`→`model: "haiku"`, `mid`→`model: "sonnet"`, `senior`→`model: "opus"`. For waves containing mixed-tier steps, use the highest tier in the wave: senior > mid > quick. If ANY constituent step has `Tier: senior`, the entire wave's agent gets `model: "opus"`. If the highest is `mid`, use `model: "sonnet"`. If all steps are `quick`, use `model: "haiku"`.
+**Model routing**: Each step gets its own model based on tier — launch multiple Agent() calls in the same message, each with its own `model:` parameter:
+
+- `quick` → `model: "haiku"`
+- `mid` → `model: "sonnet"`
+- `senior` → `model: "opus"`
+
+Mixed-tier waves are fine — CC supports different `model:` values per Agent() call in the same message block. Each worker runs independently on its assigned model.
 
 **Worker prompt template** — each agent must receive a fully self-contained prompt:
 
@@ -205,6 +211,8 @@ Before marking a work unit done:
 
    Append extracted patterns to ACCUMULATED_WISDOM as bullet points (max 5 per unit, max 15 total). Skip if the worker's output contains no discoverable patterns. Do not accumulate verification results or generic statements — only actionable conventions that help the next worker avoid re-discovery.
 
+4. **Persist wisdom to file**: After updating ACCUMULATED_WISDOM, write it to `plans/{plan-name}.wisdom.md` (same directory as the plan file). Format: bullet list with wave/step source annotations. This file survives the session — subsequent ac:execute runs or manual inspection can reuse discovered patterns. Overwrite on each update (latest wisdom replaces previous).
+
 Do NOT mark a work unit complete with unresolved ERROR diagnostics.
 
 ---
@@ -227,7 +235,11 @@ As background agent notifications arrive:
 
 1. Update status to ✅ done or ❌ failed
 2. If a wave completes, launch the next wave
-3. If an agent fails, log the failure and continue with other agents
+3. If an agent fails, attempt **tier escalation** before logging failure:
+   - `quick` (Haiku) failed → retry once with `model: "sonnet"` (mid)
+   - `mid` (Sonnet) failed → retry once with `model: "opus"` (senior)
+   - `senior` (Opus) failed → no escalation possible, log failure
+   - Maximum 1 escalation per step. If escalated retry also fails → log failure and continue
 4. For background task result retrieval, use TaskOutput once notified. Do not poll in loops while waiting.
 
 When all agents complete, render the final table and summary.
@@ -301,7 +313,18 @@ Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-fil
 
 **Handle verdict**:
 
-- **APPROVE** → Present summary with: `"Verification passed — all criteria met, scope clean. Suggest checkpoint commit."`
+- **APPROVE** → Present verification summary to user with results table, then offer:
+  ```
+  question: "Verification passed. All criteria met, scope clean."
+  header: "Execution Complete"
+  options:
+    - label: "Commit"
+      description: "Suggest checkpoint commit for all changes."
+    - label: "Review Changes"
+      description: "Show git diff before committing."
+    - label: "Done"
+      description: "Keep changes uncommitted."
+  ```
 - **REJECT** → Present failed items with evidence, then offer options via AskUserQuestion:
   ```
   question: "Verifier found unmet criteria. How to proceed?"
