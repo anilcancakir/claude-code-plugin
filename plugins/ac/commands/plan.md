@@ -142,9 +142,11 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
    - Files to create or modify
    - Acceptance criteria as executable commands (not "verify it works")
    - Independence: `independent` (no shared files/state with other steps) or `depends on Step N` (reason)
-   - Escalate: `true` or `false` — classify per step using the escalation heuristic:
-     - `true` when ANY: 3+ files to modify, schema/migration changes, cross-layer touches (frontend + backend or 2+ architectural layers), complex multi-step verification
-     - `false` otherwise (default)
+   - Tier: `quick`, `mid`, or `senior` — classify per step using the tier heuristic:
+     - `quick` when ALL: ≤1 file to modify, trivial change (config, typo, rename, simple addition), no design decisions
+     - `mid` when: 1-2 files, standard implementation, moderate complexity, test writing (default)
+     - `senior` when ANY: 3+ files to modify, schema/migration changes, cross-layer touches (frontend + backend or 2+ architectural layers), complex multi-step verification, architecture decisions
+   - Quick-tier enrichment: when a step is classified `quick`, write an exhaustively explicit description — exact file path, exact change to make, expected before/after state. The executing model is optimized for speed over depth; compensate with prompt precision
 9. If TDD rule is active, every implementation step must be preceded by a test step
 10. Add a "Must NOT Have" section listing explicit exclusions
 11. If plan has 3+ steps, decompose into Work Units for `ac:execute`:
@@ -166,7 +168,7 @@ Plans must follow this exact structure for ac:execute compatibility:
   - `Files:` list of files to modify
   - `Done when:` executable acceptance criteria
   - `Independence:` independent or depends on Step N
-  - `Escalate:` true or false — signals ac:execute to use Opus model for this step
+  - `Tier:` quick | mid | senior — signals ac:execute which model to use (quick→Haiku, mid→Sonnet, senior→Opus)
 - `### Work Units` — parallel decomposition with Unit entries containing Steps, Files, Verification
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
@@ -215,6 +217,7 @@ Do not present a plan that references symbols verified-missing by LSP.
 **TL;DR**: [1-2 sentence summary]
 **Intent**: [Build/Refactor/Mid-sized/Architecture/Research] | **Complexity**: [Simple/Standard/Complex]
 **Test Strategy**: [TDD/Tests after/None]
+**Tier Summary**: N quick / N mid / N senior
 
 ### Steps
 
@@ -222,7 +225,7 @@ Do not present a plan that references symbols verified-missing by LSP.
    Files: [file paths]
    Done when: [executable verification command + expected output]
    Independence: [independent / depends on Step N]
-   Escalate: [true / false]
+   Tier: [quick / mid / senior]
 
 2. ...
 
