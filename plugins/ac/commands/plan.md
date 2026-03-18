@@ -259,17 +259,21 @@ Plan saved to: ~/.claude/projects/<cwd-hash>/plans/$planName.md
 question: "Plan is ready. How would you like to proceed?"
 header: "Next Step"
 options:
-  - label: "Proceed (Recommended)"
-    description: "Approve the plan and begin implementation."
-  - label: "Execute (Parallel)"
-    description: "Launch parallel background agents to execute independent steps concurrently."
-  - label: "Plan Review"
-    description: "Launch plan-review agent to verify references and executability."
+  - label: "Execute (Recommended)"
+    description: "Launch ac:execute with tier-based model routing. Workers spawn as Haiku/Sonnet/Opus per step tier."
+  - label: "Deep Review"
+    description: "Launch adversarial plan-reviewer (Momus-class) to stress-test references, tiers, and executability before committing."
   - label: "Adjust"
     description: "Modify specific parts of the plan."
 ```
 
-If user selects **Execute (Parallel)**, invoke `ac:execute` with the plan file path.
+If user selects **Execute**, invoke `ac:execute` with the plan file path.
+
+If user selects **Deep Review**:
+1. Launch plan-review agent: `Agent(subagent_type: "ac:plan-review", prompt: "Review plan at [plan-file-path]. Adversarial mode — hunt for flaws.")`
+2. Present the verdict to the user
+3. If OKAY → re-offer: "Execute" / "Adjust"
+4. If REJECT → show blocking issues with suggested fixes, then offer: "Adjust" / "Execute Anyway"
 
 Plan handoff must respect runtime mode:
 - If plan mode is active, use `ExitPlanMode` for approval handoff

@@ -14,7 +14,7 @@ description: |
   assistant: "I'll launch the plan-analysis agent to audit for missing requirements, AI-slop, and vague acceptance criteria."
   <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
   </example>
-model: sonnet
+model: opus
 tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: yellow
@@ -68,7 +68,18 @@ Check if plan is structured for parallel execution via `ac:execute`:
 - **Independence test**: Can each unit be implemented with no shared state or file overlap?
 - **Uniform sizing**: Are units roughly equal in scope? Flag if one unit has 5 steps and another has 1
 
-### 6. Gemini Second Eye (Optional)
+### 6. Tier Sanity
+
+If the plan uses `Tier:` fields (quick/mid/senior), audit tier assignments:
+
+- **Quick-tier file count**: Quick steps must touch ≤1 file. If a quick step touches 2+ files, flag: "IMPORTANT: Step N assigned quick but touches [N] files — consider mid"
+- **Senior-tier justification**: Senior steps should have 3+ files, cross-layer changes, or architecture decisions. If a senior step touches 1 file with a trivial change, flag: "MINOR: Step N assigned senior but is a single-file edit — consider mid"
+- **Tier distribution**: If >80% of steps have the same tier, flag: "IMPORTANT: [N]% of steps are [tier] — verify tier diversity. All-senior plans are costly, all-quick plans risk quality"
+- **Tier summary**: Report distribution: "Tier distribution: N quick / N mid / N senior"
+
+If the plan does not use `Tier:` fields (legacy plans with `Escalate:` or no field): skip this section entirely.
+
+### 7. Gemini Second Eye (Optional)
 
 When `mcp__gemini-cli__ask-gemini` tool is available, send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own analysis and merge any unique gaps into the report with `[Gemini]` prefix.
 
@@ -115,6 +126,11 @@ Return your analysis in this exact format:
 - File conflicts: [None / "Unit X and Y share `file`"]
 - Independence: [All independent / "Unit X depends on Unit Y"]
 - Sizing: [Balanced / "Unit X is 5x larger than Unit Y"]
+
+### Tier Sanity
+
+- Tier distribution: [N quick / N mid / N senior]
+- Issues: [list of tier assignment issues, or "All tiers appropriate."]
 
 ### Gemini Cross-Check
 - [Gemini] [Gap/finding from Gemini's independent analysis]
