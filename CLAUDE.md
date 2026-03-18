@@ -17,7 +17,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
 │   │   ├── commands/             # 13 user-invocable /ac:* commands
-│   │   ├── agents/               # 9 read-only agent definitions
+│   │   ├── agents/               # 10 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
@@ -112,8 +112,9 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
 | `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | blue | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
 | `linter` | `"ac:linter"` | `"linter"` | Haiku | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
-| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | yellow | Plan gap/slop detection, acceptance criteria audit | Read, Grep, Glob |
-| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Plan executability verification (OKAY/REJECT) | Read, Grep, Glob |
+| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Opus | yellow | Plan gap/slop detection, tier sanity audit, acceptance criteria audit | Read, Grep, Glob, gemini-cli |
+| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
+| `verifier` | `"ac:verifier"` | `"verifier"` | Opus | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
 | `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |

@@ -289,6 +289,31 @@ Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against pl
 ```
 CRITICAL findings must be fixed before marking complete. IMPORTANT findings are reported to user.
 
+### Plan Compliance Verification (mandatory)
+
+After build/test/lint pass (and optional LSP/code-review), run the verifier agent as the final gate:
+
+```
+Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity.")
+```
+
+**Handle verdict**:
+
+- **APPROVE** → Present summary with: `"Verification passed — all criteria met, scope clean. Suggest checkpoint commit."`
+- **REJECT** → Present failed items with evidence, then offer options via AskUserQuestion:
+  ```
+  question: "Verifier found unmet criteria. How to proceed?"
+  header: "Verification Failed"
+  options:
+    - label: "Fix and Re-verify"
+      description: "Address the failed criteria, then re-run verifier."
+    - label: "Accept and Commit"
+      description: "Acknowledge failures and commit current state anyway."
+  ```
+  If user selects "Fix and Re-verify" → user fixes issues, then re-invoke verifier.
+
+Do NOT suggest commit until verifier returns APPROVE (or user explicitly selects "Accept and Commit").
+
 ---
 
 ## Error Handling
