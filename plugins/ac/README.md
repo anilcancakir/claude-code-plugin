@@ -4,7 +4,7 @@
 
 `ac` learns how you code, how you write, and how you think about architecture — then applies that knowledge to every task. It plans before coding, researches before asking, delegates to specialized agents, and never forgets your conventions.
 
-Designed for **Sonnet as your daily driver** — but optimized for **any model**. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Search and documentation agents are customizable per user. **Structured workflows that scale with your model choice.**
+Designed for **Sonnet as your daily driver** — but optimized for **any model**. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Plan steps carry **tier assignments** (quick/mid/senior) so `/ac:execute` routes each worker to Haiku, Sonnet, or Opus automatically. Search and documentation agents are customizable per user. **Structured workflows that scale with your model choice.**
 
 ## Why This Plugin
 
@@ -12,7 +12,7 @@ Claude Code is powerful out of the box, but without structure it burns tokens on
 
 - **It knows your style** — Analyzes your existing projects and writing to create personal `my-coding` and `my-language` skills that load automatically
 - **It plans before it codes** — Every non-trivial task goes through classify, research, interview, plan. No wasted cycles on wrong approaches
-- **It delegates intelligently** — Haiku agents search your codebase and fetch docs in parallel. Sonnet and Opus agents review plans through quality gates
+- **It delegates intelligently** — Haiku agents search your codebase and fetch docs in parallel. Each plan step gets tier-assigned (quick/mid/senior) and routed to Haiku/Sonnet/Opus automatically at execution time
 - **It scaffolds from reality** — Auto-generates `CLAUDE.md` and `.claude/rules/` from actual codebase analysis, not generic templates
 - **It's token-efficient** — Progressive disclosure loads context only when needed. Path-scoped rules inject only for matching files
 - **It's built on official patterns** — Pure markdown on Claude Code's native extension points (agents, skills, commands, rules, MCP). No custom runtime, no vendor lock-in
@@ -155,8 +155,8 @@ Or in `~/.claude/settings.json`:
 | Agent | Default Model | Override Via |
 |-------|--------------|-------------|
 | explore, linter | Haiku | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
-| librarian, plan-analysis, challenger, feasibility, code-reviewer | Sonnet | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
-| plan-review | Opus | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
+| librarian, challenger, feasibility, code-reviewer | Sonnet | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
+| plan-analysis, plan-review, verifier | Opus | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
 
 ## Commands
 
@@ -197,8 +197,9 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 | `ac:explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
 | `ac:librarian` | `"ac:librarian"` | Sonnet | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
 | `ac:linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
-| `ac:plan-analysis` | `"ac:plan-analysis"` | Sonnet | Plan quality gate — gap classification, AI-slop detection, acceptance criteria audit |
-| `ac:plan-review` | `"ac:plan-review"` | Opus | Plan executability gate — reference verification, OKAY/REJECT verdict |
+| `ac:plan-analysis` | `"ac:plan-analysis"` | Opus | Plan quality gate — gap classification, AI-slop detection, tier sanity audit, acceptance criteria audit |
+| `ac:plan-review` | `"ac:plan-review"` | Opus | Adversarial plan reviewer — Momus-class, bias toward REJECT, tier challenge, Gemini second eye, OKAY/REJECT verdict |
+| `ac:verifier` | `"ac:verifier"` | Opus | Post-execution compliance auditor — verifies done-when criteria, must-not-have exclusions, scope fidelity, APPROVE/REJECT verdict |
 | `ac:challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches |
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
 | `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
@@ -218,10 +219,12 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 Request -> Classify (intent + complexity)
         -> Research (parallel ac:explore + ac:librarian agents)
         -> Interview (AskUserQuestion with options)
-        -> Draft plan with acceptance criteria
-        -> Analysis gate (plan-analysis agent)
+        -> Draft plan: steps with Tier (quick/mid/senior), done-when criteria, independence
+        -> Wave decomposition: group independent steps into parallel Waves
+        -> Analysis gate (plan-analysis Opus agent: gaps, AI-slop, tier sanity, Gemini second eye)
         -> Save to ~/.claude/projects/<hash>/plans/
-        -> User approves -> /ac:execute
+        -> User: Execute / Deep Review (plan-review Momus) / Adjust
+        -> Execute -> /ac:execute
 ```
 
 ### Deep Investigation (`/ac:deep`)
@@ -238,12 +241,16 @@ Request -> Classify (intent type + scope + predict likely issues)
 ### Execution (`/ac:execute`)
 
 ```
-Load plan -> Decompose into Work Units
-          -> Independent units -> parallel background agents
-          -> Dependent units -> sequential agents
-          -> After each unit: check <new-diagnostics>, delegate to ac:linter
-          -> Track progress per wave
-          -> Final verification (build + test + lint + LSP navigation check + code review gate)
+Load plan -> Parse Waves section (or legacy Work Units)
+          -> Wave 1: parallel background agents (per-step model routing: quick→Haiku, mid→Sonnet, senior→Opus)
+          -> Wave 2+: sequential after prior wave completes
+          -> After each unit: extract wisdom, check <new-diagnostics>, delegate to ac:linter
+          ->   On agent failure: tier escalation (quick→Sonnet, mid→Opus, max 1 retry)
+          -> Wisdom persisted to plans/{name}.wisdom.md
+          -> Final verification: build + test + lint + LSP navigation + code review gate
+          -> Mandatory: ac:verifier compliance audit (done-when criteria, must-not-have, scope fidelity)
+          -> APPROVE → offer Commit / Review Changes / Done
+          -> REJECT → present failed items → Fix and Re-verify / Accept and Commit
 ```
 
 ### Smart Commit (`/ac:commit`)
@@ -289,14 +296,16 @@ Request -> Classify (intent + complexity)
 
 ## Design Principles
 
-**Sonnet-first, Opus-when-needed** — The plugin is designed for developers who run Claude Code on Sonnet as their default model. Complex tasks escalate to Opus agents for planning, investigation, and architecture, then return to Sonnet for execution. Haiku handles fast search and exploration. You get the right model at each step without switching manually.
+**Tier-based model routing** — Every plan step carries a tier (`quick`/`mid`/`senior`). `/ac:execute` routes each worker agent to the right model — Haiku for quick mechanical tasks, Sonnet for standard implementation, Opus for senior-level cross-layer changes. Failed agents escalate one tier before logging failure (quick→Sonnet, mid→Opus). You get exactly the right model at each step, automatically.
 
 ```
 Daily work (Sonnet) -> Complex task detected
-  -> Build/Refactor? -> /ac:plan (Opus plans, Haiku researches)
+  -> Build/Refactor? -> /ac:plan (Opus plans + tier-assigns, Haiku researches)
   -> Debug/Investigate? -> /ac:deep (Opus investigates, Haiku searches)
   -> Critical task? -> /ac:ultra (Opus orchestrates end-to-end with verification)
-  -> /ac:execute (Sonnet agents implement)
+  -> /ac:execute -> Wave 1 parallel: quick→Haiku, mid→Sonnet, senior→Opus
+                 -> Wave 2+ sequential: same per-step routing
+                 -> ac:verifier final gate -> Commit / Done
   -> Back to daily work (Sonnet)
 ```
 
@@ -304,7 +313,7 @@ Daily work (Sonnet) -> Complex task detected
 
 **Progressive disclosure** — Plugin metadata is always in context (~100 words per component). SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant.
 
-**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review) never have write tools. All 9 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
+**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review, verifier) never have write tools. All 10 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
 
 **Subagent-only architecture** — All agents use the subagent execution model (fresh context, custom model/tools). The fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory).
 
@@ -331,12 +340,13 @@ plugins/ac/
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   ├── commit.md               # /ac:commit
 │   └── brainstorm.md           # /ac:brainstorm
-├── agents/                      # 9 read-only agent definitions
+├── agents/                      # 10 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Sonnet external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier
-│   ├── plan-analysis.md         # Sonnet plan auditor
-│   ├── plan-review.md           # Opus plan reviewer
+│   ├── plan-analysis.md         # Opus plan quality gate (tier sanity, gap, slop)
+│   ├── plan-review.md           # Opus adversarial plan reviewer (Momus-class)
+│   ├── verifier.md              # Opus post-execution compliance auditor
 │   ├── challenger.md            # Sonnet devil's advocate
 │   ├── feasibility.md           # Sonnet feasibility evaluator
 │   ├── code-reviewer.md         # Sonnet spec + quality reviewer
