@@ -149,12 +149,13 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
    - Quick-tier enrichment: when a step is classified `quick`, write an exhaustively explicit description — exact file path, exact change to make, expected before/after state. The executing model is optimized for speed over depth; compensate with prompt precision
 9. If TDD rule is active, every implementation step must be preceded by a test step
 10. Add a "Must NOT Have" section listing explicit exclusions
-11. If plan has 3+ steps, decompose into Work Units for `ac:execute`:
-    - Group independent steps (no shared files, no dependency) into parallel units
-    - Merge dependent steps into single sequential units
-    - Each unit must have no shared state with sibling units
-    - Each unit must be independently verifiable
-    - Add "Work Units" section to plan file
+11. If plan has 3+ steps, decompose into Waves for `ac:execute`:
+    - **Wave 1**: Group all independent steps (no shared files, no dependency) — these run in parallel
+    - **Wave 2+**: Steps that depend on Wave 1 results go into Wave 2, etc.
+    - Each wave must have no shared state with sibling waves
+    - Each wave must be independently verifiable
+    - Annotate each step with its tier inline: `Step N [quick]`, `Step N [mid]`, `Step N [senior]`
+    - Add "Waves" section to plan file
 12. Save the draft plan to `~/.claude/projects/<cwd-hash>/plans/$planName.md`
 
 **Plan File Format** (contract with ac:execute):
@@ -169,7 +170,7 @@ Plans must follow this exact structure for ac:execute compatibility:
   - `Done when:` executable acceptance criteria
   - `Independence:` independent or depends on Step N
   - `Tier:` quick | mid | senior — signals ac:execute which model to use (quick→Haiku, mid→Sonnet, senior→Opus)
-- `### Work Units` — parallel decomposition with Unit entries containing Steps, Files, Verification
+- `### Waves` — wave-based parallel decomposition: Wave 1 (no deps, all parallel), Wave 2 (after Wave 1), etc. Each step annotated with tier `[quick/mid/senior]`
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
 - `### Research Summary` — structured findings from Phase 2:
@@ -229,19 +230,19 @@ Do not present a plan that references symbols verified-missing by LSP.
 
 2. ...
 
-### Work Units (for ac:execute)
+### Waves (for ac:execute)
 
-Unit 1: [descriptive name]
-- Steps: [step numbers]
-- Files: [non-overlapping file list]
-- Verification: [command]
+Wave 1 (Start Immediately):
+├── Step 1 [quick]: [title]
+├── Step 2 [quick]: [title]
+└── Step 3 [mid]: [title]
 
-Unit 2: [descriptive name]
-- Steps: [step numbers]
-- Files: [non-overlapping file list]
-- Verification: [command]
+Wave 2 (After Wave 1):
+├── Step 4 [senior]: [title]
+└── Step 5 [mid]: [title]
 
-Sequential: [step numbers that must run after parallel units, if any]
+Wave 3 (After Wave 2):
+└── Step 6 [mid]: [title]
 
 ### Must NOT Have
 - [Explicit exclusion / AI-slop guardrail]
