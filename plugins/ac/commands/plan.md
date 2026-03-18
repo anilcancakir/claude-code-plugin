@@ -199,7 +199,7 @@ Do not present a plan that references symbols verified-missing by LSP.
 
 **Analysis gate** (mandatory before presenting to user):
 
-1. Launch the `plan-analysis` agent via the Agent tool with `subagent_type: "ac:plan-analysis"`. In the prompt, provide the plan file path. This runs gap classification, AI-slop detection, and acceptance criteria audit on a fresh Sonnet context
+1. Launch the `plan-analysis` agent via the Agent tool with `subagent_type: "ac:plan-analysis"`. In the prompt, provide the plan file path. This runs gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit on a fresh Opus context
 2. Read the analysis agent's output. Apply all fixes:
     - CRITICAL gaps: add as questions for the user
     - MINOR gaps: fix directly in the plan
@@ -279,7 +279,8 @@ Plan handoff must respect runtime mode:
 - If plan mode is active, use `ExitPlanMode` for approval handoff
 - If plan mode is not active, use standard chat flow and AskUserQuestion options
 
-CRITICAL: Do not write code or modify source files during planning. Only produce the plan.
+=== CRITICAL: PLAN ONLY — DO NOT WRITE CODE ===
+Do not write code or modify source files. Only produce the plan.
 
 ---
 

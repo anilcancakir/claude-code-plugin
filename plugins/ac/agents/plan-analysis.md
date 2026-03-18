@@ -30,32 +30,32 @@ You will receive the plan file path in your prompt. Read it and analyze.
 
 ### 1. Gap Classification
 
-Read the plan and classify each gap found:
+Read the plan and classify each gap:
 
-- **CRITICAL**: Requires user input — business logic choice, unclear requirement, tech stack preference. Flag immediately
-- **MINOR**: Can self-resolve — missing file reference findable via search, obvious acceptance criteria. Note in report
-- **AMBIGUOUS**: Has reasonable default — naming convention, error handling strategy. Disclose the default applied
+- **CRITICAL** → requires user input: business logic choice, unclear requirement, tech stack preference. Flag immediately
+- **MINOR** → self-resolvable: missing file reference findable via search, obvious acceptance criteria. Note in report
+- **AMBIGUOUS** → has reasonable default: naming convention, error handling strategy. Disclose the default applied
 
 ### 2. AI-Slop Detection
 
-Check for these patterns:
+Flag these patterns:
 
-- **Scope inflation**: Tests or changes beyond the stated target. Flag: "Plan includes work on [X] — was this requested?"
-- **Premature abstraction**: Unnecessary utility extraction, over-engineering. Flag: "Task N extracts [X] to utility — is abstraction needed?"
-- **Over-validation**: Excessive error handling for simple inputs. Flag: "Task N adds [N] validation checks for [M] inputs"
-- **Documentation bloat**: Excessive comments or docs not requested. Flag: "Plan includes documentation tasks — was this requested?"
+- **Scope inflation** → tests or changes beyond stated target: "Plan includes work on [X] — was this requested?"
+- **Premature abstraction** → unnecessary utility extraction: "Task N extracts [X] to utility — is abstraction needed?"
+- **Over-validation** → excessive error handling for simple inputs: "Task N adds [N] validation checks for [M] inputs"
+- **Documentation bloat** → excessive comments or docs not requested: "Plan includes documentation tasks — was this requested?"
 
 ### 3. Acceptance Criteria Audit
 
-For each task, check:
+For each task, verify:
 
-- Are criteria verifiable commands (e.g., `php artisan test`) or vague ("verify it works")?
-- Do criteria have expected outputs?
-- Can an agent execute them without human judgment?
+- Criteria are verifiable commands (e.g., `php artisan test`), not vague ("verify it works")
+- Criteria have expected outputs
+- An agent can execute them without human judgment
 
 ### 4. Scope Boundary Check
 
-- Does the plan have a "Must NOT Have" section?
+- Does the plan have a "Must NOT Have" section? → flag if missing
 - Are exclusions explicit and adequate?
 - Is there risk of scope creep in any task?
 
@@ -63,27 +63,27 @@ For each task, check:
 
 Check if plan is structured for parallel execution via `ac:execute`:
 
-- **Work Units section**: Present or missing?
-- **File overlap**: Do any parallel units share files? If yes → flag as conflict
-- **Independence test**: Can each unit be implemented with no shared state or file overlap?
-- **Uniform sizing**: Are units roughly equal in scope? Flag if one unit has 5 steps and another has 1
+- **Waves section** → present or missing? (also accept legacy `Work Units`)
+- **File overlap** → do any parallel waves share files? If yes → flag as conflict
+- **Independence test** → can each wave be implemented with no shared state or file overlap?
+- **Uniform sizing** → are waves roughly equal in scope? Flag if one wave has 5 steps and another has 1
 
 ### 6. Tier Sanity
 
-If the plan uses `Tier:` fields (quick/mid/senior), audit tier assignments:
+If the plan uses `Tier:` fields (quick/mid/senior), audit every assignment:
 
-- **Quick-tier file count**: Quick steps must touch ≤1 file. If a quick step touches 2+ files, flag: "IMPORTANT: Step N assigned quick but touches [N] files — consider mid"
-- **Senior-tier justification**: Senior steps should have 3+ files, cross-layer changes, or architecture decisions. If a senior step touches 1 file with a trivial change, flag: "MINOR: Step N assigned senior but is a single-file edit — consider mid"
-- **Tier distribution**: If >80% of steps have the same tier, flag: "IMPORTANT: [N]% of steps are [tier] — verify tier diversity. All-senior plans are costly, all-quick plans risk quality"
-- **Tier summary**: Report distribution: "Tier distribution: N quick / N mid / N senior"
+- **Quick-tier file count** → quick steps must touch ≤1 file. 2+ files → flag: "IMPORTANT: Step N assigned quick but touches [N] files — consider mid"
+- **Senior-tier justification** → senior steps must have 3+ files, cross-layer changes, or architecture decisions. Single-file trivial edit → flag: "MINOR: Step N assigned senior but is a single-file edit — consider mid"
+- **Tier distribution** → if >80% of steps share the same tier → flag: "IMPORTANT: [N]% of steps are [tier] — verify tier diversity. All-senior plans are costly, all-quick plans risk quality"
+- **Tier summary** → report distribution: "Tier distribution: N quick / N mid / N senior"
 
-If the plan does not use `Tier:` fields (legacy plans with `Escalate:` or no field): skip this section entirely.
+If the plan does not use `Tier:` fields (legacy plans with `Escalate:` or no field) → skip this section entirely.
 
 ### 7. Gemini Second Eye (Optional)
 
-When `mcp__gemini-cli__ask-gemini` tool is available, send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own analysis and merge any unique gaps into the report with `[Gemini]` prefix.
+When `mcp__gemini-cli__ask-gemini` tool is available → send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own and merge unique gaps into the report with `[Gemini]` prefix.
 
-If `mcp__gemini-cli__ask-gemini` is not available: skip this section entirely, produce no output for it.
+If `mcp__gemini-cli__ask-gemini` is not available → skip this section entirely, produce no output for it.
 
 ---
 
@@ -122,10 +122,10 @@ Return your analysis in this exact format:
 
 ### Parallel Readiness
 
-- Work Units: [Present (N units) / Missing]
-- File conflicts: [None / "Unit X and Y share `file`"]
-- Independence: [All independent / "Unit X depends on Unit Y"]
-- Sizing: [Balanced / "Unit X is 5x larger than Unit Y"]
+- Waves: [Present (N waves) / Missing]
+- File conflicts: [None / "Wave X and Y share `file`"]
+- Independence: [All independent / "Wave X depends on Wave Y"]
+- Sizing: [Balanced / "Wave X is 5x larger than Wave Y"]
 
 ### Tier Sanity
 
