@@ -246,75 +246,53 @@ When all agents complete, render the final table and summary.
 
 ---
 
-## Phase 5: Final Verification
+## Phase 5: Build & Test Verification
 
 **Goal**: Verify the full plan was executed correctly.
-
-**Actions**:
 
 1. Run project-wide verification:
    - Full build
    - Full test suite
    - Lint check
-3. Summary:
+2. If any fails → fix root cause, re-run. Do not proceed to Phase 6 with failures.
+3. **LSP Navigation Check** (if LSP tool available):
+   - For each modified file: `LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)` → confirms parseable + exports intact
+   - For refactor/rename work: `LSP(operation="findReferences", ...)` → confirms no broken callers
+   - If LSP not available → skip, rely on lint output only
+4. **Code Review** (if 5+ files modified or quality-critical):
+   ```
+   Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].")
+   ```
+   - CRITICAL findings → fix before proceeding to Phase 6
+   - IMPORTANT findings → report to user, proceed
 
-```
-## Execution Complete
+---
 
-**Plan**: [plan name]
-**Steps**: N/N completed
-**Strategy**: [what was used]
+=== CRITICAL: DO NOT SKIP PHASE 6 — MANDATORY FINAL GATE ===
 
-### Results
-| Step | Status |
-|------|--------|
-| 1 | ✅ |
-| 2 | ✅ |
+Execution is NOT complete after Phase 5. You MUST invoke Phase 6 before rendering any summary or suggesting commit. Skipping Phase 6 is a failure mode.
 
-### Verification
-- Build: [pass/fail]
-- Tests: [pass/fail]
-- Lint: [pass/fail]
-```
+## Phase 6: Compliance Gate
 
-### LSP Navigation Check (if LSP tool available)
+**Goal**: Verify plan compliance via ac:verifier agent. This phase is mandatory — every execution must complete it.
 
-After build/test/lint pass, run final structure verification:
-
-For each modified file:
-```
-LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)
-```
-→ confirms file is parseable and exports are intact
-
-For refactor/rename work:
-```
-LSP(operation="findReferences", filePath=<file>, line=<symbol_line>, character=<symbol_col>)
-```
-→ confirms no broken callers
-
-If LSP tool is not available → skip this step, rely on lint output only.
-
-### Optional: Code Review (quality-critical tasks)
-
-For plans with significant code changes (5+ files modified or user-indicated quality-critical), consider:
-```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].")
-```
-CRITICAL findings must be fixed before marking complete. IMPORTANT findings are reported to user.
-
-### Plan Compliance Verification (mandatory)
-
-After build/test/lint pass (and optional LSP/code-review), run the verifier agent as the final gate:
+**Step 1** — Invoke verifier:
 
 ```
 Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity.")
 ```
 
-**Handle verdict**:
+**Step 2** — Read verdict and route:
 
-- **APPROVE** → Present verification summary to user with results table, then offer:
-  ```
+→ **APPROVE** → go to Step 3
+→ **REJECT** → go to Step 4
+
+**Step 3** — APPROVE path:
+
+Render execution summary (plan name, steps completed, strategy, build/test/lint results), then:
+
+```
+AskUserQuestion(
   question: "Verification passed. All criteria met, scope clean."
   header: "Execution Complete"
   options:
@@ -324,9 +302,15 @@ Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-fil
       description: "Show git diff before committing."
     - label: "Done"
       description: "Keep changes uncommitted."
-  ```
-- **REJECT** → Present failed items with evidence, then offer options via AskUserQuestion:
-  ```
+)
+```
+
+**Step 4** — REJECT path:
+
+Present failed items with evidence from verifier output, then:
+
+```
+AskUserQuestion(
   question: "Verifier found unmet criteria. How to proceed?"
   header: "Verification Failed"
   options:
@@ -334,16 +318,18 @@ Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-fil
       description: "Address the failed criteria, then re-run verifier."
     - label: "Accept and Commit"
       description: "Acknowledge failures and commit current state anyway."
-  ```
-  If user selects "Fix and Re-verify" → user fixes issues, then re-invoke verifier.
+)
+```
 
-Do NOT suggest commit until verifier returns APPROVE (or user explicitly selects "Accept and Commit").
+If user selects "Fix and Re-verify" → fix issues, then re-invoke verifier (loop back to Step 1).
+
+DO NOT render "Execution Complete" or suggest commit before Phase 6 completes.
 
 ---
 
 ## Error Handling
 
-- **Agent fails**: Log failure, continue other agents. Report in final summary
+- **Agent fails**: Attempt tier escalation first (Phase 4). If still fails, log failure and continue other agents. Report in final summary
 - **Plan file not found**: Inform user, suggest running `/ac:plan` first
 - **No independent steps found**: Fall back to sequential execution
 - **Not a git repo**: Fall back to sequential execution
