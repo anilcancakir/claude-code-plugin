@@ -104,12 +104,7 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 
 1. Once agents return, read all key files identified by agents to build deep understanding
 2. Summarize findings: patterns found, files to modify, dependencies, external best practices discovered
-3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings:
-   - **Key Files**: file:line references with one-line descriptions of what each file contains
-   - **Patterns Found**: Architectural patterns, naming conventions, code organization discovered
-   - **Dependencies**: External libraries, frameworks, or services identified
-   - **Conventions**: Detected naming patterns, file organization style, coding conventions
-   Format must be structured (not raw agent output) — maximum ~30 lines total.
+3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings. Four subsections: **Key Files** (file:line references with one-line descriptions), **Patterns Found** (architecture, naming, code organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming patterns, file organization, coding style). Format must be structured — maximum ~30 lines total.
 
 **Error Recovery**: If ac:explore agents return empty or insufficient results, proceed to Phase 3 with reduced confidence. Note research gaps in the plan's Risks section and flag them to the user during review. Do not block planning due to incomplete research — partial data is better than no plan.
 
@@ -136,25 +131,12 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 5. Derive `$planName` from request topic (slugified, e.g., `auth-system`)
 6. Plan storage path is `.ac/plans/` (created automatically if missing)
 7. Synthesize all findings into a draft plan
-8. Each step must include:
-   - Clear deliverable description
-   - Files to create or modify
-   - Acceptance criteria as executable commands (not "verify it works")
-   - Independence: `independent` (no shared files/state with other steps) or `depends on Step N` (reason)
-   - Tier: `quick`, `mid`, or `senior` — classify per step using the tier heuristic:
-     - `quick` when ALL: ≤1 file to modify, trivial change (config, typo, rename, simple addition), no design decisions
-     - `mid` when: 1-2 files, standard implementation, moderate complexity, test writing (default)
-     - `senior` when ANY: 3+ files to modify, schema/migration changes, cross-layer touches (frontend + backend or 2+ architectural layers), complex multi-step verification, architecture decisions
-   - Quick-tier enrichment: when a step is classified `quick`, write an exhaustively explicit description — exact file path, exact change to make, expected before/after state. The executing model is optimized for speed over depth; compensate with prompt precision
+8. Each step must include: clear deliverable description, files to create/modify, acceptance criteria as executable commands (not "verify it works"), independence (`independent` or `depends on Step N`), and tier assignment (`quick`/`mid`/`senior`)
+   - **Tier heuristic**: `quick` = ≤1 file, trivial change, no design decisions. `mid` = 1-2 files, standard implementation (default). `senior` = 3+ files, schema/migration, cross-layer, architecture decisions
+   - **Quick-tier enrichment**: Write exhaustively explicit descriptions — exact file, exact change, before/after state. The executing model optimizes for speed; compensate with prompt precision
 9. If TDD rule is active, every implementation step must be preceded by a test step
 10. Add a "Must NOT Have" section listing explicit exclusions
-11. If plan has 3+ steps, decompose into Waves for `ac:execute`:
-    - **Wave 1**: Group all independent steps (no shared files, no dependency) — these run in parallel
-    - **Wave 2+**: Steps that depend on Wave 1 results go into Wave 2, etc.
-    - Each wave must have no shared state with sibling waves
-    - Each wave must be independently verifiable
-    - Annotate each step with its tier inline: `Step N [quick]`, `Step N [mid]`, `Step N [senior]`
-    - Add "Waves" section to plan file
+11. If plan has 3+ steps, decompose into Waves for `ac:execute`. Wave 1: all independent steps (no shared files/deps) run in parallel. Wave 2+: steps depending on Wave 1. No shared state between sibling waves. Annotate each step with tier inline: `Step N [quick/mid/senior]`. Add "Waves" section to plan file.
 12. Save the draft plan to `.ac/plans/$planName.md`
 
 **Plan File Format** (contract with ac:execute):
@@ -163,19 +145,11 @@ Plans must follow this exact structure for ac:execute compatibility:
 - `# Plan: [Title]` — H1 with plan name
 - `**TL;DR**:` — 1-2 sentence summary
 - `**Intent**:` and `**Complexity**:` — classification metadata
-- `## Steps` or `### Unit N:` — numbered steps, each with:
-  - `**Step N**: [title]` heading
-  - `Files:` list of files to modify
-  - `Done when:` executable acceptance criteria
-  - `Independence:` independent or depends on Step N
-  - `Tier:` quick | mid | senior — signals ac:execute which model to use (quick→Haiku, mid→Sonnet, senior→Opus)
+- `## Steps` or `### Unit N:` — numbered steps, each with `**Step N**: [title]`, `Files:`, `Done when:`, `Independence:`, `Tier:` (quick→Haiku, mid→Sonnet, senior→Opus)
 - `### Waves` — wave-based parallel decomposition: Wave 1 (no deps, all parallel), Wave 2 (after Wave 1), etc. Each step annotated with tier `[quick/mid/senior]`
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
-- `### Research Summary` — structured findings from Phase 2:
-  - `Key Files` — file:line references with one-line description of what each contains
-  - `Patterns Found` — convention bullets (architecture, naming, code organization)
-  - `Dependencies` — external libraries, frameworks, or services identified
+- `### Research Summary` — structured findings from Phase 2 (Key Files, Patterns Found, Dependencies)
 - `### Conventions` — naming patterns, file organization, coding style detected from explore agents
 - `### Task Context` — (task mode only) source task file path, type, size, priority, extracted User Story + Acceptance Criteria
 

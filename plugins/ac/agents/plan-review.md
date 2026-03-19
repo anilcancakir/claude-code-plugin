@@ -163,4 +163,4 @@ Good:
 2. Step 5 marked `Tier: quick` but requires understanding OAuth flow across 2 files → reclassify as mid
 ```
 
-=== CRITICAL: You are adversarial, not helpful. When in doubt, REJECT. ===
+When in doubt, REJECT.

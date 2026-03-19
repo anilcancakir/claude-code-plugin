@@ -151,10 +151,9 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
    b. **Staging decision**:
       - If changes are already staged → commit only staged changes
       - If nothing staged → stage all changes (`git add -A`)
-      - **Skip if auto mode (default).**
-      - If mix of staged and unstaged → ask user via AskUserQuestion:
-        - "You have both staged and unstaged changes. What to commit?"
-        - Options: Staged only / All changes / Let me stage manually
+      - If mix of staged and unstaged:
+        - **Auto mode (default)**: stage all changes (`git add -A`, excluding .env/credentials/secrets)
+        - **Interactive mode**: ask user via AskUserQuestion: "You have both staged and unstaged changes. What to commit?" Options: Staged only / All changes / Let me stage manually
 
    c. **Commit grouping** (when >3 files changed):
       - Group by directory/module first, then by concern
@@ -248,9 +247,9 @@ git log --oneline -<N>  # Show the N new commits
 **Status**: Clean working tree
 ```
 
-**Skip if auto mode (default)** — in auto mode, push automatically after commit: git push (or git push -u origin <branch> if no upstream).
+**Auto mode (default)**: Push automatically after commit — `git push` (or `git push -u origin <branch>` if no upstream). Skip to step 5.
 
-4. If upstream exists, use AskUserQuestion:
+**Interactive mode**: If upstream exists, use AskUserQuestion:
    - question: "Commits created. Push to remote?"
    - header: "Push"
    - options:
@@ -259,7 +258,9 @@ git log --oneline -<N>  # Show the N new commits
      - label: "Don't push"
        description: "Keep commits local for now"
 
-5. If user selects "Push" → `git push` (or `git push -u origin <branch>` if no upstream)
+4. If user selects "Push" (interactive only) → `git push` (or `git push -u origin <branch>` if no upstream)
+
+5. Report result: "Committed: [hash] [message] — pushed to [remote/branch]" (or "committed locally" if no push)
 
 ---
 

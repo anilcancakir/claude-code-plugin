@@ -244,10 +244,10 @@ Load plan -> Parse Waves section (or legacy Work Units)
           -> Wave 2+: sequential after prior wave completes
           -> After each unit: extract wisdom, check <new-diagnostics>, delegate to ac:linter
           ->   On agent failure: tier escalation (quick→Sonnet, mid→Opus, max 1 retry)
-          -> Wisdom persisted to plans/{name}.wisdom.md
+          -> Wisdom persisted to .ac/plans/{name}.wisdom.md
           -> Final verification: build + test + lint + LSP navigation + code review gate
           -> Mandatory: ac:verifier compliance audit (done-when criteria, must-not-have, scope fidelity)
-          -> APPROVE → offer Commit / Review Changes / Done
+          -> APPROVE → invoke /ac:commit (auto commit+push)
           -> REJECT → present failed items → Fix and Re-verify / Accept and Commit
 ```
 

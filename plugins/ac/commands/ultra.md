@@ -108,7 +108,7 @@ Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CL
    - Launch additional agents for the gap
    - OR use AskUserQuestion if the gap requires user input
    - Re-run certainty check
-5. If ALL checks are "Yes": proceed to Phase 3
+6. If ALL checks are "Yes": proceed to Phase 3
 
 ---
 
