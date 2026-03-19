@@ -17,7 +17,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
 │   │   ├── commands/             # 11 user-invocable /ac:* commands
-│   │   ├── agents/               # 10 read-only agent definitions
+│   │   ├── agents/               # 11 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
 │   │   ├── README.md
@@ -92,9 +92,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | Command | Description |
 |---------|-------------|
 | `/ac:plan` | Classify → research → interview → plan |
-| `/ac:deep` | Opus-powered root cause analysis for complex bugs and debugging |
 | `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) |
-| `/ac:ultra` | End-to-end disciplined execution — certainty → plan → execute → verify. Supports `--loop` for autonomous retry (max 3 iterations) |
 | `/ac:init-claude-md` | Generate/enhance project CLAUDE.md |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
@@ -117,6 +115,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
 | `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline | Read, Glob, LS, gemini-cli |
+| `investigate` | `"ac:investigate"` | `"investigate"` | Opus | red | Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively for hairy bugs | Glob, Grep, Read, LS, BashOutput |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -161,11 +160,11 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → references/ on demand
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
-- **Certainty-first** (ultra): End-to-end discipline — no implementation without certainty, no completion without evidence
+- **reliability-first**: Right model for right task — default Sonnet execution, Opus for planning/investigation/architecture
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/` in the working directory. Not gitignored by default — each project decides
-- **Auto commit+push**: Orchestrators (execute, ultra, ideate) invoke `/ac:commit` after task completion to commit and push changes
+- **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
 
 ## Key Files
 

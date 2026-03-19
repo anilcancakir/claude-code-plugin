@@ -83,14 +83,6 @@ Claude classifies the request, launches research agents, interviews you on ambig
 
 Decomposes the plan into independent work units and executes them — parallel background agents for independent steps, sequential agents for dependent ones.
 
-For complex bugs or deep investigation:
-
-```
-/ac:deep <describe the bug or issue>
-```
-
-Opus investigates the codebase, traces root cause through hypothesis-first analysis, and returns specific fix steps.
-
 For smart commits with preflight checks:
 
 ```
@@ -106,14 +98,6 @@ For refining ideas, creating PRDs, and managing product requests before planning
 ```
 
 Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute. Produces a mature concept document with gaps, risks, and alternatives — ready for `/ac:plan` handoff.
-
-For critical tasks where partial delivery is unacceptable:
-
-```
-/ac:ultra <describe your task>
-```
-
-Chains the full workflow — certainty gate, planning, execution, and verification — in one command. Enforces delegation-first orchestration and requires evidence-based completion before declaring done.
 
 ### Updating
 
@@ -165,9 +149,7 @@ Or in `~/.claude/settings.json`:
 | Command | Description |
 |---------|-------------|
 | `/ac:plan` | Classify intent, research via agents, interview, produce actionable plan |
-| `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation |
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential |
-| `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command |
 | `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits |
 | `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
 
@@ -202,6 +184,7 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
 | `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
 | `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline |
+| `ac:investigate` | `"ac:investigate"` | Opus | Root cause investigator — hypothesis-driven debugging with structured evidence |
 
 ## Skills
 
@@ -223,17 +206,6 @@ Request -> Classify (intent + complexity)
         -> Save to .ac/plans/
         -> User: Execute / Deep Review (plan-review Momus) / Adjust
         -> Execute -> /ac:execute
-```
-
-### Deep Investigation (`/ac:deep`)
-
-```
-Request -> Classify (intent type + scope + predict likely issues)
-        -> Research (LSP navigation first: incomingCalls/goToDefinition/findReferences,
-                     then parallel ac:explore + ac:librarian agents)
-        -> Analyze (hypothesis-first, verify against code, load my-coding)
-        -> Report (diagnosis + evidence + recommended fix + verification)
-        -> Main agent executes recommended steps
 ```
 
 ### Execution (`/ac:execute`)
@@ -272,17 +244,6 @@ Idea/Request -> Classify (mode: idea refinement vs PRD vs PM task, detect --bulk
              -> Handoff (plan this / plan all / save & exit)
 ```
 
-### Ultra Mode (`/ac:ultra`)
-
-```
-Request -> Classify (intent + complexity)
-        -> Certainty gate (parallel agents, readiness self-check)
-        -> Plan (invoke ac:plan or ac:deep)
-        -> Execute (invoke ac:execute or direct)
-        -> Verify (build + test + lint + manual QA)
-        -> Complete (all TODOs done, evidence collected)
-```
-
 ## Design Principles
 
 **Tier-based model routing** — Every plan step carries a tier (`quick`/`mid`/`senior`). `/ac:execute` routes each worker agent to the right model — Haiku for quick mechanical tasks, Sonnet for standard implementation, Opus for senior-level cross-layer changes. Failed agents escalate one tier before logging failure (quick→Sonnet, mid→Opus). You get exactly the right model at each step, automatically.
@@ -290,8 +251,6 @@ Request -> Classify (intent + complexity)
 ```
 Daily work (Sonnet) -> Complex task detected
   -> Build/Refactor? -> /ac:plan (Opus plans + tier-assigns, Haiku researches)
-  -> Debug/Investigate? -> /ac:deep (Opus investigates, Haiku searches)
-  -> Critical task? -> /ac:ultra (Opus orchestrates end-to-end with verification)
   -> /ac:execute -> Wave 1 parallel: quick→Haiku, mid→Sonnet, senior→Opus
                  -> Wave 2+ sequential: same per-step routing
                  -> ac:verifier final gate -> Commit / Done
@@ -302,7 +261,7 @@ Daily work (Sonnet) -> Complex task detected
 
 **Progressive disclosure** — Plugin metadata is always in context (~100 words per component). SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant.
 
-**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review, verifier) never have write tools. All 10 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
+**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review, verifier) never have write tools. All 11 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
 
 **Subagent-only architecture** — All agents use the subagent execution model (fresh context, custom model/tools). The fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory).
 
@@ -315,11 +274,9 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 11 user-invocable /ac:* commands
+├── commands/                    # 9 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
-│   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
-│   ├── ultra.md                 # /ac:ultra
 │   ├── ideate.md                # /ac:ideate
 │   ├── init-claude-md.md        # /ac:init-claude-md
 │   ├── init-rules.md            # /ac:init-rules
@@ -327,7 +284,7 @@ plugins/ac/
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   └── commit.md               # /ac:commit
-├── agents/                      # 10 read-only agent definitions
+├── agents/                      # 11 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Sonnet external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier

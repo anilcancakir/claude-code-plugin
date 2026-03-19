@@ -179,7 +179,7 @@ Question 7:
 3. **Enhance/New mode** (interview path): Build all sections from interview answers + detected data:
    - **Identity block**: Communication style from Q1
    - **Tech Stack**: From Q2 or detected from `my-coding` skill
-   - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:deep"`, Critical/Must-not-fail → `skill: "ac:ultra"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
+   - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:plan"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
    - **Workflow — Research**: Copy the Research BLOCKING block verbatim from the template. NEVER compress, soften, or summarize — the "Do NOT use Grep, Glob, Read, or WebSearch directly" prohibition must appear word-for-word. This is the primary mechanism that makes Claude delegate to `ac:explore` and `ac:librarian` agents.
    - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
    - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>` from session). User skills: trigger description from frontmatter. Plugin skills: trigger description from frontmatter. **Never include `ac-skill-creator` or `ac:ac-skill-creator`** — omit entirely regardless of detection. If no skills detected, omit this section
@@ -214,7 +214,7 @@ Question 7:
    - `TodoWrite` not "create a task list"
    - `ac:explore` for codebase exploration, `ac:librarian` for external docs — not "launch an explorer"
    - `skill: "ac:plan"` for planning workflows
-   - `skill: "ac:deep"` for debugging/investigation workflows — not "analyze the bug"
+   - `skill: "ac:plan"` for all workflows (planning, debugging, investigation) — delegates to appropriate agent via intent classification
    - `AskUserQuestion` not "ask the user"
    - `run_in_background: true` for parallel execution
 3. Ensure no duplicate rules — each rule appears exactly once

@@ -9,8 +9,8 @@
     "plugins": [
         {
             "name": "ac",
-            "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents with customizable model routing.",
-            "version": "2.18.0",
+            "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with hypothesis discipline, delegates to specialized agents with reliability-first model routing.",
+            "version": "3.0.0",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
@@ -20,7 +20,7 @@
             "homepage": "https://github.com/anilcancakir/claude-code-plugin",
             "tags": [
                 "development-twin",
-                "cost-optimization",
+                "reliability-first",
                 "model-routing",
                 "plan-first",
                 "multi-agent"

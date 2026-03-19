@@ -9,10 +9,10 @@ description: |
   <commentary>Triggered after implementation. Code-reviewer checks acceptance criteria first, then quality.</commentary>
   </example>
   <example>
-  Context: ac:ultra Phase 5 verification, code changes span 4+ files
+  Context: ac:execute Phase 5 verification, code changes span 4+ files
   user: [internally via Agent tool]
   assistant: "Delegating to ac:code-reviewer for 2-stage spec + quality review."
-  <commentary>Triggered by ac:ultra when complexity is Standard or Complex. Returns CRITICAL/IMPORTANT/MINOR findings.</commentary>
+  <commentary>Triggered by ac:execute when complexity is Standard or Complex. Returns CRITICAL/IMPORTANT/MINOR findings.</commentary>
   </example>
 model: sonnet
 tools: Glob, Grep, LS, Read
