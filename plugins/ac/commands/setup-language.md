@@ -1,7 +1,6 @@
 ---
 description: Interactive writing style analyzer — scans existing articles, documentation, and written content, interviews the developer, generates a personalized my-language skill
 argument-hint: Path to writing samples or documentation directory (optional)
-model: opus
 ---
 
 # Setup My Language Style

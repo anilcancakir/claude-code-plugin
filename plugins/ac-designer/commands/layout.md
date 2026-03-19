@@ -1,7 +1,6 @@
 ---
 description: Generate layout shells (app-shell, auth, dashboard) — determines needed layouts from codebase or interview, generates via Stitch with DESIGN.md injection. Run after /ac-designer:init.
 argument-hint: Layout name or type (optional, e.g., "app-shell", "auth", "dashboard")
-model: opus
 ---
 
 # Layout Generation

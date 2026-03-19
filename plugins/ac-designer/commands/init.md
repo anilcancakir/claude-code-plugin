@@ -1,7 +1,6 @@
 ---
 description: Initialize Stitch project — create or connect project, generate design foundation, build DESIGN.md from first screen. Use when starting a new design project or connecting to an existing Stitch project.
 argument-hint: Project name or Stitch project ID (optional)
-model: opus
 ---
 
 # Initialize Stitch Design Project

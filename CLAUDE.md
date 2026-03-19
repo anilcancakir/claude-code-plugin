@@ -89,19 +89,19 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 ## Commands (ac plugin)
 
-| Command | Description | Model |
-|---------|-------------|-------|
-| `/ac:plan` | Classify → research → interview → plan | Opus |
-| `/ac:deep` | Opus-powered root cause analysis for complex bugs and debugging | Opus |
-| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) | Sonnet |
-| `/ac:ultra` | End-to-end disciplined execution — certainty → plan → execute → verify. Supports `--loop` for autonomous retry (max 3 iterations) | Opus |
-| `/ac:init-claude-md` | Generate/enhance project CLAUDE.md | Opus |
-| `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis | Opus |
-| `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill | Opus |
-| `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
-| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
-| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
-| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute. Replaces brainstorm + prd + pm | Opus |
+| Command | Description |
+|---------|-------------|
+| `/ac:plan` | Classify → research → interview → plan |
+| `/ac:deep` | Opus-powered root cause analysis for complex bugs and debugging |
+| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) |
+| `/ac:ultra` | End-to-end disciplined execution — certainty → plan → execute → verify. Supports `--loop` for autonomous retry (max 3 iterations) |
+| `/ac:init-claude-md` | Generate/enhance project CLAUDE.md |
+| `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
+| `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
+| `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill |
+| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` |
+| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits |
+| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
 
 ## Agents (ac plugin)
 
@@ -113,7 +113,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Opus | yellow | Plan gap/slop detection, tier sanity audit, acceptance criteria audit | Read, Grep, Glob, gemini-cli |
 | `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
 | `verifier` | `"ac:verifier"` | `"verifier"` | Opus | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
-| `challenger` | `"ac:challenger"` | `"challenger"` | Sonnet | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
+| `challenger` | `"ac:challenger"` | `"challenger"` | Opus | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
 | `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | cyan | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline | Read, Glob, LS, gemini-cli |
@@ -164,6 +164,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - **Certainty-first** (ultra): End-to-end discipline — no implementation without certainty, no completion without evidence
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
+- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/` in the working directory. Not gitignored by default — each project decides
+- **Auto commit+push**: Orchestrators (execute, ultra, ideate) invoke `/ac:commit` after task completion to commit and push changes
 
 ## Key Files
 
@@ -174,6 +176,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `plugins/ac/skills/ac-skill-creator/references/project-claude-md-template.md` — Template for project CLAUDE.md generation
 - `plugins/ac/skills/ac-skill-creator/references/prd-template.md` — Template for ideation document generation used by `/ac:ideate` (overview + task format reference)
 - `plugins/ac/skills/ac-skill-creator/references/pm-base.md` — Shared ideation reference used by `/ac:ideate` — task file format, INVEST validation, interview dimensions, triage format
+- `.ac/plans/` — Generated execution plans (project-local, created by /ac:plan)
+- `.ac/tasks/` — Generated task documents (project-local, created by /ac:ideate)
 
 ## Adding a New Plugin
 

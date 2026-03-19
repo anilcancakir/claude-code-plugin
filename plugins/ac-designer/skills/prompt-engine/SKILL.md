@@ -2,7 +2,6 @@
 name: prompt-engine
 description: Shared prompt enhancement pipeline for ac-designer commands. Contains Stitch MCP tool reference, 8-step prompt enhancement pipeline, asset download procedure, consistency check, design token extraction, and Stitch Web Bridge.
 user-invocable: false
-model: sonnet
 ---
 
 # Prompt Engine — Shared Design Knowledge

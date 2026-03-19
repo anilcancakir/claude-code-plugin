@@ -14,7 +14,7 @@ description: |
   assistant: "Let me launch a challenger agent to probe that extraction strategy for hidden dependencies and risks."
   <commentary>Triggered by an architectural decision with high stakes. Challenger identifies coupling, data integrity risks, and surfaces alternatives the user hasn't considered.</commentary>
   </example>
-model: sonnet
+model: opus
 tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit
 color: red

@@ -1,7 +1,6 @@
 ---
 description: Generate a single page design — selects strategy (full generation or layout-referenced), runs prompt enhancement pipeline with DESIGN.md injection, generates via Stitch, runs consistency check. Run after /ac-designer:init (and optionally /ac-designer:layout).
 argument-hint: Page name or description (e.g., "settings page", "user profile")
-model: opus
 ---
 
 # Page Generation

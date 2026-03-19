@@ -1,14 +1,13 @@
 ---
 description: Structured planning workflow — classify, research, interview, plan
 argument-hint: Feature or task description
-model: opus
 ---
 
 # Structured Planning
 
 You are orchestrating a planning workflow. Classify intent, research the codebase, interview the user, and produce an actionable plan.
 
-**Plan storage**: Your auto memory directory appears in your system prompt (e.g., `/Users/user/.claude/projects/-Users-user-Code-project/memory/`). Replace the trailing `memory/` with `plans/` to derive the plan storage path. Save plans as `plans/$planName.md` where `$planName` is slugified from the request topic.
+**Plan storage**: Plans are stored in `.ac/plans/` relative to the working directory. Save plans as `.ac/plans/$planName.md` where `$planName` is slugified from the request topic. Create the directory if it doesn't exist.
 
 ## Core Principles
 
@@ -54,7 +53,7 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 
 **Actions**:
 
-0. **Task file detection**: If $ARGUMENTS contains `/tasks/` in the path OR points to a file whose YAML frontmatter has `type:` matching `story`, `bug`, `spike`, or `chore` (pm-base types), enter **task mode**:
+0. **Task file detection**: If $ARGUMENTS contains `.ac/tasks/` in the path OR `/tasks/` in the path OR points to a file whose YAML frontmatter has `type:` matching `story`, `bug`, `spike`, or `chore` (pm-base types), enter **task mode**:
    - Read the task file and extract `User Story` + `Acceptance Criteria` sections as the plan's requirements
    - Force Phase 2 research — do NOT skip even if the task file contains a `### Research Summary` section
    - Announce: "Task file detected — entering task mode. Using [task title] as plan input with fresh research."
@@ -135,7 +134,7 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
    - Premature abstraction: "Inline or extract to utility?"
    - Over-validation: "Minimal or comprehensive error handling?"
 5. Derive `$planName` from request topic (slugified, e.g., `auth-system`)
-6. Derive plan storage path from auto memory directory (replace `memory/` with `plans/`)
+6. Plan storage path is `.ac/plans/` (created automatically if missing)
 7. Synthesize all findings into a draft plan
 8. Each step must include:
    - Clear deliverable description
@@ -156,7 +155,7 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
     - Each wave must be independently verifiable
     - Annotate each step with its tier inline: `Step N [quick]`, `Step N [mid]`, `Step N [senior]`
     - Add "Waves" section to plan file
-12. Save the draft plan to `~/.claude/projects/<cwd-hash>/plans/$planName.md`
+12. Save the draft plan to `.ac/plans/$planName.md`
 
 **Plan File Format** (contract with ac:execute):
 
@@ -250,7 +249,7 @@ Wave 3 (After Wave 2):
 ### Risks
 - [Risk and mitigation, if any]
 
-Plan saved to: ~/.claude/projects/<cwd-hash>/plans/$planName.md
+Plan saved to: .ac/plans/$planName.md
 ```
 
 1. Use AskUserQuestion to get user decision:

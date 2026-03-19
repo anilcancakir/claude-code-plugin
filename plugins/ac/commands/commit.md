@@ -1,7 +1,6 @@
 ---
 description: "Smart commit orchestrator — runs preflight checks (lint, tests), detects project commit conventions, and creates well-structured atomic commits. Delegates to git-master skill when available. Use for: 'commit changes', 'commit what I have', 'stage and commit', 'smart commit'."
 argument-hint: Optional commit scope or message hint
-model: sonnet
 allowed-tools: AskUserQuestion, Bash, Grep, Read, Glob
 ---
 
@@ -9,9 +8,27 @@ allowed-tools: AskUserQuestion, Bash, Grep, Read, Glob
 
 You are a commit orchestrator. You ensure code quality before committing, detect project conventions, and create well-structured atomic commits.
 
-**CRITICAL**: Never commit without passing preflight checks. Never auto-push without user approval.
+**CRITICAL**: Never commit without passing preflight checks. Default: auto commit+push. Use --interactive for manual control.
 
 Request context: $ARGUMENTS
+
+## Default Behavior (Auto Mode)
+
+By default, /ac:commit runs in auto mode — no interactive prompts:
+- Stage all modified/new files relevant to the current task (exclude .env, credentials, secrets)
+- Run preflight checks (lint, tests) — fail → abort commit, report error
+- Detect commit style from project conventions (commitlint, commitizen, or git log)
+- Create a single atomic commit with conventional message
+- Push to remote: `git push` (or `git push -u origin <branch>` if no upstream)
+- Output: "Committed: [hash] [message] — pushed to [remote/branch]"
+- If no changes to commit: "Nothing to commit (clean tree)"
+
+## Interactive Mode (--interactive)
+
+Detect `--interactive` flag in $ARGUMENTS. If present:
+- Strip `--interactive` from arguments
+- Use AskUserQuestion for all decisions: staging, grouping, commit message review, push confirmation
+- This is the old behavior — full manual control over every step
 
 ---
 
@@ -20,6 +37,8 @@ Request context: $ARGUMENTS
 **Goal**: Understand the current git state and project commit conventions.
 
 **Actions**:
+
+0. Detect --interactive flag in $ARGUMENTS. If absent, auto mode is active (default). If present, strip flag and enable interactive mode.
 
 1. Run in parallel:
 
@@ -99,8 +118,8 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
 | Result | Action |
 |--------|--------|
 | All pass | Proceed to Phase 3 |
-| Lint fails | Report failures. Use AskUserQuestion: "Lint failed. How to proceed?" with options: Fix issues first / Commit anyway / Cancel |
-| Tests fail | Report failures. Use AskUserQuestion: "Tests failed. How to proceed?" with options: Fix issues first / Commit anyway / Cancel |
+| Lint fails | **Skip if auto mode (default).** Report failures. Use AskUserQuestion: "Lint failed. How to proceed?" with options: Fix issues first / Commit anyway / Cancel |
+| Tests fail | **Skip if auto mode (default).** Report failures. Use AskUserQuestion: "Tests failed. How to proceed?" with options: Fix issues first / Commit anyway / Cancel |
 | No tooling detected | Skip preflight, proceed to Phase 3 with note |
 
 4. If user selects "Fix issues first" → stop and let user fix. They can re-run `/ac:commit` after.
@@ -132,6 +151,7 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
    b. **Staging decision**:
       - If changes are already staged → commit only staged changes
       - If nothing staged → stage all changes (`git add -A`)
+      - **Skip if auto mode (default).**
       - If mix of staged and unstaged → ask user via AskUserQuestion:
         - "You have both staged and unstaged changes. What to commit?"
         - Options: Staged only / All changes / Let me stage manually
@@ -169,6 +189,8 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
 
 **Preflight**: ✅ Lint passed, ✅ Tests passed
 ```
+
+**Skip if auto mode (default).**
 
 2. Use AskUserQuestion for approval:
    - question: "Review the commit plan above. Ready to commit?"
@@ -225,6 +247,8 @@ git log --oneline -<N>  # Show the N new commits
 **Branch**: feature/auth
 **Status**: Clean working tree
 ```
+
+**Skip if auto mode (default)** — in auto mode, push automatically after commit: git push (or git push -u origin <branch> if no upstream).
 
 4. If upstream exists, use AskUserQuestion:
    - question: "Commits created. Push to remote?"

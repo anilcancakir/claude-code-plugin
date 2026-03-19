@@ -87,7 +87,7 @@ When delegating to an agent, include: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT 
 - Run project's linter/formatter on modified files.
 - 3-strike rule: 3 failures → stop, revert, ask user.
 - Evidence required: tests pass + lint clean. No evidence = not complete.
-- After all tasks done, suggest commit (one line, don't repeat).
+- Auto commit after each step, push at end of execution. Opt-out: --no-commit flag or autoCommit: false in project CLAUDE.md.
 ```
 
 ---

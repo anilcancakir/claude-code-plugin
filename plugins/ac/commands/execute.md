@@ -1,7 +1,6 @@
 ---
 description: Execute an approved plan — parallel background agents or sequential
 argument-hint: Plan file path (e.g., auth-system)
-model: sonnet
 ---
 
 # Plan Execution
@@ -19,8 +18,8 @@ Plan identifier: $ARGUMENTS
 
 **Actions**:
 
-1. **Plan storage**: Your auto memory directory appears in your system prompt (e.g., `/Users/user/.claude/projects/-Users-user-Code-project/memory/`). Replace the trailing `memory/` with `plans/` to derive plan file locations.
-2. If `$ARGUMENTS` is a full path, use it directly. If it's a slug (e.g., `auth-system`), resolve to `~/.claude/projects/<cwd-hash>/plans/$ARGUMENTS.md`
+1. **Plan storage**: Plans are stored in .ac/plans/ relative to the working directory.
+2. If `$ARGUMENTS` is a full path, use it directly. If it's a slug (e.g., `auth-system`), resolve to `.ac/plans/$ARGUMENTS.md`
 3. Read the plan file. If it doesn't exist, inform the user and stop
 4. Parse the plan into structured steps:
    - Step number, title, description
@@ -289,21 +288,7 @@ Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-fil
 
 **Step 3** — APPROVE path:
 
-Render execution summary (plan name, steps completed, strategy, build/test/lint results), then:
-
-```
-AskUserQuestion(
-  question: "Verification passed. All criteria met, scope clean."
-  header: "Execution Complete"
-  options:
-    - label: "Commit"
-      description: "Suggest checkpoint commit for all changes."
-    - label: "Review Changes"
-      description: "Show git diff before committing."
-    - label: "Done"
-      description: "Keep changes uncommitted."
-)
-```
+Render execution summary (plan name, steps completed, strategy, build/test/lint results), then invoke `/ac:commit` to commit and push all changes.
 
 **Step 4** — REJECT path:
 
@@ -317,7 +302,7 @@ AskUserQuestion(
     - label: "Fix and Re-verify"
       description: "Address the failed criteria, then re-run verifier."
     - label: "Accept and Commit"
-      description: "Acknowledge failures and commit current state anyway."
+      description: "Acknowledge failures, invoke /ac:commit for current state."
 )
 ```
 

@@ -1,7 +1,6 @@
 ---
 description: Interactive coding style analyzer — scans existing projects, interviews the developer, generates a personalized my-coding skill
 argument-hint: Path to a representative project (optional)
-model: opus
 ---
 
 # Setup My Coding Style

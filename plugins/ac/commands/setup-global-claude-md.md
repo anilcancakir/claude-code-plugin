@@ -1,7 +1,6 @@
 ---
 description: Interactive global CLAUDE.md generator — interviews developer, detects skills, produces orchestration config. Re-run after plugin updates to sync workflow routing and skill references while preserving your personal preferences.
 argument-hint: update, enhance, or overwrite (optional)
-model: opus
 allowed-tools: AskUserQuestion, Read, Write, Bash
 ---
 
@@ -157,7 +156,7 @@ Question 6 (only if additional skills, plugin skills, or MCP servers detected be
 **Third AskUserQuestion call** — free-form (Q7):
 
 Question 7:
-- question: "Any additional rules, pet peeves, or preferences? (e.g., never auto-commit, always suggest checkpoints, use backed enums)"
+- question: "Any additional rules, pet peeves, or preferences? (e.g., use backed enums, always use strict types, prefer composition over inheritance)"
 - header: "Extra rules"
 - options:
   - No extras — "I'm good with the rules above"

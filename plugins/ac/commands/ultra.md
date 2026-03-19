@@ -1,7 +1,6 @@
 ---
 description: End-to-end disciplined execution — certainty-first, delegation-first, verification-guaranteed workflow for critical tasks. Use for important features, complex refactors, or any task where partial delivery is unacceptable. Chains plan → execute → verify with ultrawork discipline. Supports optional `--loop` flag to repeat the execute → verify cycle autonomously (max 3 iterations) until all criteria pass.
 argument-hint: Task description (feature, refactor, or investigation)
-model: opus
 ---
 
 # Ultra Mode
@@ -126,7 +125,7 @@ Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CL
 2. Wait for skill output. The skill will:
    - Classify, research further if needed, interview user, produce plan
    - Run plan-analysis gate (ac:plan only)
-   - Save plan to `~/.claude/projects/<cwd-hash>/plans/`
+   - Save plan to `.ac/plans/`
 
 3. After skill completes, present ultra-specific options via AskUserQuestion:
 
@@ -306,7 +305,7 @@ When `--loop` was NOT specified: behavior is identical to current Phase 6 — no
 
 If `--loop` was specified in Phase 1: (1) Read the Criteria Status block. (2) If ALL items show ✅ PASS → complete normally. (3) If ANY item shows ❌ FAIL → this is loop iteration N of 3. If N < 3: create an inline remediation plan targeting ONLY the failed criteria, invoke ac:execute on it, then return to Phase 5 and re-verify ALL criteria (not just previously failed). If N >= 3: surface full failure report to user and stop.
 
-6. Suggest checkpoint commit (never auto-commit)
+6. Invoke `/ac:commit` to commit and push all changes.
 
 ---
 
@@ -334,4 +333,4 @@ If `--loop` was specified in Phase 1: (1) Read the Criteria Status block. (2) If
 - **Plan skill fails**: Report error, suggest running `/ac:plan` manually
 - **Execution agent fails**: Log failure, continue other agents. After 3 failures on same step → invoke ac:deep
 - **Verification fails 3 times**: Stop, revert changes, report blocker with evidence
-- **User cancels**: Stop gracefully, report progress so far, suggest checkpoint commit for completed work
+- **User cancels**: Stop gracefully, report progress so far, invoke `/ac:commit` for completed work

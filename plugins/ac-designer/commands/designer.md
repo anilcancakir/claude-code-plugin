@@ -1,7 +1,6 @@
 ---
 description: Full design orchestrator — auto-detects project state, directs user to run missing phases (init, layout), then generates all pages from SITE.md roadmap with baton-driven iteration. The one command to design everything.
 argument-hint: Project description or specific page to design (optional)
-model: opus
 ---
 
 # Design Orchestrator

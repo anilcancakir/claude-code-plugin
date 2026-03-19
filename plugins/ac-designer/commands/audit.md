@@ -1,7 +1,6 @@
 ---
 description: Cross-page design consistency audit — scans all page HTML, extracts tokens, compares across pages and against DESIGN.md Token Reference. Reports drift matrix with category-level summary. Advisory only.
 argument-hint: Optional page name to audit single page (omit for full project audit)
-model: opus
 ---
 
 # Cross-Page Design Consistency Audit

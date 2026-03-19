@@ -1,7 +1,6 @@
 ---
 name: git-master
 description: "Git expert skill — atomic commits with style detection, interactive rebase/squash, and history archaeology (blame, bisect, pickaxe). Use for ALL git operations: committing changes, rebasing branches, squashing commits, searching history, finding who wrote code, bisecting bugs. Triggers on: 'commit', 'rebase', 'squash', 'who wrote', 'when was X added', 'find the commit', 'blame', 'bisect', 'cleanup history', 'split commits', 'fixup'."
-model: sonnet
 ---
 
 # Git Master

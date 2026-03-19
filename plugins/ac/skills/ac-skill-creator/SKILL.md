@@ -2,7 +2,6 @@
 name: ac-skill-creator
 description: Create Claude Code skills, agents, commands, and rules optimized for Claude models. This skill should be used when users want to create, update, or improve any Claude Code extension component (skills, agents, commands, rules, CLAUDE.md). Use it when creating prompt-based files for Claude Code, designing agent instructions, writing skill workflows, crafting rules, or optimizing existing prompts for token efficiency and effectiveness. Also use when the user mentions creating tools, workflows, plugins, or automations for Claude Code.
 user-invocable: true
-model: opus
 ---
 
 # Skill Creator for Claude Code

@@ -139,7 +139,7 @@ Override agent models using Claude Code's native environment variables:
 ```bash
 # In your shell profile or ~/.claude/settings.json env block
 ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-sonnet-4-6    # Upgrades all Haiku agents (explore, linter)
-ANTHROPIC_DEFAULT_SONNET_MODEL=claude-opus-4-6     # Upgrades all Sonnet agents (librarian, challenger, etc.)
+ANTHROPIC_DEFAULT_SONNET_MODEL=claude-opus-4-6     # Upgrades all Sonnet agents (librarian, feasibility, etc.)
 ```
 
 Or in `~/.claude/settings.json`:
@@ -155,36 +155,36 @@ Or in `~/.claude/settings.json`:
 | Agent | Default Model | Override Via |
 |-------|--------------|-------------|
 | explore, linter | Haiku | `ANTHROPIC_DEFAULT_HAIKU_MODEL` |
-| librarian, challenger, feasibility, code-reviewer | Sonnet | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
-| plan-analysis, plan-review, verifier | Opus | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
+| librarian, feasibility, code-reviewer | Sonnet | `ANTHROPIC_DEFAULT_SONNET_MODEL` |
+| challenger, plan-analysis, plan-review, verifier | Opus | `ANTHROPIC_DEFAULT_OPUS_MODEL` |
 
 ## Commands
 
 ### Workflow
 
-| Command | Description | Model |
-|---------|-------------|-------|
-| `/ac:plan` | Classify intent, research via agents, interview, produce actionable plan | Opus |
-| `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation | Opus |
-| `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
-| `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
-| `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
-| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute | Opus |
+| Command | Description |
+|---------|-------------|
+| `/ac:plan` | Classify intent, research via agents, interview, produce actionable plan |
+| `/ac:deep` | Opus-powered root cause analysis — hypothesis-first debugging and investigation |
+| `/ac:execute` | Execute an approved plan — parallel background agents or sequential |
+| `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command |
+| `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits |
+| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
 
 ### Project Setup
 
-| Command | Description | Model |
-|---------|-------------|-------|
-| `/ac:init-claude-md` | Auto-discover codebase, interview developer, generate project `CLAUDE.md` | Opus |
-| `/ac:init-rules` | Analyze project conventions, score directories, generate `.claude/rules/` | Opus |
+| Command | Description |
+|---------|-------------|
+| `/ac:init-claude-md` | Auto-discover codebase, interview developer, generate project `CLAUDE.md` |
+| `/ac:init-rules` | Analyze project conventions, score directories, generate `.claude/rules/` |
 
 ### Personal Setup
 
-| Command | Description | Model |
-|---------|-------------|-------|
-| `/ac:setup-coding` | Scan your projects, interview on preferences, generate `~/.claude/skills/my-coding/` | Opus |
-| `/ac:setup-language` | Scan your writing, interview on voice, generate `~/.claude/skills/my-language/` | Opus |
-| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP, interview, generate `~/.claude/CLAUDE.md` | Opus |
+| Command | Description |
+|---------|-------------|
+| `/ac:setup-coding` | Scan your projects, interview on preferences, generate `~/.claude/skills/my-coding/` |
+| `/ac:setup-language` | Scan your writing, interview on voice, generate `~/.claude/skills/my-language/` |
+| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP, interview, generate `~/.claude/CLAUDE.md` |
 
 ## Agents
 
@@ -198,16 +198,16 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 | `ac:plan-analysis` | `"ac:plan-analysis"` | Opus | Plan quality gate — gap classification, AI-slop detection, tier sanity audit, acceptance criteria audit |
 | `ac:plan-review` | `"ac:plan-review"` | Opus | Adversarial plan reviewer — Momus-class, bias toward REJECT, tier challenge, Gemini second eye, OKAY/REJECT verdict |
 | `ac:verifier` | `"ac:verifier"` | Opus | Post-execution compliance auditor — verifies done-when criteria, must-not-have exclusions, scope fidelity, APPROVE/REJECT verdict |
-| `ac:challenger` | `"ac:challenger"` | Sonnet | Devil's advocate — gaps, risks, blind spots, alternative approaches |
+| `ac:challenger` | `"ac:challenger"` | Opus | Devil's advocate — gaps, risks, blind spots, alternative approaches |
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
 | `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
 | `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline |
 
 ## Skills
 
-| Skill | Model | Description |
-|-------|-------|-------------|
-| `ac-skill-creator` | Opus | Create skills, agents, commands, rules optimized for Claude Code. Includes prompt pattern library and style templates in `references/` |
+| Skill | Description |
+|-------|-------------|
+| `ac-skill-creator` | Create skills, agents, commands, rules optimized for Claude Code. Includes prompt pattern library and style templates in `references/` |
 
 ## How It Works
 
@@ -220,7 +220,7 @@ Request -> Classify (intent + complexity)
         -> Draft plan: steps with Tier (quick/mid/senior), done-when criteria, independence
         -> Wave decomposition: group independent steps into parallel Waves
         -> Analysis gate (plan-analysis Opus agent: gaps, AI-slop, tier sanity, Gemini second eye)
-        -> Save to ~/.claude/projects/<hash>/plans/
+        -> Save to .ac/plans/
         -> User: Execute / Deep Review (plan-review Momus) / Adjust
         -> Execute -> /ac:execute
 ```
@@ -334,7 +334,7 @@ plugins/ac/
 │   ├── plan-analysis.md         # Opus plan quality gate (tier sanity, gap, slop)
 │   ├── plan-review.md           # Opus adversarial plan reviewer (Momus-class)
 │   ├── verifier.md              # Opus post-execution compliance auditor
-│   ├── challenger.md            # Sonnet devil's advocate
+│   ├── challenger.md            # Opus devil's advocate
 │   ├── feasibility.md           # Sonnet feasibility evaluator
 │   ├── code-reviewer.md         # Sonnet spec + quality reviewer
 │   └── gemini-vision.md         # Sonnet multimodal via Gemini

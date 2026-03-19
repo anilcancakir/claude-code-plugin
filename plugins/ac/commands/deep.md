@@ -1,7 +1,6 @@
 ---
 description: Deep investigation — Opus-powered root cause analysis for complex bugs, debugging, and code investigation
 argument-hint: Bug description, error message, or investigation target
-model: opus
 ---
 
 # Deep Investigation
