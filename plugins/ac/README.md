@@ -99,13 +99,13 @@ For smart commits with preflight checks:
 
 Runs linter and tests first, detects your project's commit conventions, and creates well-structured atomic commits. Delegates to `git-master:git-master` skill when available for style detection and intelligent splitting.
 
-For brainstorming and evaluating ideas before planning:
+For refining ideas, creating PRDs, and managing product requests before planning:
 
 ```
-/ac:brainstorm <describe your idea>
+/ac:ideate <describe your idea or request>
 ```
 
-Socratic interview refines your idea through targeted questions, then parallel challenger and feasibility agents stress-test it. Produces a mature concept document with gaps, risks, and alternatives — ready for `/ac:plan` handoff. Large ideas auto-decompose into phases.
+Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute. Produces a mature concept document with gaps, risks, and alternatives — ready for `/ac:plan` handoff.
 
 For critical tasks where partial delivery is unacceptable:
 
@@ -169,9 +169,7 @@ Or in `~/.claude/settings.json`:
 | `/ac:execute` | Execute an approved plan — parallel background agents or sequential | Sonnet |
 | `/ac:ultra` | End-to-end disciplined execution — certainty, plan, execute, verify in one command | Opus |
 | `/ac:commit` | Smart commit — preflight checks (lint, tests), convention detection, atomic commits | Sonnet |
-| `/ac:brainstorm` | Socratic idea refinement — interview, challenge, and mature ideas before planning | Opus |
-| `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + task files). Supports `--loop` | Opus |
-| `/ac:pm` | Product management — turn raw customer requests or meeting notes into structured, Jira-ready task files via interactive interview. Supports single requests and bulk mode. Supports `--loop` | Opus |
+| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute | Opus |
 
 ### Project Setup
 
@@ -263,24 +261,15 @@ Request -> Context (git state + convention detection)
         -> Execute (create commits, optional push)
 ```
 
-### Brainstorm (`/ac:brainstorm`)
+### Ideate (`/ac:ideate`)
 
 ```
-Idea -> Understand (classify + parallel ac:explore + ac:librarian research)
-     -> Interview (Socratic questioning, 3-7 rounds, clarity tracking)
-     -> Challenge (parallel ac:challenger + ac:feasibility agents)
-     -> Crystallize (mature document + multi-phase decomposition if large)
-     -> User choice: /ac:plan handoff or iterate more
-```
-
-### Product Management (`/ac:pm`)
-
-```
-Request -> Intake (classify single vs bulk, detect --loop)
-         -> Triage (bulk only — parse items, present table, user confirms)
-         -> Interview (AskUserQuestion, 3-5 rounds single / 2-3 per unclear bulk item)
-         -> Generate (task files in pm-base format, INVEST validation)
-         -> Handoff (plan this task / plan all / save & exit)
+Idea/Request -> Classify (mode: idea refinement vs PRD vs PM task, detect --bulk/--loop)
+             -> Research (parallel ac:explore + ac:librarian agents)
+             -> Interview (Socratic questioning with ambiguity scoring, 3-7 rounds)
+             -> Challenge (parallel ac:challenger + ac:feasibility agents)
+             -> Generate (mature concept doc, PRD, or Jira-ready task files)
+             -> Handoff (plan this / plan all / save & exit)
 ```
 
 ### Ultra Mode (`/ac:ultra`)
@@ -326,20 +315,18 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 13 user-invocable /ac:* commands
+├── commands/                    # 11 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── deep.md                  # /ac:deep
 │   ├── execute.md               # /ac:execute
 │   ├── ultra.md                 # /ac:ultra
-│   ├── prd.md                   # /ac:prd
-│   ├── pm.md                    # /ac:pm
+│   ├── ideate.md                # /ac:ideate
 │   ├── init-claude-md.md        # /ac:init-claude-md
 │   ├── init-rules.md            # /ac:init-rules
 │   ├── setup-coding.md          # /ac:setup-coding
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
-│   ├── commit.md               # /ac:commit
-│   └── brainstorm.md           # /ac:brainstorm
+│   └── commit.md               # /ac:commit
 ├── agents/                      # 10 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Sonnet external docs

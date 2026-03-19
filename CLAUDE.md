@@ -16,7 +16,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
-│   │   ├── commands/             # 13 user-invocable /ac:* commands
+│   │   ├── commands/             # 11 user-invocable /ac:* commands
 │   │   ├── agents/               # 10 read-only agent definitions
 │   │   ├── skills/
 │   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
@@ -101,9 +101,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill | Opus |
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` | Opus |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits | Sonnet |
-| `/ac:brainstorm` | Socratic idea refinement — interview, challenge, mature ideas before planning. Supports `--loop` to pass loop-mode to execution | Opus |
-| `/ac:prd` | Interactive PRD creation — interview, challenge, generate document family (overview + task files). Supports `--loop` for autonomous phase-by-phase plan → execute | Opus |
-| `/ac:pm` | Product management — turn raw customer requests or meeting notes into structured, Jira-ready task files via interactive interview. Supports single requests and bulk mode. Supports `--loop` | Opus |
+| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute. Replaces brainstorm + prd + pm | Opus |
 
 ## Agents (ac plugin)
 
@@ -174,8 +172,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `plugins/ac/skills/ac-skill-creator/references/language-style-template.md` — Template for `my-language` skill generation
 - `plugins/ac/skills/ac-skill-creator/references/global-claude-md-template.md` — Template for global CLAUDE.md generation
 - `plugins/ac/skills/ac-skill-creator/references/project-claude-md-template.md` — Template for project CLAUDE.md generation
-- `plugins/ac/skills/ac-skill-creator/references/prd-template.md` — Template for PRD document generation (overview + task format reference)
-- `plugins/ac/skills/ac-skill-creator/references/pm-base.md` — Shared PM reference — task file format, INVEST validation, interview dimensions, triage format
+- `plugins/ac/skills/ac-skill-creator/references/prd-template.md` — Template for ideation document generation used by `/ac:ideate` (overview + task format reference)
+- `plugins/ac/skills/ac-skill-creator/references/pm-base.md` — Shared ideation reference used by `/ac:ideate` — task file format, INVEST validation, interview dimensions, triage format
 
 ## Adding a New Plugin
 

@@ -1,6 +1,6 @@
 # PRD Template
 
-Two canonical templates for `/ac:prd` generation. Product-focused — define WHAT, never HOW.
+Two canonical templates for `/ac:ideate` generation. Product-focused — define WHAT, never HOW.
 
 ## Overview Template
 
