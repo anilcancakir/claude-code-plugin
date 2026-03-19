@@ -1,6 +1,6 @@
 # PM Base Reference
 
-Shared reference for `/ac:pm` and `/ac:prd`. Defines task file schema, validation rules, interview patterns, triage format, priority model, and plan handoff protocol.
+Shared reference for `/ac:ideate`. Defines task file schema, validation rules, interview patterns, triage format, priority model, and plan handoff protocol.
 
 ## Task File Format
 
