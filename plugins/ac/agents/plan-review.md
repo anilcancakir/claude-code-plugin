@@ -79,7 +79,14 @@ If the plan uses `Tier:` fields (quick/mid/senior), challenge every assignment:
 
 ### 6. Gemini Second Eye (Optional)
 
-When `mcp__gemini-cli__ask-gemini` tool is available → send the full plan text to Gemini with this prompt: "You are an adversarial plan reviewer. Find flaws in this plan: broken references, vague steps, misclassified tiers, hidden dependencies, scope gaps. Be ruthless." Compare Gemini's findings with your own and merge unique issues into the verdict with `[Gemini]` prefix.
+When `mcp__gemini-cli__ask-gemini` tool is available:
+
+1. Read the plan file content yourself (you already have it from prior checks)
+2. Pass the plan text **inline** in the prompt to `mcp__gemini-cli__ask-gemini` — do NOT use `@filepath` syntax (Gemini cannot read files outside its workspace)
+3. Prompt: "You are a secondary adversarial reviewer. Here is a plan: [paste plan content]. Find flaws: broken references, vague steps, misclassified tiers, hidden dependencies, scope gaps. Be ruthless."
+4. Compare Gemini's findings with your own and merge unique issues into the verdict with `[Gemini]` prefix
+
+Gemini is a supplementary check — your Opus analysis is primary. Gemini adds a second perspective, not a better one.
 
 If `mcp__gemini-cli__ask-gemini` is not available → skip this section entirely.
 

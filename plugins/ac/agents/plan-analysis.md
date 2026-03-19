@@ -81,7 +81,14 @@ If the plan does not use `Tier:` fields (legacy plans with `Escalate:` or no fie
 
 ### 7. Gemini Second Eye (Optional)
 
-When `mcp__gemini-cli__ask-gemini` tool is available → send the full plan text to Gemini for an independent gap analysis. Compare Gemini's findings with your own and merge unique gaps into the report with `[Gemini]` prefix.
+When `mcp__gemini-cli__ask-gemini` tool is available:
+
+1. Read the plan file content yourself (you already have it from prior analysis)
+2. Pass the plan text **inline** in the prompt to `mcp__gemini-cli__ask-gemini` — do NOT use `@filepath` syntax (Gemini cannot read files outside its workspace)
+3. Prompt: "You are a secondary reviewer. Here is a plan for a Claude Code plugin. Find gaps I might have missed: [paste plan content]. Focus on: missing files, vague criteria, scope risks, tier mismatches."
+4. Compare Gemini's findings with your own analysis. Merge unique gaps into the report with `[Gemini]` prefix
+
+Gemini is a supplementary check — your Opus analysis is primary. Gemini adds breadth, not depth.
 
 If `mcp__gemini-cli__ask-gemini` is not available → skip this section entirely, produce no output for it.
 

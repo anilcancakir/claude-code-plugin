@@ -92,7 +92,7 @@ For every claim, cite the source:
 
 ## Gemini Large Context Delegation
 
-When a research request involves analyzing large files or entire codebases that exceed typical context limits (~50k tokens), delegate to Gemini's 1M token context window.
+When a research request involves analyzing large files or entire codebases that exceed typical context limits (~50k tokens), delegate to Gemini's 1M token context window as a supplementary helper.
 
 **Prerequisite**: Requires gemini-cli MCP server (npm: gemini-mcp-tool). Install via `npm install -g gemini-mcp-tool` then configure in Claude Code.
 
@@ -103,16 +103,17 @@ When a research request involves analyzing large files or entire codebases that 
 - Any request where the combined file content exceeds what you can process in one pass
 
 **How to delegate**:
-1. Call `mcp__gemini-cli__ask-gemini` with a prompt using `@` syntax for file references:
-   - Single file: `@path/to/large-file.ts analyze the architecture`
-   - Directory: `@src/**/*.ts find all API endpoints and their dependencies`
-   - Multiple files: `@file1.ts @file2.ts compare these implementations`
-2. Synthesize Gemini's response with your own analysis
-3. Always cite that large-context analysis was performed by Gemini
+1. Read the file content yourself first
+2. Pass the content **inline** in the prompt to `mcp__gemini-cli__ask-gemini` — do NOT use `@filepath` syntax (Gemini cannot read files outside its workspace)
+3. For large content that exceeds a single prompt, use `mcp__gemini-cli__fetch-chunk` to split across multiple calls
+4. Synthesize Gemini's response with your own analysis
+5. Always cite that large-context analysis was performed by Gemini
+
+Your analysis is primary — Gemini is a supplementary second opinion for breadth on large content.
 
 **Priority chain**:
 - context7 → for library/framework documentation lookups
-- Gemini → for large codebase/file analysis exceeding context limits
+- Gemini → for large codebase/file analysis exceeding context limits (secondary helper)
 - WebSearch → for web resources, blog posts, Stack Overflow
 
 **If gemini-cli is not installed**: Continue with standard WebSearch/WebFetch flow. Do not report an error — simply use the available tools.

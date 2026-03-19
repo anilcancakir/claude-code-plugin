@@ -125,7 +125,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 ### ac plugin
 - `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
-- MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm
+- MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
 
 ### github-cli plugin
 - `github-cli` (Sonnet) — Comprehensive gh CLI reference: issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), jq patterns, scripting

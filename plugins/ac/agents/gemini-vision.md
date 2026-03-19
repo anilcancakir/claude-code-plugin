@@ -64,7 +64,8 @@ Use Glob and LS to locate referenced files if paths are not provided directly. V
 
 Construct a focused prompt and call `mcp__gemini-cli__ask-gemini`:
 
-- Include the file path using `@filepath` syntax for Gemini to process
+- Include the file path using `@filepath` syntax for Gemini to process (only works for files inside Gemini's workspace — the project directory)
+- If the file is outside the project workspace, read its content and pass inline instead
 - Frame the prompt with the specific analysis goal from the parent request
 - Request structured output (lists, measurements, findings) not prose
 
