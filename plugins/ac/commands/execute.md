@@ -182,7 +182,7 @@ Before marking a work unit done:
 1. Check `<new-diagnostics>` context:
    - If ERROR-level diagnostics appear for modified files → fix in this turn before marking done
    - If WARNING-level only → log to final report, continue
-   - If LSP not available → proceed to Phase 6 lint commands
+   - If LSP not available → proceed to Phase 5 verification wave
 
 2. If LSP tool is available and work unit involved code changes, delegate to ac:linter:
    - `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit description]")`
@@ -233,66 +233,58 @@ When all agents complete, render the final table and summary.
 
 ---
 
-## Phase 5: Build & Test Verification
+## Phase 5: Verification Wave
 
-**Goal**: Verify the full plan was executed correctly.
+**Goal**: Verify the full plan was executed correctly via parallel verification agents.
 
-1. Run project-wide verification:
-   - Full build
-   - Full test suite
-   - Lint check
-2. If any fails → fix root cause, re-run. Do not proceed to Phase 6 with failures.
-3. **LSP Navigation Check** (if LSP tool available):
+CRITICAL: DO NOT SKIP PHASE 5 — MANDATORY FINAL GATE. Complete the full verification wave before rendering any summary or suggesting commit.
+
+**Step 1** — Run build + test + lint (prerequisite — must pass before wave):
+
+1. Full build
+2. Full test suite
+3. Lint check
+4. If any fails → fix root cause, re-run. Do not launch verification wave with failures.
+5. **LSP Navigation Check** (if LSP tool available):
    - For each modified file: `LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)` → confirms parseable + exports intact
    - For refactor/rename work: `LSP(operation="findReferences", ...)` → confirms no broken callers
    - If LSP not available → skip, rely on lint output only
-4. **Code Review** (if 5+ files modified or quality-critical):
-   ```
-   Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].")
-   ```
-   - CRITICAL findings → fix before proceeding to Phase 6
-   - IMPORTANT findings → report to user, proceed
 
----
-
-CRITICAL: DO NOT SKIP PHASE 6 — MANDATORY FINAL GATE. Invoke Phase 6 before rendering any summary or suggesting commit.
-
-## Phase 6: Compliance Gate
-
-**Goal**: Verify plan compliance via ac:verifier agent. This phase is mandatory — every execution must complete it.
-
-**Step 1** — Invoke verifier:
+**Step 2** — Launch verification wave — 3 agents in parallel (single message block):
 
 ```
-Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity.")
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].", run_in_background: true)
+Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity.", run_in_background: true)
+Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
 ```
 
-**Step 2** — Read verdict and route:
+**Step 3** — Collect results — ALL must pass:
 
-→ **APPROVE** → go to Step 3
-→ **REJECT** → go to Step 4
+| Agent | Pass | Fail |
+|-------|------|------|
+| ac:code-reviewer | APPROVED | BLOCKED |
+| ac:verifier | APPROVE | REJECT |
+| ac:linter | CLEAN or LSP UNAVAILABLE | BLOCKED |
 
-**Step 3** — APPROVE path:
+**Step 4** — Route based on combined verdict:
 
-Render execution summary (plan name, steps completed, strategy, build/test/lint results), then invoke `/ac:commit` to commit and push all changes.
+→ **ALL pass** → Render execution summary (plan name, steps completed, strategy, build/test/lint results, verification verdicts), then invoke `/ac:commit` to commit and push all changes.
 
-**Step 4** — REJECT path:
-
-Present failed items with evidence from verifier output, then:
+→ **ANY fail** → Present all failures with evidence from agent outputs, then:
 
 ```
 AskUserQuestion(
-  question: "Verifier found unmet criteria. How to proceed?"
+  question: "Verification wave found issues. How to proceed?"
   header: "Verification Failed"
   options:
     - label: "Fix and Re-verify"
-      description: "Address the failed criteria, then re-run verifier."
+      description: "Address the failed criteria, then re-run full verification wave."
     - label: "Accept and Commit"
       description: "Acknowledge failures, invoke /ac:commit for current state."
 )
 ```
 
-If user selects "Fix and Re-verify" → fix issues, then re-invoke verifier (loop back to Step 1).
+If user selects "Fix and Re-verify" → fix issues, then loop back to Step 1 (re-run build/test/lint, then re-launch parallel verification wave).
 
 
 ---

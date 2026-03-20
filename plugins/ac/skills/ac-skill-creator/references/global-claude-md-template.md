@@ -62,7 +62,7 @@ Before copying patterns, classify: **Disciplined** (consistent, tested → follo
 Prefer delegating research to specialized agents — use them proactively before tools directly:
 - **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, relationships)
 - **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API refs (context7 → WebSearch)
-CRITICAL: Always use `ac:` prefixed subagent_type. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one parallel message.
+CRITICAL: Always use `ac:` prefixed subagent_type. Always `run_in_background: true`. Fire 2-3 agents in parallel for non-trivial questions. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one message. Once delegated, do NOT manually re-search.
 
 ### Execution
 - Plans with 3+ steps → `ac:execute` for parallel execution. Use TodoWrite for 2+ steps

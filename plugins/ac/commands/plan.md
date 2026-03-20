@@ -143,8 +143,17 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
    - Over-validation: "Minimal or comprehensive error handling?"
 5. Derive `$planName` from request topic (slugified, e.g., `auth-system`)
 6. Plan storage path is `.ac/plans/` (created automatically if missing)
+6b. **Pre-generation analysis** (Metis — for Standard and Complex only):
+   - Launch plan-analysis agent in pre-generation mode:
+     ```
+     Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode. Request: [original request]. Research findings: [Research Summary content]. Analyze for hidden intentions, unstated requirements, and AI-slop risks. Return directives.")
+     ```
+   - Read directives from agent output
+   - Inject MUST DO / MUST NOT DO directives as constraints for plan generation
+   - If agent returns QUESTIONS → add them to the interview question queue (ask user before generating plan)
+   - Skip for Simple complexity (not worth the overhead)
 7. Synthesize all findings into a draft plan
-8. Each step must include: clear deliverable description, files to create/modify, acceptance criteria as executable commands (not "verify it works"), independence (`independent` or `depends on Step N`), and tier assignment (`quick`/`mid`/`senior`)
+8. Each step must include: clear deliverable description, files to create/modify, acceptance criteria as executable commands (not "verify it works"), QA Scenario per step as executable verification (what to test, expected outcome — e.g., "grep -c 'pattern' file returns ≥2", not "verify it works"), independence (`independent` or `depends on Step N`), and tier assignment (`quick`/`mid`/`senior`)
    - **Tier heuristic**: `quick` = ≤1 file, trivial change, no design decisions. `mid` = 1-2 files, standard implementation (default). `senior` = 3+ files, schema/migration, cross-layer, architecture decisions
    - **Quick-tier enrichment**: Write exhaustively explicit descriptions — exact file, exact change, before/after state. The executing model optimizes for speed; compensate with prompt precision
 9. If TDD rule is active, every implementation step must be preceded by a test step
@@ -158,7 +167,7 @@ Plans must follow this exact structure for ac:execute compatibility:
 - `# Plan: [Title]` — H1 with plan name
 - `**TL;DR**:` — 1-2 sentence summary
 - `**Intent**:` and `**Complexity**:` — classification metadata
-- `## Steps` or `### Unit N:` — numbered steps, each with `**Step N**: [title]`, `Files:`, `Done when:`, `Independence:`, `Tier:` (quick→Haiku, mid→Sonnet, senior→Opus)
+- `## Steps` or `### Unit N:` — numbered steps, each with `**Step N**: [title]`, `Files:`, `Done when:`, `QA:` (QA Scenario — executable verification), `Independence:`, `Tier:` (quick→Haiku, mid→Sonnet, senior→Opus)
 - `### Waves` — wave-based parallel decomposition: Wave 1 (no deps, all parallel), Wave 2 (after Wave 1), etc. Each step annotated with tier `[quick/mid/senior]`
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
@@ -211,6 +220,7 @@ Do not present a plan that references symbols verified-missing by LSP.
 1. [Step title]
    Files: [file paths]
    Done when: [executable verification command + expected output]
+   QA: [action] → [expected outcome] (QA Scenario)
    Independence: [independent / depends on Step N]
    Tier: [quick / mid / senior]
 

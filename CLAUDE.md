@@ -91,8 +91,8 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 | Command | Description |
 |---------|-------------|
-| `/ac:plan` | Classify → research → interview → plan |
-| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) |
+| `/ac:plan` | Classify → research → interview → pre-generation analysis → plan (with QA scenarios) |
+| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) → Verification Wave (code-reviewer + verifier + linter in parallel) |
 | `/ac:init-claude-md` | Generate/enhance project CLAUDE.md |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
@@ -108,7 +108,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS |
 | `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | blue | External docs — context7 MCP → WebSearch fallback | context7, WebSearch, WebFetch |
 | `linter` | `"ac:linter"` | `"linter"` | Haiku | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
-| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Opus | yellow | Plan gap/slop detection, tier sanity audit, acceptance criteria audit | Read, Grep, Glob, gemini-cli |
+| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Opus | yellow | Plan quality auditor with dual-mode: pre-generation (Metis — hidden intentions, AI-slop risks before plan writing) and post-generation (gaps, tier sanity after plan writing) | Read, Grep, Glob, gemini-cli |
 | `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
 | `verifier` | `"ac:verifier"` | `"verifier"` | Opus | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
 | `challenger` | `"ac:challenger"` | `"challenger"` | Opus | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
@@ -161,6 +161,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
 - **reliability-first**: Right model for right task — default Sonnet execution, Opus for planning/investigation/architecture
+- **Parallel verification wave**: After implementation, code-reviewer + verifier + linter run simultaneously. All must pass before commit.
+- **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/` in the working directory. Not gitignored by default — each project decides
