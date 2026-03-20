@@ -38,6 +38,7 @@ Initial request: $ARGUMENTS
    - **Standard** (1-2 modules, some ambiguity or scope to clarify): Phase 2 + 3
    - **Complex** (cross-module, design decisions required, or user explicitly signals complexity): All phases
 3. Announce intent and complexity to the user in one line
+4. Detect `--loop` flag in $ARGUMENTS. If present: announce "Loop mode active — will auto-execute after plan approval." Strip `--loop` from arguments before further processing. Store $loopMode = true.
 
 ## Agent Routing
 
@@ -60,6 +61,12 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
    - Carry the task's metadata (type, size, priority, status, source path) forward — include a `### Task Context` section in the final plan output showing the source task file path and extracted requirements
    - Then continue to step 1 (skip the skip-research gate below)
 0b. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
+0c. **Investigation intake**: If the input document (from $ARGUMENTS or inline context) contains investigation findings — identified by presence of `### Root Cause` AND `### Evidence` AND `### Affected Files` sections (ac:investigate output format) — enter **investigation mode**:
+   - Extract: Root Cause (with confidence level), Evidence (file:line references), Affected Files (with role tags), Recommended Fix Approach, and Remaining Leads (if present)
+   - Map investigation sections to Research Summary format: Evidence → **Key Files**, Affected Files → **Patterns Found** (role-tagged impact map), Recommended Fix Approach → plan's guiding constraint
+   - Set investigation confidence: if High → skip Phase 2 entirely, proceed to Phase 3 with pre-vetted findings. If Medium/Low → run Phase 2 but scope agents to validate/extend investigation findings rather than fresh exploration
+   - Announce: "Investigation findings detected (confidence: [level]) — using root cause analysis as pre-research."
+   - Add `### Investigation Context` to the final plan output showing: source investigation, root cause, confidence, key evidence
 1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
 2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
 
@@ -105,6 +112,12 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
 1. Once agents return, read all key files identified by agents to build deep understanding
 2. Summarize findings: patterns found, files to modify, dependencies, external best practices discovered
 3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings. Four subsections: **Key Files** (file:line references with one-line descriptions), **Patterns Found** (architecture, naming, code organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming patterns, file organization, coding style). Format must be structured — maximum ~30 lines total.
+4. **Codebase state assessment**: After reading key files from agent findings, classify the target area's codebase state and code quality:
+   - **Disciplined**: Consistent patterns, good test coverage, strong typing → follow existing patterns exactly
+   - **Transitional**: Mixed old/new patterns coexisting → follow the NEW pattern direction, don't copy legacy
+   - **Legacy**: Outdated patterns, weak tests, loose typing → improve incrementally alongside changes
+   - **Chaotic**: No clear patterns, no tests → establish conventions before implementing
+   Include the classification in the plan's `### Research Summary` under a `**Codebase State**:` line. This classification informs step-level decisions: disciplined areas get quick-tier steps, chaotic areas get senior-tier with convention-establishment prerequisites.
 
 **Error Recovery**: If ac:explore agents return empty or insufficient results, proceed to Phase 3 with reduced confidence. Note research gaps in the plan's Risks section and flag them to the user during review. Do not block planning due to incomplete research — partial data is better than no plan.
 
@@ -240,7 +253,7 @@ options:
     description: "Modify specific parts of the plan."
 ```
 
-If user selects **Execute**, invoke `ac:execute` with the plan file path.
+If user selects **Execute** (or $loopMode is true from --loop — auto-execute without asking), invoke `ac:execute` with the plan file path.
 
 If user selects **Deep Review**:
 1. Launch plan-review agent: `Agent(subagent_type: "ac:plan-review", prompt: "Review plan at [plan-file-path]. Adversarial mode — hunt for flaws.")`

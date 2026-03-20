@@ -131,7 +131,7 @@ Mixed-tier waves are fine — CC supports different `model:` values per Agent() 
 [Inject PLAN_CONVENTIONS extracted from plan file in Phase 1. If no conventions section was found in the plan, use: "Read existing files and match patterns before modifying."]
 
 [If step has Tier: quick, append this section:]
-**Quick Tier Context**: This task runs on a fast, lightweight model optimized for speed over depth. Instructions are exhaustively explicit — follow them literally. Do not abbreviate output, do not skip steps, produce complete file content. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
+**Quick Tier Context**: This task is truly trivial — single file, explicit instructions, no design decisions. Follow instructions literally. Do not abbreviate output, do not skip steps, produce complete file content. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
 
 [If step has Tier: mid, no special append — standard worker prompt is sufficient.]
 

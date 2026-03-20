@@ -21,7 +21,7 @@ Sections in the generated CLAUDE.md have two ownership types:
 
 | Type | Sections | Update Behavior |
 |------|----------|----------------|
-| **Plugin-managed** | Workflow Protocol, Skills, MCP Servers | Updated by plugin on every run. Always reflects current plugin state |
+| **Plugin-managed** | Workflow, Skills, MCP Servers | Updated by plugin on every run. Always reflects current plugin state |
 | **User-managed** | Identity, Tech Stack, Rules | Preserved across updates. Only changed via interview |
 
 On **update** mode: skip interview, regenerate plugin-managed sections from current template + detected skills/MCP, preserve user-managed sections verbatim. On **enhance** mode: run full interview but pre-fill answers from existing file. On **overwrite** mode: full fresh generation.
@@ -173,15 +173,14 @@ Question 7:
 
 2. **Update mode** (skip interview path): ALWAYS reconstruct the file from scratch by combining:
    - **User-managed sections** (copy verbatim from existing file): Identity block (everything before `## Stack`), Tech Stack section, Rules section
-   - **Plugin-managed sections** (ALWAYS regenerate from template — never reuse existing text): Build the Workflow section fresh from the template's Workflow Protocol block. Build Skills table from detected skills. Build MCP table from detected servers. Build LSP section from template. Do NOT compare existing sections against template — always overwrite plugin-managed sections with template content populated with discovery data.
+   - **Plugin-managed sections** (ALWAYS regenerate from template — never reuse existing text): Build the Workflow section fresh from the template's Sisyphus Brain Workflow block. Build Skills table from detected skills. Build MCP table from detected servers. Build LSP section from template. Do NOT compare existing sections against template — always overwrite plugin-managed sections with template content populated with discovery data.
    - **Diff report**: After composing the new file, compare it line-by-line against the existing file. Report every changed line to the user in Phase 5. If no lines differ, announce "No changes needed" and skip install.
 
 3. **Enhance/New mode** (interview path): Build all sections from interview answers + detected data:
    - **Identity block**: Communication style from Q1
    - **Tech Stack**: From Q2 or detected from `my-coding` skill
-   - **Workflow — Intent Gate**: Static table with complexity classification and tool routing. Single BLOCKING REQUIREMENT with intent-based routing: Build/Refactor/Design → `skill: "ac:plan"`, Debug/Investigate/Root Cause → `skill: "ac:plan"`. Include concrete example signals for each route. Add fallback: "When in doubt, use ac:plan."
-   - **Workflow — Research**: Copy the Research BLOCKING block verbatim from the template. NEVER compress, soften, or summarize — the "Do NOT use Grep, Glob, Read, or WebSearch directly" prohibition must appear word-for-word. This is the primary mechanism that makes Claude delegate to `ac:explore` and `ac:librarian` agents.
-   - **Workflow subsections**: Task Tracking, Execution, Delegation, Verification — all using native tool terminology
+   - **Workflow — Sisyphus Brain**: Copy the entire Workflow section from the template verbatim. This includes: Intent Gate (6-type intent classification table + verbalization format), Delegation Check (3-step DELEGATE bias), Investigation Protocol (surgical vs hairy), Codebase State Awareness, Research delegation, Execution, and Verification. The template's Workflow section is the complete orchestration core — do not modify, abbreviate, or rewrite it.
+   - **Workflow — Compression guard**: Two subsections must survive context compression verbatim: (1) Intent Gate table with 6 intent types — primary routing mechanism, and (2) Research delegation with "proactively" keyword — primary agent-triggering enforcement. NEVER soften, summarize, or abbreviate these.
    - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>` from session). User skills: trigger description from frontmatter. Plugin skills: trigger description from frontmatter. **Never include `ac-skill-creator` or `ac:ac-skill-creator`** — omit entirely regardless of detection. If no skills detected, omit this section
    - **MCP section**: If user approved MCP references in Q6, include all active MCP servers from both `~/.claude/.mcp.json` and `~/.claude.json` mcpServers. For each: `| server-name | one-line capability |`. Only enabled servers. Infer capability from command/args if no description available. Omit if none detected or user declined
    - **LSP (Code Intelligence)** — if the user has LSP plugins installed or plans to use them. Include this concise block (5 lines max) in the generated CLAUDE.md:
@@ -214,7 +213,7 @@ Question 7:
    - `TodoWrite` not "create a task list"
    - `ac:explore` for codebase exploration, `ac:librarian` for external docs — not "launch an explorer"
    - `skill: "ac:plan"` for planning workflows
-   - `skill: "ac:plan"` for all workflows (planning, debugging, investigation) — delegates to appropriate agent via intent classification
+   - `skill: "ac:plan"` for Build/Refactor intents — delegates to plan→execute pipeline via Intent Gate routing
    - `AskUserQuestion` not "ask the user"
    - `run_in_background: true` for parallel execution
 3. Ensure no duplicate rules — each rule appears exactly once

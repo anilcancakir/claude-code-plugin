@@ -1,8 +1,6 @@
 # Global CLAUDE.md Template
 
-Structure guidance for `/ac:setup-global-claude-md` generation. Each section is conditional — include only if data available from interview or detection.
-
----
+Guidance for `/ac:setup-global-claude-md`. Sections conditional — include only if data available.
 
 ## Section: Identity (always include)
 
@@ -15,13 +13,10 @@ You are a [communication_style] development partner. [expertise_assumption].
 - Ambiguous requirement? Use AskUserQuestion instead of guessing.
 ```
 
----
-
-## Section: Tech Stack (include if interview Q2 answered or detected from my-coding)
+## Section: Tech Stack (if detected from my-coding or interview)
 
 ```markdown
 ## Tech Stack
-
 - **Backend**: [backend_stack]
 - **Mobile**: [mobile_stack]
 - **Frontend**: [frontend_stack]
@@ -29,130 +24,97 @@ You are a [communication_style] development partner. [expertise_assumption].
 - **Environment**: [os_arch], [shell]
 ```
 
-Remove unused lines. If single-stack developer, keep only relevant entries.
+Remove unused lines. Single-stack developers keep only relevant entries.
 
-## Section: Workflow (always include — this is the orchestration core)
+## Section: Workflow — Sisyphus Brain (always include — orchestration core)
 
 ```markdown
-## Workflow Protocol
+## Workflow
 
-Before the first tool call, classify complexity in one line:
+### Intent Gate
+Before the first tool call, verbalize intent:
+> `[intent_type]: I need to [what] because [why]. Approach: [how].`
 
-> [Simple/Standard/Complex]: [reason]
+| Intent | Signals | Route |
+|--------|---------|-------|
+| **Research** | "how does X work", "explain Y" | ac:explore + ac:librarian agents |
+| **Build** | "add X", "create Y", "implement Z" | `skill: "ac:plan"` → ac:execute |
+| **Refactor** | "restructure X", "clean up Y" | `skill: "ac:plan"` → ac:execute |
+| **Investigation** | "why does X fail", "debug Y" | Classify: surgical or hairy (below) |
+| **Fix** | "fix X", known single-location cause | Direct fix → verify |
+| **Evaluation** | "review X", "audit Y", "compare A vs B" | ac:explore agents + inline analysis |
 
-| Complexity | Signals | Action |
-|------------|---------|--------|
-| **Simple** | Single module, clear target, no design decisions | Execute directly → verify |
-| **Standard** | 1-2 modules, some ambiguity or scope to clarify | Classify intent → invoke matching skill → verify |
-| **Complex** | Cross-module, design decisions, or user signals complexity | Classify intent → invoke matching skill → verify |
+### Delegation Check
+Default Bias: DELEGATE. Before acting on any non-trivial task:
+1. **Specialized agent?** ac:explore, ac:librarian, ac:investigate handles this? → Spawn it
+2. **Matching skill?** A loaded skill (my-coding, ac:plan, etc.) covers this? → Invoke it
+3. **SUPER SIMPLE?** Single file, <10 lines, zero ambiguity? → Execute directly
+If steps 1-2 match → delegate. Only reach step 3 for genuinely trivial work.
 
-**BLOCKING REQUIREMENT for Standard and Complex**: After classifying complexity, determine intent and invoke the matching skill as your very first tool call. Do NOT call Read, Grep, Glob, Write, Edit, or any other tool before invoking the matching skill. "Already knowing what to do" is NOT a valid reason to skip.
+### Investigation Protocol
+- **Surgical fix**: Known cause, single location, <20 lines → Fix directly, verify with tests
+- **Hairy investigation**: Unknown cause, multi-file, or systemic → Spawn ac:investigate agent (Opus, read-only, hypothesis-driven, 3-cycle ceiling). Findings → `skill: "ac:plan"`. Never fix without understanding.
 
-- **Build / Refactor / Design**: Invoke `skill: "ac:plan"`
-  → "add user auth", "refactor payment module", "implement dark mode"
-- **Debug / Investigate / Root Cause**: Invoke `skill: "ac:plan"`
-  → "login returns 500", "why does cache invalidate", "auth broke after refactor"
-
-Use `ac:plan` for all building, refactoring, and investigation tasks. It handles both through its classify phase.
+### Codebase State Awareness
+Before copying patterns, classify: **Disciplined** (consistent, tested → follow patterns) · **Transitional** (mixed old/new → follow NEW direction) · **Legacy** (outdated, weak tests → improve, don't copy) · **Chaotic** (no patterns → establish from scratch).
 
 ### Research
-
-BLOCKING — Do NOT use Grep, Glob, Read, or WebSearch directly. Delegate all research to agents:
-- **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, structure, relationships)
-- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API references, best practices (context7 MCP → WebSearch fallback). For large context analysis, delegate to Gemini via gemini-cli MCP when installed
-
-CRITICAL: Always use the `ac:` prefixed `subagent_type` values. `"Explore"` (builtin) and `"explore"` route to different agents with different tools and models.
-
-Launch with CONTEXT, GOAL, DOWNSTREAM, REQUEST prompts in one parallel message. Read files AFTER agents return, not before.
-
-### Task Tracking
-
-Use TodoWrite for any task with 2+ steps. The ac:plan skill will create the initial plan — then mark tasks `in_progress`/`completed` as you execute.
+Prefer delegating research to specialized agents — use them proactively before tools directly:
+- **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, relationships)
+- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API refs (context7 → WebSearch)
+CRITICAL: Always use `ac:` prefixed subagent_type. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one parallel message.
 
 ### Execution
-
-- For approved plans with 3+ steps, use `ac:execute` for parallel execution
-- Ad-hoc parallel: Agent tool with `run_in_background: true`. Launch all in a single message
-- Do not poll or sleep — notifications arrive automatically
-
-### Delegation
-
-When delegating to an agent, include: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT.
+- Plans with 3+ steps → `ac:execute` for parallel execution. Use TodoWrite for 2+ steps
+- Ad-hoc parallel: Agent with `run_in_background: true`. All in one message
+- reliability-first routing: default Sonnet, Opus for planning/investigation/architecture, Haiku for search/trivial
+- Delegation format: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT
 
 ### Verification
-
-- Run project's test suite after every logical unit.
-- Run project's linter/formatter on modified files.
-- 3-strike rule: 3 failures → stop, revert, ask user.
-- Evidence required: tests pass + lint clean. No evidence = not complete.
-- Auto commit+push after task completion via /ac:commit.
+- Run project's test suite after every logical unit + linter on modified files
+- 3-strike rule: 3 failures → stop, revert, ask user
+- Evidence required: tests pass + lint clean. No evidence = not complete
+- Auto commit+push after task completion via /ac:commit
 ```
 
----
-
-## Section: Skills (include if any skills detected)
+## Section: Skills (if any skills detected)
 
 ```markdown
 ## Skills
-
-Load relevant skills before starting any task:
-
 | Skill | Load When |
 |-------|-----------|
 | `my-coding` | ANY code generation, review, refactor, implementation |
-| `my-language` | Writing documentation, guides, articles, any written content |
-| `github-cli:github-cli` | gh CLI, issues, PRs, releases, GitHub Actions, gh api |
-| `frontend-design:frontend-design` | Any UI work — pages, components, mobile screens, color, typography |
-| `git-master:git-master` | Committing, rebasing, squashing, blame, bisect, history search |
+| `my-language` | Writing documentation, guides, articles |
+| `github-cli:github-cli` | gh CLI, issues, PRs, releases, GitHub Actions |
+| `frontend-design:frontend-design` | Any UI work — pages, components, mobile screens |
+| `git-master:git-master` | Committing, rebasing, squashing, blame, bisect |
 | `<additional-user-skill>` | <when to load — from frontmatter description> |
 ```
 
-- Include only detected + user-approved skills
-- User skills (`my-coding`, `my-language`) come from `~/.claude/skills/` detection
-- Plugin skills (`<plugin>:<skill>`) come from active session capabilities — include only if that plugin is installed
-- **Never include `ac-skill-creator`** — omit unconditionally, it is user-invoked on demand
-- If no skills detected, omit this section entirely
+Include only detected + user-approved skills. Never include `ac-skill-creator`. Omit if none.
 
----
-
-## Section: MCP (include only if MCP servers detected + user approved in Q6)
+## Section: MCP (if MCP servers detected + user approved)
 
 ```markdown
 ## MCP Servers
-
 | Server | Capability |
 |--------|------------|
-| `context7` | Live framework docs — version-aware library reference (user-installed) |
-| `gemini-cli` | Gemini CLI bridge — multimodal analysis, large context, brainstorm |
-| `<server>` | <one-line capability — infer from command/args if no description> |
+| `context7` | Live framework docs — version-aware library reference |
+| `gemini-cli` | Gemini CLI bridge — multimodal, large context, brainstorm |
+| `<server>` | <one-line capability — infer from command/args> |
 ```
 
-- Aggregate from `~/.claude/.mcp.json` and `~/.claude.json` mcpServers (all user-installed or user-global)
-- Only enabled servers
-- Keep capability descriptions concise — one line per server, LLM-effective
-- Omit this section if no MCP servers detected or user declined
-
----
-
-## Section: Rules (include if interview Q3/Q4/Q7 produced rules)
+Aggregate from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Only enabled. Omit if none.
+## Section: Rules (if interview produced rules)
 
 ```markdown
 ## Rules
-
-- [compiled_rules — deduplicated, one per line]
-- [each rule appears exactly once across the entire file]
+- [compiled_rules]
 ```
 
-If `my-coding` skill exists and contains detailed rules, keep this section minimal (3-5 critical rules only) and note: "Detailed coding rules are in the `my-coding` skill."
-
----
+If `my-coding` has detailed rules, keep minimal (3-5 rules): "Detailed coding rules → `my-coding` skill." Deduplicate — each rule appears once across entire file.
 
 ## Composition Guidelines
-
-1. **Target ≤120 lines total**
-2. **Deduplication**: No rule should appear in both Rules section and Workflow section
-3. **Skill delegation**: If `my-coding` has detailed rules, keep Rules section lean
-4. **Stack-agnostic workflow**: Verification says "project's test suite", not specific commands
-5. **Official tool names**: Use exact Claude Code system prompt terminology
-6. **No Haiku references**: Only Opus and Sonnet
-7. **Research BLOCKING must survive compression**: Copy the Research section verbatim — never soften or summarize the "Do NOT use Grep, Glob, Read" prohibition. This is the primary agent-triggering enforcement and must not be compressed.
+1. **Target ≤120 lines** generated output. Deduplication: no rule in both Rules and Workflow
+2. **Intent Gate must survive compression**: 6-type table + verbalization format verbatim — primary routing
+3. **Research delegation must survive compression**: proactively pattern verbatim — primary agent trigger
