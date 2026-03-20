@@ -44,24 +44,41 @@ Initial request: $ARGUMENTS
 
 Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CLAUDE.md` for the full routing reference and NOT column. This command uses: `ac:explore`, `ac:librarian`, `ac:plan-analysis`, `ac:plan-review`.
 
+### Pipeline Profiles
+
+Pipeline depth scales with complexity classification from Phase 1. Each profile defines what the planning pipeline includes at every stage:
+
+| Stage | Simple | Standard | Complex |
+|-------|--------|----------|---------|
+| **Research** | Direct Read, 0 explore agents | 1 explore agent | 2-3 explore + librarian |
+| **Pre-gen Metis** | Skip | Skip | Yes |
+| **Post-gen Analysis** | Skip | Yes (plan-analysis only) | Yes (plan-analysis) |
+| **Deep Review** | Skip | Opt-in (user selects) | Offered (recommended) |
+| **Verification** | Build+test only | Code-reviewer + linter | Full 3-agent wave |
+| **Expected agents** | ~2-3 total | ~4-6 total | ~7-10 total |
+
+This table is the single source of truth — Phase 2, Phase 3, and Complexity Shortcuts reference it. Verification depth is handled by execute.md (already implemented).
+
 ---
 
 ## Phase 2: Research
 
 **Goal**: Research codebase patterns AND external best practices before interviewing
 
-Critical: In this phase, use ac:explore and ac:librarian agents for ALL research. Do not use Read, Glob, Grep, or Search tools directly — delegate all codebase exploration to ac:explore agents and all external documentation research to ac:librarian agents.
+Research depth is profile-conditional (see Pipeline Profiles table for agent counts):
+- **Simple complexity**: Use direct Read, Glob, Grep on known files. Do not spawn explore agents — the target is already clear from Phase 1 classification. Skip the Agent Routing by Intent section below entirely
+- **Standard and Complex complexity**: Use ac:explore and ac:librarian agents for research. Do not use Read, Glob, Grep, or Search tools directly — delegate all codebase exploration to ac:explore agents and all external documentation research to ac:librarian agents. Agent counts per profile are defined in the Pipeline Profiles table — use the intent routing below to determine prompt content, but respect the profile's agent count limits
 
 **Actions**:
 
 0. **Task file detection**: If $ARGUMENTS contains `.ac/tasks/` in the path OR `/tasks/` in the path OR points to a file whose YAML frontmatter has `type:` matching `story`, `bug`, `spike`, or `chore` (pm-base types), enter **task mode**:
    - Read the task file and extract `User Story` + `Acceptance Criteria` sections as the plan's requirements
-   - Force Phase 2 research — do NOT skip even if the task file contains a `### Research Summary` section
    - Announce: "Task file detected — entering task mode. Using [task title] as plan input with fresh research."
    - Carry the task's metadata (type, size, priority, status, source path) forward — include a `### Task Context` section in the final plan output showing the source task file path and extracted requirements
-   - If task file contains a `### Codebase Context` section: extract file:line references as pre-seeded exploration targets. Reduce explore agent count (launch 1 instead of 2-3) and scope them to validate/extend the pre-seeded context rather than fresh exploration
-   - Then continue to step 1 (skip the skip-research gate below)
-0b. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
+   - If task file contains a `### Research Summary` section (populated): apply the skip-research gate below (step 0b) — skip Phase 2, use existing findings
+   - If task file contains a `### Codebase Context` section (but no Research Summary): extract file:line references as pre-seeded exploration targets. Reduce explore agent count per the Pipeline Profile (e.g., Standard: 1 explore with pre-seeded targets instead of fresh exploration)
+   - If task file has neither Research Summary nor Codebase Context: proceed to step 1 with full research per Pipeline Profile
+0b. **Skip-research gate**: If $ARGUMENTS points to a document with a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3. This gate applies to both task files and regular documents.
 0c. **Investigation intake**: If the input document (from $ARGUMENTS or inline context) contains investigation findings — identified by presence of `### Root Cause` AND `### Evidence` AND `### Affected Files` sections (ac:investigate output format) — enter **investigation mode**:
    - Extract: Root Cause (with confidence level), Evidence (file:line references), Affected Files (with role tags), Recommended Fix Approach, and Remaining Leads (if present)
    - Map investigation sections to Research Summary format: Evidence → **Key Files**, Affected Files → **Patterns Found** (role-tagged impact map), Recommended Fix Approach → plan's guiding constraint
@@ -73,8 +90,12 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
 
 ### Agent Routing by Intent
 
-**Build intent**:
-Launch 2 ac:explore agents + 1 ac:librarian agent in parallel. Each agent should:
+**Simple complexity**: Skip this section entirely — use direct Read on known files per the profile gate above.
+
+**Standard and Complex complexity**: Use the routing below. Respect the Pipeline Profiles table for agent counts — Standard launches fewer agents than Complex even within the same intent.
+
+**Build intent** (Standard: 1 explore; Complex: 2 explore + 1 librarian):
+Each agent should:
 
 - Target a different aspect of the codebase or documentation
 - Include a list of key files to read in their findings
@@ -85,24 +106,21 @@ Launch 2 ac:explore agents + 1 ac:librarian agent in parallel. Each agent should
 - ac:explore 2: "CONTEXT: Adding [feature] to [project]. GOAL: Understand organizational patterns. DOWNSTREAM: Decide where to place new files. REQUEST: Find how features are organized — controllers, views, routes registration. Compare 2-3 feature directories."
 - ac:librarian: "CONTEXT: Implementing [technology] in production. GOAL: Follow best practices. DOWNSTREAM: Setup and configuration decisions. REQUEST: Find official docs for setup, configuration, and common pitfalls. Skip beginner tutorials."
 
-**Refactor intent**:
-Launch 2 ac:explore agents in parallel:
+**Refactor intent** (Standard: 1 explore; Complex: 2 explore):
 
 **Example agent prompts**:
 
 - ac:explore 1: "CONTEXT: Refactoring [target]. GOAL: Map impact scope. DOWNSTREAM: Build safe refactoring plan. REQUEST: Find all usages — call sites, type flow, dynamic access. Return file path, usage pattern, risk level."
 - ac:explore 2: "CONTEXT: Modifying [target]. GOAL: Understand test coverage. DOWNSTREAM: Decide whether to add tests first. REQUEST: Find all test files exercising this code, what each asserts, coverage gaps."
 
-**Architecture intent**:
-Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
+**Architecture intent** (Standard: 1 explore; Complex: 1 explore + 1-2 librarian):
 
 **Example agent prompts**:
 
 - ac:explore: "CONTEXT: Planning architectural changes. GOAL: Understand current system design. DOWNSTREAM: Identify safe-to-change vs load-bearing boundaries. REQUEST: Find module boundaries, dependency direction, key abstractions, circular deps."
 - ac:librarian: "CONTEXT: Designing architecture for [domain]. GOAL: Evaluate trade-offs. DOWNSTREAM: Present concrete options. REQUEST: Find best practices, real-world case studies, and common failure modes. Skip generic pattern catalogs."
 
-**Research intent**:
-Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
+**Research intent** (Standard: 1 explore; Complex: 1 explore + 1-2 librarian):
 
 **Example agent prompts**:
 
@@ -144,7 +162,7 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
    - Over-validation: "Minimal or comprehensive error handling?"
 5. Derive `$planName` from request topic (slugified, e.g., `auth-system`)
 6. Plan storage path is `.ac/plans/` (created automatically if missing)
-6b. **Pre-generation analysis** (Metis — for Standard and Complex only):
+6b. **Pre-generation analysis** (Metis — for Complex only, per Pipeline Profiles):
    - Launch plan-analysis agent in pre-generation mode:
      ```
      Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode. Request: [original request]. Research findings: [Research Summary content]. Analyze for hidden intentions, unstated requirements, and AI-slop risks. Return directives.")
@@ -152,7 +170,7 @@ Launch 1 ac:explore agent + 1-2 ac:librarian agents in parallel:
    - Read directives from agent output
    - Inject MUST DO / MUST NOT DO directives as constraints for plan generation
    - If agent returns QUESTIONS → add them to the interview question queue (ask user before generating plan)
-   - Skip for Simple complexity (not worth the overhead)
+   - Skip for Simple and Standard complexity (see Pipeline Profiles — pre-gen Metis adds overhead without proportional value for bounded scope)
 7. Synthesize all findings into a draft plan
 8. Each step must include: clear deliverable description, files to create/modify, acceptance criteria as executable commands (not "verify it works"), QA Scenario per step as executable verification (what to test, expected outcome — e.g., "grep -c 'pattern' file returns ≥2", not "verify it works"), independence (`independent` or `depends on Step N`), and tier assignment (`quick`/`mid`/`senior`)
    - **Tier heuristic**: `quick` = ≤1 file, trivial change, no design decisions. `mid` = 1-2 files, standard implementation (default). `senior` = 3+ files, schema/migration, cross-layer, architecture decisions
@@ -193,7 +211,10 @@ If LSP tool is not available:
 
 Do not present a plan that references symbols verified-missing by LSP.
 
-**Analysis gate** (mandatory before presenting to user):
+**Analysis gate** (profile-conditional — see Pipeline Profiles):
+
+- **Simple**: Skip analysis gate entirely. 1-2 step plans don't need gap analysis. Proceed directly to Save and present.
+- **Standard and Complex**: Run analysis gate as described below.
 
 Two flows depending on whether Deep Review was requested (set $deepReview flag in Phase 1 if `--deep-review` flag detected in $ARGUMENTS, or set it when the user selects Deep Review from the AskUserQuestion options below):
 
@@ -268,16 +289,32 @@ Wave 3 (After Wave 2):
 Plan saved to: .ac/plans/$planName.md
 ```
 
-1. Use AskUserQuestion to get user decision:
+1. Use AskUserQuestion to get user decision (profile-conditional options):
 
+**Simple complexity**: Skip AskUserQuestion entirely — auto-execute. Simple plans are trivial and don't need user confirmation.
+
+**Standard complexity**:
 ```
 question: "Plan is ready. How would you like to proceed?"
 header: "Next Step"
 options:
   - label: "Execute (Recommended)"
-    description: "Launch ac:execute with tier-based model routing. Workers spawn as Haiku/Sonnet/Opus per step tier."
+    description: "Launch ac:execute with tier-based model routing."
   - label: "Deep Review"
-    description: "Re-run the analysis gate in Deep Review flow — launches plan-analysis and adversarial plan-reviewer (Momus-class) in parallel, then merges results. Stress-tests references, tiers, and executability. Saves ~2 minutes vs sequential review."
+    description: "Launch adversarial plan-reviewer (Momus-class) in parallel with plan-analysis. Stress-tests references, tiers, and executability."
+  - label: "Adjust"
+    description: "Modify specific parts of the plan."
+```
+
+**Complex complexity**:
+```
+question: "Plan is ready. How would you like to proceed?"
+header: "Next Step"
+options:
+  - label: "Deep Review (Recommended)"
+    description: "Launch adversarial plan-reviewer (Momus-class) in parallel with plan-analysis. Cross-module plans benefit from adversarial scrutiny before execution."
+  - label: "Execute"
+    description: "Launch ac:execute with tier-based model routing. Skip adversarial review."
   - label: "Adjust"
     description: "Modify specific parts of the plan."
 ```
@@ -298,20 +335,23 @@ Do not write code or modify source files. Only produce the plan.
 
 ## Complexity Shortcuts
 
-For **Simple** requests (single module, clear target, no design decisions):
+Each complexity level maps to a Pipeline Profile that controls depth across the entire planning pipeline. See the Pipeline Profiles table above for the authoritative reference. Below are the quick-reference execution paths:
 
-1. Skip Phase 2 (research)
-2. Identify affected files directly
-3. Create a 3-4 step plan via TodoWrite
-4. **Analysis gate: skip for Simple** (1-2 step plans don't need gap analysis)
-5. Save and present to user
+**Pipeline Profile: Simple** (~2-3 total agents)
+- Phase 1: Classify → Simple
+- Phase 2: Skip explore agents. Use direct Read/Glob/Grep on known files
+- Phase 3: Skip pre-gen Metis. 0-1 interview questions. Skip analysis gate. Auto-execute (no AskUserQuestion)
+- Verification (execute.md): Build+test only — no verification agents
 
-For **Standard** requests (1-2 modules, some ambiguity or scope to clarify):
+**Pipeline Profile: Standard** (~4-6 total agents)
+- Phase 1: Classify → Standard
+- Phase 2: Launch 1 ac:explore agent (+ ac:librarian if external docs relevant)
+- Phase 3: Skip pre-gen Metis. 1-2 interview questions. Run post-gen analysis gate (plan-analysis only). Deep Review is opt-in via AskUserQuestion
+- Verification (execute.md): Code-reviewer + linter (skip verifier)
 
-- Run Phase 2 with 1-2 ac:explore agents + 1 ac:librarian agent (if external docs relevant), then Phase 3
-
-For **Complex** requests (cross-module, design decisions required, or user explicitly signals complexity):
-
-- Run all phases with 2-3 ac:explore agents + 1-2 ac:librarian agents and deeper interview
-- Add Risks section with specific failure scenarios
+**Pipeline Profile: Complex** (~7-10 total agents)
+- Phase 1: Classify → Complex
+- Phase 2: Launch 2-3 ac:explore agents + 1 ac:librarian agent (full research)
+- Phase 3: Run pre-gen Metis. 2-3 interview questions. Run post-gen analysis gate. Deep Review is recommended via AskUserQuestion. Add Risks section with specific failure scenarios
+- Verification (execute.md): Full 3-agent wave (code-reviewer + linter + verifier)
 - Suggest phased execution if steps have dependencies

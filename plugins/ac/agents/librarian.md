@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by need for external library setup guidance. Librarian finds official docs with version-specific information.</commentary>
   </example>
 model: sonnet
+effort: medium
 tools: Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: blue

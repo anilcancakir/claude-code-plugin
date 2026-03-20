@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by "which files" dependency question. Explore traces imports, call sites, and dependency chains.</commentary>
   </example>
 model: haiku
+effort: low
 tools: Glob, Grep, LS, Read, BashOutput
 disallowedTools: Write, Edit
 color: green

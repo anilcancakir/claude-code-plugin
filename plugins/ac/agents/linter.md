@@ -17,6 +17,7 @@ description: |
   <commentary>Triggered by execute as final gate before marking implementation complete.</commentary>
   </example>
 model: haiku
+effort: low
 tools: LSP, Glob, Read
 disallowedTools: Write, Edit
 color: yellow

@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by an architectural decision with high stakes. Challenger identifies coupling, data integrity risks, and surfaces alternatives the user hasn't considered.</commentary>
   </example>
 model: opus
+effort: high
 tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit
 color: red

@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by architectural fit question. Feasibility evaluates pattern alignment, prerequisites, and dependency impact.</commentary>
   </example>
 model: sonnet
+effort: medium
 tools: Glob, Grep, LS, Read, BashOutput
 disallowedTools: Write, Edit
 color: cyan

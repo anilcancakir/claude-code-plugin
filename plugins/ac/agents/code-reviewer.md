@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by ac:execute when complexity is Standard or Complex. Returns CRITICAL/IMPORTANT/MINOR findings.</commentary>
   </example>
 model: sonnet
+effort: medium
 tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit
 color: yellow

@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by file paths to multiple images for comparison. Gemini-vision processes the files and returns a structured comparison.</commentary>
   </example>
 model: sonnet
+effort: medium
 tools: Read, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: cyan

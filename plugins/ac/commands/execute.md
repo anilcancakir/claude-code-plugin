@@ -115,13 +115,39 @@ Mixed-tier waves are fine — CC supports different `model:` values per Agent() 
 
 **Worker prompt template** — each agent must receive a fully self-contained prompt:
 
+**Quick tier template** (Haiku — lean format, no Atlas overhead):
+
 ```markdown
 ## Your Task
+
+**Assignment**: [Step title]
+[Full step description from plan — exhaustively explicit]
+
+**Files**: [file paths from plan step]
+
+**Done when**: [acceptance criteria, verbatim]
+
+**Conventions**: [Inject PLAN_CONVENTIONS or "Read existing files and match patterns before modifying."]
+
+Follow instructions literally. Do not abbreviate output, do not skip steps. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
+
+[If ACCUMULATED_WISDOM is non-empty:]
+**Wisdom from prior steps**: [Inject ACCUMULATED_WISDOM]
+
+After changes: run build, tests, lint. Summarize: files changed, verification results, issues.
+```
+
+**Mid and Senior tier template** (Sonnet/Opus — structured Atlas format):
+
+```markdown
+## Task
 
 **Overall Goal**: [Plan title and context — 1-2 sentences]
 
 **Your Assignment**: [Step title]
 [Full step description from plan]
+
+## Expected Outcome
 
 **Files to Modify**:
 - [file paths from plan step]
@@ -129,31 +155,31 @@ Mixed-tier waves are fine — CC supports different `model:` values per Agent() 
 **Acceptance Criteria**:
 [Done-when conditions from plan, verbatim]
 
-**Codebase Conventions** (follow these):
+## Must Do
+
+- Read existing files before modifying — match patterns and conventions
+- Implement ONLY your assigned step. Do not touch files outside your scope
+- Run verification after changes (build, tests, lint)
+- If tests fail, fix the root cause. Do not skip or modify tests to pass
+- [Inject PLAN_CONVENTIONS or "Match existing patterns in target files"]
+
+## Must NOT Do
+
+- Do not modify files outside your assigned scope
+- Do not refactor, clean up, or improve code beyond what the step requires
+- Do not add documentation, comments, or type annotations to unchanged code
+
+## Context
+
+**Codebase Conventions**:
 [Inject PLAN_CONVENTIONS extracted from plan file in Phase 1. If no conventions section was found in the plan, use: "Read existing files and match patterns before modifying."]
 
-[If step has Tier: quick, append this section:]
-**Quick Tier Context**: This task is truly trivial — single file, explicit instructions, no design decisions. Follow instructions literally. Do not abbreviate output, do not skip steps, produce complete file content. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
+[If step has Tier: senior, append:]
+**Senior Tier**: This task was flagged for senior-level reasoning. Explore the codebase deeply before acting. Consider edge cases, cross-cutting concerns, and architectural impact. Quality over speed. Consider downstream effects on callers and dependents before modifying.
 
-[If step has Tier: mid, no special append — standard worker prompt is sufficient.]
-
-[If step has Tier: senior, append this section:]
-**Senior Tier Context**: This task was flagged for senior-level reasoning. Explore the codebase deeply before acting. Consider edge cases, cross-cutting concerns, and architectural impact. Take your time — quality over speed. Consider downstream effects on callers and dependents before modifying.
-
-[If ACCUMULATED_WISDOM is non-empty, append this section:]
-**Wisdom from prior steps** (patterns discovered by earlier workers — follow these):
+[If ACCUMULATED_WISDOM is non-empty, append:]
+**Wisdom from prior steps** (prefer this context over re-discovering — avoid redundant tool calls for information already captured here):
 [Inject ACCUMULATED_WISDOM content here]
-
-## Execution Rules
-
-1. Read existing files before modifying — match patterns and conventions
-2. Implement ONLY your assigned step. Do not touch files outside your scope
-3. Run verification after changes:
-   - Build: run the project's build command
-   - Tests: run tests relevant to modified files
-   - Lint: run the project's linter
-4. If tests fail, fix the root cause. Do not skip or modify tests to pass
-5. After completion, summarize: files changed, verification results, any issues
 
 ## Output Format
 
