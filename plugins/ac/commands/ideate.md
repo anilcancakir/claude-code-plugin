@@ -170,6 +170,7 @@ Brownfield: ambiguity = 1 - (goal × 0.35 + constraints × 0.25 + success × 0.2
    - YAML frontmatter: `type` (story/bug/spike/chore), `size` (XS-XL), `priority` (P0-P3), `status`, `design`, `project: $ideateName`, `phase: N`, `created: YYYY-MM-DD`
    - Body sections: User Story (`As a {persona}, I want to {action}, so that {outcome}`), Context, Acceptance Criteria (Given/When/Then), Scope (In/Out), Open Questions, Notes
    - Must NOT include `### Research Summary` — forces ac:plan to run fresh codebase research
+   - If brownfield: include `### Codebase Context` section with key file:line references from Phase 1 exploration (structural references only — file paths, patterns found, not analytical conclusions). This helps ac:plan start from known locations rather than searching from scratch
    - Use `type: spike` for technical decisions
    - Split any scope exceeding size L into multiple tasks
 6. **INVEST validation gate** — check each task against all 6 criteria:

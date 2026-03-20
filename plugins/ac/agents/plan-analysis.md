@@ -21,6 +21,7 @@ description: |
   <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
   </example>
 model: opus
+effort: high
 tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: yellow

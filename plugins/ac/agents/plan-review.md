@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered via ac:plan's post-presentation options. Returns OKAY or REJECT with max 5 blocking issues + suggested fixes.</commentary>
   </example>
 model: opus
+effort: high
 tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: green

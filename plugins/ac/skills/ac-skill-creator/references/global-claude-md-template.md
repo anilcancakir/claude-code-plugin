@@ -71,10 +71,10 @@ CRITICAL: Always use `ac:` prefixed subagent_type. Always `run_in_background: tr
 - Delegation format: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT
 
 ### Verification
-- Run project's test suite after every logical unit + linter on modified files
+- Run project's test suite after every logical unit. Per-unit linter advisory, Phase 5 authoritative. Complexity-driven: Simple (build+test), Standard (+code-reviewer+linter), Complex (+verifier)
 - 3-strike rule: 3 failures → stop, revert, ask user
 - Evidence required: tests pass + lint clean. No evidence = not complete
-- Auto commit+push after task completion via /ac:commit
+- Auto commit+push after task completion via /ac:commit --skip-preflight
 ```
 
 ## Section: Skills (if any skills detected)

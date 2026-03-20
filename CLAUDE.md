@@ -92,13 +92,13 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | Command | Description |
 |---------|-------------|
 | `/ac:plan` | Classify → research → interview → pre-generation analysis → plan (with QA scenarios) |
-| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) → Verification Wave (code-reviewer + verifier + linter in parallel) |
+| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) → Complexity-driven Verification Wave (Simple: build+test only, Standard: code-reviewer + linter, Complex: full 3-agent wave) |
 | `/ac:init-claude-md` | Generate/enhance project CLAUDE.md |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
 | `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill |
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` |
-| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits |
+| `/ac:commit` | Smart commit — preflight checks (skippable via `--skip-preflight`), convention detection, atomic commits |
 | `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
 
 ## Agents (ac plugin)
@@ -161,8 +161,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
 - **reliability-first**: Right model for right task — default Sonnet execution, Opus for planning/investigation/architecture
-- **Parallel verification wave**: After implementation, code-reviewer + verifier + linter run simultaneously. All must pass before commit.
-- **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing
+- **Complexity-driven verification**: Verification depth scales with plan complexity — Simple (build+test only), Standard (code-reviewer + linter, skip Opus verifier), Complex (full 3-agent wave). Build+test and verification agents launch concurrently. Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification.
+- **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) when selected.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/` in the working directory. Not gitignored by default — each project decides

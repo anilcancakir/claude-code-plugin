@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered manually after user fixes REJECT issues. Same verification pass.</commentary>
   </example>
 model: opus
+effort: medium
 tools: Read, Grep, Glob, LS
 disallowedTools: Write, Edit
 color: green

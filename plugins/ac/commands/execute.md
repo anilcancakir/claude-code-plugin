@@ -29,6 +29,8 @@ Plan identifier: $ARGUMENTS
 
 8. **Initialize wisdom accumulator**: Set ACCUMULATED_WISDOM to empty. Populated after each work unit completes and injected into subsequent worker prompts to prevent repeated discovery and pattern drift.
 
+9. **Extract plan complexity**: Parse the plan file for `**Complexity**:` metadata. Extract value: `Simple`, `Standard`, or `Complex`. If not found, derive from step count: 1-2 steps → Simple, 3-6 steps → Standard, 7+ steps → Complex. Store as PLAN_COMPLEXITY for Phase 5 verification depth routing.
+
 ---
 
 ## Phase 2: Classify Execution Strategy
@@ -184,9 +186,9 @@ Before marking a work unit done:
    - If WARNING-level only → log to final report, continue
    - If LSP not available → proceed to Phase 5 verification wave
 
-2. If LSP tool is available and work unit involved code changes, delegate to ac:linter:
+2. If LSP tool is available and work unit involved code changes, delegate to ac:linter (advisory — early feedback only):
    - `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit description]")`
-   - BLOCKED verdict → fix errors before proceeding to next unit
+   - BLOCKED verdict → log warning with details, continue to next unit. Phase 5 linter agent is the authoritative final check
    - CLEAN or LSP UNAVAILABLE verdict → mark unit done
 
 3. **Extract wisdom** from the completed worker's output. Scan the worker's "Changes Made" and "Issues" sections for:
@@ -235,22 +237,24 @@ When all agents complete, render the final table and summary.
 
 ## Phase 5: Verification Wave
 
-**Goal**: Verify the full plan was executed correctly via parallel verification agents.
+**Goal**: Verify the full plan was executed correctly. Verification depth scales with PLAN_COMPLEXITY.
 
-CRITICAL: DO NOT SKIP PHASE 5 — MANDATORY FINAL GATE. Complete the full verification wave before rendering any summary or suggesting commit.
+CRITICAL: DO NOT SKIP PHASE 5 — MANDATORY FINAL GATE. Complete verification before rendering any summary or suggesting commit.
 
-**Step 1** — Run build + test + lint (prerequisite — must pass before wave):
+### Verification Depth by Complexity
 
-1. Full build
-2. Full test suite
-3. Lint check
-4. If any fails → fix root cause, re-run. Do not launch verification wave with failures.
-5. **LSP Navigation Check** (if LSP tool available):
-   - For each modified file: `LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)` → confirms parseable + exports intact
-   - For refactor/rename work: `LSP(operation="findReferences", ...)` → confirms no broken callers
-   - If LSP not available → skip, rely on lint output only
+Route based on PLAN_COMPLEXITY (extracted in Phase 1):
 
-**Step 2** — Launch verification wave — 3 agents in parallel (single message block):
+**Simple** (1-2 steps, quick tier): Skip verification wave agents entirely. Only run build + test + lint as the final check. If all pass → invoke `/ac:commit --skip-preflight`. If any fail → fix and re-run.
+
+**Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents concurrently (skip verifier — Opus is expensive for standard work):
+
+```
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].", run_in_background: true)
+Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
+```
+
+**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents concurrently (full wave):
 
 ```
 Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].", run_in_background: true)
@@ -258,17 +262,30 @@ Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-fil
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
 ```
 
-**Step 3** — Collect results — ALL must pass:
+### Execution (Standard and Complex only)
 
-| Agent | Pass | Fail |
+**Step 1** — Launch build+test AND verification agents concurrently (single message block):
+
+1. Start full build + full test suite execution
+2. Simultaneously launch verification agents per complexity level above
+3. Build/test failures do NOT prevent agent launch — agents run to completion regardless. Build or test failure blocks the final verdict.
+4. **LSP Navigation Check** (if LSP tool available, run alongside above):
+   - For each modified file: `LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)` → confirms parseable + exports intact
+   - For refactor/rename work: `LSP(operation="findReferences", ...)` → confirms no broken callers
+   - If LSP not available → skip, rely on linter agent output only
+
+**Step 2** — Collect ALL results — ALL must pass:
+
+| Check | Pass | Fail |
 |-------|------|------|
+| Build + test suite | exits 0 | non-zero exit |
 | ac:code-reviewer | APPROVED | BLOCKED |
-| ac:verifier | APPROVE | REJECT |
+| ac:verifier (Complex only) | APPROVE | REJECT |
 | ac:linter | CLEAN or LSP UNAVAILABLE | BLOCKED |
 
-**Step 4** — Route based on combined verdict:
+**Step 3** — Route based on combined verdict:
 
-→ **ALL pass** → Render execution summary (plan name, steps completed, strategy, build/test/lint results, verification verdicts), then invoke `/ac:commit` to commit and push all changes.
+→ **ALL pass** → Render execution summary (plan name, steps completed, strategy, complexity level, build/test results, verification verdicts), then invoke `/ac:commit --skip-preflight` to commit and push all changes.
 
 → **ANY fail** → Present all failures with evidence from agent outputs, then:
 
@@ -278,13 +295,13 @@ AskUserQuestion(
   header: "Verification Failed"
   options:
     - label: "Fix and Re-verify"
-      description: "Address the failed criteria, then re-run full verification wave."
+      description: "Address the failed criteria, then re-run verification at current complexity level."
     - label: "Accept and Commit"
       description: "Acknowledge failures, invoke /ac:commit for current state."
 )
 ```
 
-If user selects "Fix and Re-verify" → fix issues, then loop back to Step 1 (re-run build/test/lint, then re-launch parallel verification wave).
+If user selects "Fix and Re-verify" → fix issues, then loop back to Step 1 (re-run build+test and re-launch verification agents concurrently).
 
 
 ---

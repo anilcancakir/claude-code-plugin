@@ -15,6 +15,7 @@ description: |
   <commentary>Triggered by silent failure requiring deep tracing. Investigate builds a mental model of the system, forms hypotheses, and verifies each against actual code.</commentary>
   </example>
 model: opus
+effort: high
 tools: Glob, Grep, Read, LS, BashOutput
 disallowedTools: Write, Edit
 color: red

@@ -38,7 +38,7 @@ Detect `--interactive` flag in $ARGUMENTS. If present:
 
 **Actions**:
 
-0. Detect --interactive flag in $ARGUMENTS. If absent, auto mode is active (default). If present, strip flag and enable interactive mode.
+0. Detect flags in $ARGUMENTS: `--interactive` (enables interactive mode) and `--skip-preflight` (skips Phase 2 preflight checks — used when invoked by ac:execute after verification wave passes). Strip detected flags from $ARGUMENTS.
 
 1. Run in parallel:
 
@@ -81,6 +81,8 @@ git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "NO_UPSTREAM"
 ## Phase 2: Preflight Checks
 
 **Goal**: Ensure code quality before committing. Green lint + green tests = safe to commit.
+
+**Important**: If `--skip-preflight` flag was detected in Phase 1 → skip this entire phase (preflight already passed in caller's verification wave). Jump directly to Phase 3.
 
 **Actions**:
 

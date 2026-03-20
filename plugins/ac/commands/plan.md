@@ -59,6 +59,7 @@ Critical: In this phase, use ac:explore and ac:librarian agents for ALL research
    - Force Phase 2 research — do NOT skip even if the task file contains a `### Research Summary` section
    - Announce: "Task file detected — entering task mode. Using [task title] as plan input with fresh research."
    - Carry the task's metadata (type, size, priority, status, source path) forward — include a `### Task Context` section in the final plan output showing the source task file path and extracted requirements
+   - If task file contains a `### Codebase Context` section: extract file:line references as pre-seeded exploration targets. Reduce explore agent count (launch 1 instead of 2-3) and scope them to validate/extend the pre-seeded context rather than fresh exploration
    - Then continue to step 1 (skip the skip-research gate below)
 0b. **Skip-research gate**: If $ARGUMENTS contains a file path to an existing document, read that document. If it has a populated `### Research Summary` section (heading present with at least one non-empty line under it), skip Phase 2 entirely. Use the document's Research Summary as pre-vetted findings and announce: "Research already completed — using findings from [source document]." Proceed directly to Phase 3.
 0c. **Investigation intake**: If the input document (from $ARGUMENTS or inline context) contains investigation findings — identified by presence of `### Root Cause` AND `### Evidence` AND `### Affected Files` sections (ac:investigate output format) — enter **investigation mode**:
@@ -194,13 +195,31 @@ Do not present a plan that references symbols verified-missing by LSP.
 
 **Analysis gate** (mandatory before presenting to user):
 
-1. Launch the `plan-analysis` agent via the Agent tool with `subagent_type: "ac:plan-analysis"`. In the prompt, provide the plan file path. This runs gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit on a fresh Opus context
-2. Read the analysis agent's output. Apply all fixes:
-    - CRITICAL gaps: add as questions for the user
-    - MINOR gaps: fix directly in the plan
-    - AI-slop findings: remove or simplify affected steps
-    - Vague criteria: replace with executable commands
-3. Rewrite the plan file with all fixes applied
+Two flows depending on whether Deep Review was requested (set $deepReview flag in Phase 1 if `--deep-review` flag detected in $ARGUMENTS, or set it when the user selects Deep Review from the AskUserQuestion options below):
+
+**Standard flow** (no Deep Review): Launch `plan-analysis` alone, wait for results, apply fixes.
+
+```
+Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: [plan-file-path]. Run gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit.")
+```
+
+**Deep Review flow**: Launch BOTH `plan-analysis` AND `plan-review` in a single parallel message block (two Agent calls in one message), wait for both to complete, then merge their results before applying fixes.
+
+```
+// Single message — both agents launch simultaneously
+Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: [plan-file-path]. Run gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit.")
+Agent(subagent_type: "ac:plan-review", prompt: "Review plan at [plan-file-path]. Adversarial mode — hunt for flaws, stress-test references, tiers, and executability.")
+```
+
+Once all launched agents return, merge results and apply all fixes:
+- CRITICAL gaps (from plan-analysis): add as questions for the user
+- MINOR gaps (from plan-analysis): fix directly in the plan
+- AI-slop findings (from plan-analysis): remove or simplify affected steps
+- Vague criteria (from plan-analysis): replace with executable commands
+- REJECT verdict (from plan-review, Deep Review only): surface blocking issues with suggested fixes, then re-offer "Adjust" / "Execute Anyway"
+- OKAY verdict (from plan-review, Deep Review only): proceed to present plan, then re-offer "Execute" / "Adjust"
+
+Rewrite the plan file with all fixes applied.
 
 **Save and present** (after analysis):
 
@@ -258,7 +277,7 @@ options:
   - label: "Execute (Recommended)"
     description: "Launch ac:execute with tier-based model routing. Workers spawn as Haiku/Sonnet/Opus per step tier."
   - label: "Deep Review"
-    description: "Launch adversarial plan-reviewer (Momus-class) to stress-test references, tiers, and executability before committing."
+    description: "Re-run the analysis gate in Deep Review flow — launches plan-analysis and adversarial plan-reviewer (Momus-class) in parallel, then merges results. Stress-tests references, tiers, and executability. Saves ~2 minutes vs sequential review."
   - label: "Adjust"
     description: "Modify specific parts of the plan."
 ```
@@ -266,10 +285,7 @@ options:
 If user selects **Execute** (or $loopMode is true from --loop — auto-execute without asking), invoke `ac:execute` with the plan file path.
 
 If user selects **Deep Review**:
-1. Launch plan-review agent: `Agent(subagent_type: "ac:plan-review", prompt: "Review plan at [plan-file-path]. Adversarial mode — hunt for flaws.")`
-2. Present the verdict to the user
-3. If OKAY → re-offer: "Execute" / "Adjust"
-4. If REJECT → show blocking issues with suggested fixes, then offer: "Adjust" / "Execute Anyway"
+Set $deepReview = true and return to the **Analysis gate** above. The gate will launch `plan-analysis` and `plan-review` in parallel (Deep Review flow), merge their combined output, apply fixes, and present the updated plan. Verdict handling is done inside the analysis gate's merge step — no separate sequential launch here.
 
 Plan handoff must respect runtime mode:
 - If plan mode is active, use `ExitPlanMode` for approval handoff

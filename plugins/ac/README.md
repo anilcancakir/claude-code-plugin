@@ -217,8 +217,12 @@ Load plan -> Parse Waves
           -> After each unit: extract wisdom, diagnostics, ac:linter
           ->   On agent failure: tier escalation (quick→Sonnet, mid→Opus, max 1 retry)
           -> Wisdom persisted to .ac/plans/{name}.wisdom.md
-          -> Verification Wave (parallel): ac:code-reviewer + ac:verifier + ac:linter
-          ->   ALL must pass → /ac:commit (auto commit+push)
+          -> Verification Wave (complexity-driven):
+          ->   Simple: build+test only (skip agents)
+          ->   Standard: code-reviewer + linter (skip Opus verifier)
+          ->   Complex: full wave (code-reviewer + verifier + linter)
+          ->   Build+test and agents launch concurrently
+          ->   ALL must pass → /ac:commit --skip-preflight (auto commit+push)
           ->   ANY fail → present failures → Fix+Re-verify / Accept+Commit
 ```
 
@@ -247,7 +251,7 @@ Idea/Request -> Classify (mode: idea refinement vs PRD vs PM task, detect --bulk
 
 **Reliability-first model routing** — Every plan step carries a tier (`quick`/`mid`/`senior`). `/ac:execute` routes each worker agent to the right model — Haiku for quick mechanical tasks, Sonnet for standard implementation, Opus for senior-level cross-layer changes. Failed agents escalate one tier before logging failure (quick→Sonnet, mid→Opus). The default is correctness, not cost savings.
 
-**Parallel verification wave** — After all implementation waves complete, three review agents run simultaneously: `ac:code-reviewer` (spec compliance + code quality), `ac:verifier` (done-when criteria, must-not-have, scope fidelity), and `ac:linter` (LSP diagnostics). All three must pass before `/ac:commit` is invoked. Any failure blocks the commit and presents targeted fixes.
+**Complexity-driven verification** — Verification depth scales with plan complexity. Simple plans (1-2 steps) run build+test only. Standard plans add code-reviewer + linter agents. Complex plans get the full 3-agent wave (code-reviewer + verifier + linter). Build+test and verification agents launch concurrently to save time. Commit preflight is skipped via `--skip-preflight` when invoked by execute post-verification. Per-unit linter calls are advisory (early feedback), with the Phase 5 linter agent as the authoritative check.
 
 **Pre-generation analysis** — Before drafting a plan, `plan-analysis` runs in Metis mode to surface hidden intentions, scope gaps, and AI-slop risks from the raw request. This front-loads quality — preventing weak plans from reaching the interview stage with unchallenged assumptions.
 
@@ -257,11 +261,12 @@ Daily work (Sonnet) -> Complex task detected
        -> Pre-generation analysis (plan-analysis Metis mode)
        -> Research (parallel background: ac:explore + ac:librarian)
        -> Interview -> Draft (QA scenarios, tier assignments)
-       -> Post-generation analysis gate
+       -> Post-generation analysis (parallel with Deep Review if selected)
   -> /ac:execute -> Wave 1 parallel: quick→Haiku, mid→Sonnet, senior→Opus
                  -> Wave 2+ sequential: same per-step routing
-                 -> Verification Wave (parallel): code-reviewer + verifier + linter
-                 -> ALL pass → Commit / Done
+                 -> Verification Wave (complexity-driven):
+                    Simple: build+test | Standard: +code-reviewer+linter | Complex: +verifier
+                 -> ALL pass → /ac:commit --skip-preflight / Done
   -> Back to daily work (Sonnet)
 ```
 
