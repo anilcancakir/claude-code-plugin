@@ -8,16 +8,44 @@
 
 Claude Code is powerful out of the box. But without structure, it burns tokens on false starts, scope creep, and redundant exploration. `ac` fixes that with a simple principle: **plan first, code second**.
 
-Every non-trivial task flows through a structured pipeline — classify the intent, research the codebase, interview for ambiguities, generate a plan with acceptance criteria, execute with the right model for each step, and verify before committing. The entire workflow is automated. You describe what you want, `ac` handles the rest.
+The key insight: once you set up `ac`, you don't need to remember commands. Just talk naturally.
 
 ```
-You: /ac:plan add rate limiting to the payment API
-ac:  Classifies → researches codebase → interviews you → generates plan
-You: approve
-ac:  Executes steps in parallel → verifies → commits
+You: add rate limiting to the payment API
+ac:  [Build intent detected] → researches codebase → interviews you → generates plan → executes → verifies → commits
+
+You: why are order emails failing since the queue refactor?
+ac:  [Investigation intent detected] → spawns Opus investigator → traces root cause → plans fix
+
+You: explain how the auth middleware works
+ac:  [Research intent detected] → spawns explore agents → returns annotated explanation
 ```
 
-No wasted cycles. No wrong approaches. No forgotten edge cases.
+No slash commands needed. No manual routing. `ac` reads your intent and picks the right workflow automatically.
+
+### How? The Global CLAUDE.md
+
+When you run `/ac:setup-global-claude-md`, `ac` generates a `~/.claude/CLAUDE.md` file that acts as Claude Code's **brain**. This file loads at the start of every session and teaches Claude Code how to think:
+
+**Intent Gate** — Before touching any tool, Claude Code classifies what you're asking:
+
+| You Say | Intent | What Happens |
+|---------|--------|-------------|
+| "add X", "create Y", "implement Z" | Build | Triggers `/ac:plan` → `/ac:execute` automatically |
+| "restructure X", "clean up Y" | Refactor | Same plan-first pipeline |
+| "why does X fail", "debug Y" | Investigation | Spawns `ac:investigate` (Opus, hypothesis-driven) |
+| "fix X" (known cause) | Fix | Direct fix → verify with tests |
+| "how does X work", "explain Y" | Research | Spawns `ac:explore` + `ac:librarian` agents |
+| "review X", "audit Y" | Evaluation | Explore agents + inline analysis |
+
+**Delegation Check** — Default bias is DELEGATE. Before acting on anything non-trivial:
+1. Specialized agent handles this? → Spawn it
+2. Matching skill covers this? → Invoke it
+3. Super simple (single file, <10 lines)? → Execute directly
+
+This means `ac` works in the background even when you're just chatting with Claude Code. Say "add dark mode support" and the plan-execute pipeline kicks in. Say "why is this test flaky" and an Opus investigator starts tracing hypotheses. No ceremony required.
+
+> You can still use slash commands directly (`/ac:plan`, `/ac:execute`) when you want explicit control. The auto-routing is a convenience layer, not a replacement.
 
 ## Installation
 
@@ -27,59 +55,71 @@ claude plugin add anilcancakir/claude-code-plugin
 
 ## Quick Start
 
-### 1. Teach It Your Style
+### 1. Teach It Your Style (one-time)
 
-Before anything else, let `ac` learn how you work. These one-time commands scan your existing projects and writing to create personalized skills:
+These commands scan your existing projects and writing to create personalized skills. Run them once — they persist across all sessions.
 
 ```bash
-# Analyzes 1-3 of your projects — naming, architecture, formatting, testing preferences
+# Scans 1-3 of your projects — learns your naming, architecture, testing preferences
 /ac:setup-coding
 
-# Analyzes your docs, articles, commit messages — voice, tone, structure
+# Analyzes your docs, articles, commit messages — learns your voice and tone
 /ac:setup-language
+```
 
-# Detects your environment, skills, MCP servers — generates orchestration config
+### 2. Generate Your Brain File (one-time)
+
+This is the most important step. It generates `~/.claude/CLAUDE.md` — the file that teaches Claude Code how to route your requests automatically.
+
+```bash
 /ac:setup-global-claude-md
 ```
 
-After this, Claude Code knows your conventions and applies them automatically in every session.
+This command detects your environment, installed skills, and MCP servers. It interviews you on communication style and autonomy level. The output is a compact orchestration config (~120 lines) that loads at the start of every Claude Code session.
 
-### 2. Set Up Your Project
+After this step, you can just talk naturally. The Intent Gate handles the rest.
+
+### 3. Set Up Your Project (per project)
 
 Run these in each project directory. They analyze the actual codebase — no generic templates:
 
 ```bash
-# Discovers commands, architecture, conventions → generates ./CLAUDE.md
+# Discovers architecture, conventions → generates ./CLAUDE.md
 /ac:init-claude-md
 
 # Detects tech stacks, extracts conventions → generates .claude/rules/
 /ac:init-rules
 ```
 
-### 3. Start Building
+### 4. Start Building
+
+Once setup is complete, just describe what you want:
 
 ```bash
-# Plan a feature
-/ac:plan add user avatar upload with S3 storage
+# These all trigger the plan-execute pipeline automatically:
+add user avatar upload with S3 storage
+refactor the notification service to use events
+add rate limiting to public API endpoints
 
-# Execute the approved plan
+# Or use commands directly for explicit control:
+/ac:plan add avatar upload
 /ac:execute avatar-upload
-
-# Commit with preflight checks
 /ac:commit
 ```
 
-That's it. Three commands for the entire development cycle.
+That's it. Setup once, then talk naturally.
 
 ## Usage Examples
 
-### Planning a Feature
+### Building a Feature
 
-```bash
-/ac:plan add Stripe webhook handler for subscription events
+You say:
+
+```
+add Stripe webhook handler for subscription events
 ```
 
-`ac` classifies this as a "Build" intent, launches research agents to scan your codebase for existing payment patterns, then interviews you:
+The Intent Gate classifies this as **Build**. `ac` launches explore agents, finds your existing Stripe integration, and interviews you:
 
 ```
 ac: Found existing Stripe integration in app/Services/StripeService.php.
@@ -95,30 +135,44 @@ ac: Found existing Stripe integration in app/Services/StripeService.php.
        → Use Stripe's built-in signature verification
 ```
 
-After the interview, `ac` generates a plan with acceptance criteria, tier assignments for each step, and QA scenarios. You review and approve — then `/ac:execute` takes over.
+After the interview, `ac` generates a plan with acceptance criteria and tier assignments, executes it with parallel agents, runs verification, and commits. You approve the plan once — the rest is automatic.
 
 ### Investigating a Bug
 
-```bash
-/ac:plan debug why order emails stopped sending after the queue refactor
-```
-
-`ac` classifies this as an "Investigation" intent and launches an `ac:investigate` agent (Opus, hypothesis-driven, 3-cycle ceiling). The investigator traces the issue across files, forms hypotheses, and returns structured findings with root cause and evidence. Then `ac` builds a fix plan from the investigation results.
-
-### Refining an Idea
-
-```bash
-/ac:ideate add a recommendation engine based on user purchase history
-```
-
-`ac` runs a Socratic interview with mathematical ambiguity scoring. It challenges your assumptions, evaluates feasibility against your codebase, and produces a mature concept document with gaps, risks, and alternatives. When you're satisfied:
+You say:
 
 ```
-ac: Ambiguity score dropped from 73% to 12%. Ready to plan?
+why did order emails stop sending after the queue refactor?
+```
+
+The Intent Gate classifies this as **Investigation** (hairy — unknown cause, multi-file). `ac` spawns an `ac:investigate` agent on Opus with a 3-cycle ceiling. The investigator:
+
+1. Forms hypotheses ("queue connection name changed", "event listener not registered")
+2. Traces code paths across files to confirm or eliminate each hypothesis
+3. Returns structured findings with root cause, evidence, and affected files
+
+Then `ac` automatically builds a fix plan from the investigation results. No guessing, no premature fixes.
+
+### Refining a Vague Idea
+
+You say:
+
+```
+I want some kind of recommendation engine based on purchase history
+```
+
+The Intent Gate routes this to `/ac:ideate`. `ac` runs a Socratic interview — each question targets the vaguest part of your idea. It tracks ambiguity mathematically:
+
+```
+ac: Ambiguity score: 73% → asking about data sources...
+ac: Ambiguity score: 41% → asking about algorithm approach...
+ac: Ambiguity score: 12% → concept is clear. Ready to plan?
     → Yes, plan it
     → Save as PRD for later
     → Plan and execute automatically (--loop)
 ```
+
+The output is a mature concept document with gaps, risks, alternatives, and Jira-ready task breakdowns.
 
 ### Batch Processing Ideas
 
@@ -137,6 +191,8 @@ Paste meeting notes, a list of feature requests, or customer feedback. `ac` tria
 The `--loop` flag chains ideation → planning → execution automatically. `ac` refines the idea, generates a plan, executes it, runs verification, and commits — all without interruption.
 
 ## Commands
+
+> Most commands trigger automatically through the Intent Gate. Use them directly when you want explicit control over a specific step.
 
 ### Daily Workflow
 
