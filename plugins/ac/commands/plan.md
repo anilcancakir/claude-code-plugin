@@ -1,6 +1,7 @@
 ---
 description: Structured planning workflow — classify, research, interview, plan
 argument-hint: Feature or task description
+effort: high
 ---
 
 # Structured Planning
@@ -34,11 +35,12 @@ Initial request: $ARGUMENTS
    - **Architecture**: System design, infrastructure decisions ("how should we structure")
    - **Research**: Investigation needed, path unclear ("explore", "evaluate")
 2. Classify complexity:
-   - **Simple** (single module, clear target, no design decisions needed — e.g., rename a field, update a config value): Skip to Phase 3
+   - **Simple** (single module, clear target, no design decisions needed — e.g., rename a field, update a config value): Phase 2 (direct Read, no agents) + Phase 3
    - **Standard** (1-2 modules, some ambiguity or scope to clarify): Phase 2 + 3
    - **Complex** (cross-module, design decisions required, or user explicitly signals complexity): All phases
 3. Announce intent and complexity to the user in one line
 4. Detect `--loop` flag in $ARGUMENTS. If present: announce "Loop mode active — will auto-execute after plan approval." Strip `--loop` from arguments before further processing. Store $loopMode = true.
+5. Detect `--deep-review` flag in $ARGUMENTS. If present: announce "Deep Review requested — will run adversarial plan review after generation." Strip `--deep-review` from arguments before further processing. Store $deepReview = true.
 
 ## Agent Routing
 
@@ -113,6 +115,13 @@ Each agent should:
 - ac:explore 1: "CONTEXT: Refactoring [target]. GOAL: Map impact scope. DOWNSTREAM: Build safe refactoring plan. REQUEST: Find all usages — call sites, type flow, dynamic access. Return file path, usage pattern, risk level."
 - ac:explore 2: "CONTEXT: Modifying [target]. GOAL: Understand test coverage. DOWNSTREAM: Decide whether to add tests first. REQUEST: Find all test files exercising this code, what each asserts, coverage gaps."
 
+**Mid-sized intent** (Standard: 1 explore; Complex: 1 explore + 1 librarian):
+
+**Example agent prompts**:
+
+- ac:explore: "CONTEXT: Updating [target area] in [project]. GOAL: Understand current implementation and touch points. DOWNSTREAM: Plan scoped changes with minimal blast radius. REQUEST: Find the target implementation, its callers, configuration, and related tests. Return file path, current behavior, and change impact."
+- ac:librarian: "CONTEXT: Extending [existing feature] with [capability]. GOAL: Follow established patterns for this type of change. DOWNSTREAM: Implementation decisions. REQUEST: Find official docs for the relevant APIs or patterns. Focus on migration guides and breaking change notes."
+
 **Architecture intent** (Standard: 1 explore; Complex: 1 explore + 1-2 librarian):
 
 **Example agent prompts**:
@@ -150,7 +159,16 @@ Each agent should:
 
 1. Review research findings and the original request
 1b. If Research Summary contains Key Files, use them to ground interview questions in specific file references rather than abstract concepts.
-2. Identify underspecified aspects. Use AskUserQuestion with 2-4 clickable options per question:
+1c. **Pre-generation analysis** (Metis — for Complex only, per Pipeline Profiles):
+   - Launch plan-analysis agent in pre-generation mode:
+     ```
+     Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode. Request: [original request]. Research findings: [Research Summary content]. Analyze for hidden intentions, unstated requirements, and AI-slop risks. Return directives.")
+     ```
+   - Read directives from agent output
+   - Inject MUST DO / MUST NOT DO directives as constraints for plan generation
+   - If agent returns QUESTIONS → merge them into the interview question queue below (step 2)
+   - Skip for Simple and Standard complexity (see Pipeline Profiles — pre-gen Metis adds overhead without proportional value for bounded scope)
+2. Identify underspecified aspects. Use AskUserQuestion with 2-4 clickable options per question (include any Metis QUESTIONS merged from step 1c):
    - **Simple**: 1 question max (or skip if clear)
    - **Standard**: 1-2 questions
    - **Complex**: 2-3 questions
@@ -162,15 +180,6 @@ Each agent should:
    - Over-validation: "Minimal or comprehensive error handling?"
 5. Derive `$planName` from request topic (slugified, e.g., `auth-system`)
 6. Plan storage path is `.ac/plans/` (created automatically if missing)
-6b. **Pre-generation analysis** (Metis — for Complex only, per Pipeline Profiles):
-   - Launch plan-analysis agent in pre-generation mode:
-     ```
-     Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode. Request: [original request]. Research findings: [Research Summary content]. Analyze for hidden intentions, unstated requirements, and AI-slop risks. Return directives.")
-     ```
-   - Read directives from agent output
-   - Inject MUST DO / MUST NOT DO directives as constraints for plan generation
-   - If agent returns QUESTIONS → add them to the interview question queue (ask user before generating plan)
-   - Skip for Simple and Standard complexity (see Pipeline Profiles — pre-gen Metis adds overhead without proportional value for bounded scope)
 7. Synthesize all findings into a draft plan
 8. Each step must include: clear deliverable description, files to create/modify, acceptance criteria as executable commands (not "verify it works"), QA Scenario per step as executable verification (what to test, expected outcome — e.g., "grep -c 'pattern' file returns ≥2", not "verify it works"), independence (`independent` or `depends on Step N`), and tier assignment (`quick`/`mid`/`senior`)
    - **Tier heuristic**: `quick` = ≤1 file, trivial change, no design decisions. `mid` = 1-2 files, standard implementation (default). `senior` = 3+ files, schema/migration, cross-layer, architecture decisions
@@ -322,7 +331,7 @@ options:
 If user selects **Execute** (or $loopMode is true from --loop — auto-execute without asking), invoke `ac:execute` with the plan file path.
 
 If user selects **Deep Review**:
-Set $deepReview = true and return to the **Analysis gate** above. The gate will launch `plan-analysis` and `plan-review` in parallel (Deep Review flow), merge their combined output, apply fixes, and present the updated plan. Verdict handling is done inside the analysis gate's merge step — no separate sequential launch here.
+Set $deepReview = true and return to the **Analysis gate** above. If plan-analysis already ran in Standard flow (post-gen analysis gate), launch ONLY `plan-review` on re-entry — do not re-run plan-analysis. If this is the first analysis pass (e.g., `--deep-review` was set in Phase 1), run both `plan-analysis` and `plan-review` in parallel per the Deep Review flow. Merge combined output, apply fixes, and present the updated plan. Verdict handling is done inside the analysis gate's merge step — no separate sequential launch here.
 
 Plan handoff must respect runtime mode:
 - If plan mode is active, use `ExitPlanMode` for approval handoff

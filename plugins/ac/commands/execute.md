@@ -1,6 +1,7 @@
 ---
 description: Execute an approved plan — parallel background agents or sequential
 argument-hint: Plan file path (e.g., auth-system)
+effort: medium
 ---
 
 # Plan Execution
@@ -280,12 +281,14 @@ Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against pl
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
 ```
 
-**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents concurrently (full wave):
+**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents concurrently (full wave). Optionally add security-reviewer if plan touches auth, user input, file I/O, or external APIs:
 
 ```
 Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].", run_in_background: true)
 Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity.", run_in_background: true)
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
+# Optional — include when plan involves security-sensitive code:
+Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified files: [list]. Check OWASP Top 10 categories, secrets in code, path traversal, and cryptographic issues.", run_in_background: true)
 ```
 
 ### Execution (Standard and Complex only)
@@ -311,13 +314,49 @@ Agent(subagent_type="ac:linter", prompt="Final verification of all affected file
 
 **Step 3** — Route based on combined verdict:
 
-→ **ALL pass** → Render execution summary (plan name, steps completed, strategy, complexity level, build/test results, verification verdicts), then invoke `/ac:commit --skip-preflight` to commit and push all changes.
+→ **ALL pass** → Render execution summary and continuation format, then invoke `/ac:commit --skip-preflight` to commit and push all changes.
 
-→ **ANY fail** → Present all failures with evidence from agent outputs, then:
+```
+## Execution Complete
+
+**Plan**: [plan name]
+**Steps**: [N/N completed]
+**Strategy**: [Parallel Waves / Sequential / Direct]
+**Complexity**: [Simple / Standard / Complex]
+
+### Verification Results
+- Build: ✅ passed
+- Tests: ✅ passed
+- Code Review: ✅ APPROVED
+- Linter: ✅ CLEAN
+- Verifier: ✅ APPROVE (Complex only)
+
+### Next Up
+[If part of --loop orchestration: "Proceeding to next phase automatically."]
+[If standalone execution: "Run `/ac:commit --skip-preflight` to commit all changes."]
+```
+
+→ **ANY fail** → Increment VERIFY_RETRY_COUNT (initialized to 0 at start of Phase 5). Present all failures with evidence from agent outputs, then:
+
+If VERIFY_RETRY_COUNT >= 3 → **3-strike rule**: Do not offer Fix and Re-verify. Present:
 
 ```
 AskUserQuestion(
-  question: "Verification wave found issues. How to proceed?"
+  question: "Verification has failed 3 times. Pipeline halted per 3-strike rule."
+  header: "Verification Exhausted"
+  options:
+    - label: "Accept and Commit"
+      description: "Acknowledge failures, invoke /ac:commit for current state."
+    - label: "Stop and Investigate"
+      description: "Halt execution. Launch ac:investigate on the failing area."
+)
+```
+
+If VERIFY_RETRY_COUNT < 3 → Present:
+
+```
+AskUserQuestion(
+  question: "Verification wave found issues (attempt VERIFY_RETRY_COUNT/3). How to proceed?"
   header: "Verification Failed"
   options:
     - label: "Fix and Re-verify"

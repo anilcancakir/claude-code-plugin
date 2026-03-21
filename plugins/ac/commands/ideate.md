@@ -1,6 +1,7 @@
 ---
 description: "Unified idea refinement — interactive Socratic discussion with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports --bulk for meeting notes triage and --loop for autonomous plan-execute."
 argument-hint: Raw idea, feature concept, or customer request
+effort: high
 ---
 
 # Idea to Tasks
@@ -230,6 +231,6 @@ If user selects "Plan Phase 1": invoke ac:plan with: "Plan implementation based 
 
 Status markers: `[ ]` pending · `[~]` in progress · `[x]` done · `[!]` partial/failed
 
-=== CRITICAL: DOCUMENT ONLY — DO NOT WRITE CODE ===
+=== CRITICAL: DOCUMENT ONLY (Phases 1-5) — DO NOT WRITE CODE ===
 
-Do NOT write code or modify source files. This command produces documents only. Task content uses product language — no file paths, class names, or implementation details in task output.
+Do NOT write code or modify source files in Phases 1-5. These phases produce documents only. Task content uses product language — no file paths, class names, or implementation details in task output. Phase 6 Orchestrate is the exception — it delegates to ac:plan and ac:execute which DO write code.

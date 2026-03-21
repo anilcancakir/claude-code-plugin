@@ -4,7 +4,7 @@
 
 `ac` learns how you code, how you write, and how you think about architecture — then applies that knowledge to every task. It plans before coding, researches before asking, delegates to specialized agents, and never forgets your conventions.
 
-Built on a **reliability-first architecture** inspired by Sisyphus-quality workflows — every task goes through pre-generation analysis, parallel research, tier-routed execution, and a mandatory verification wave before commit. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Plan steps carry **tier assignments** (quick/mid/senior) so `/ac:execute` routes each worker to Haiku, Sonnet, or Opus automatically. **Pipeline Profiles** (Lean/Standard/Full) scale agent spawns with complexity — a Simple plan spawns ~2-3 agents and completes in minutes, Standard gets ~4-6, Complex gets the full ~7-10 multi-agent treatment. **Structured workflows that never skip the gate.**
+Built on a **reliability-first architecture** inspired by Sisyphus-quality workflows — every task goes through pre-generation analysis, parallel research, tier-routed execution, and a mandatory verification wave before commit. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Plan steps carry **tier assignments** (quick/mid/senior) so `/ac:execute` routes each worker to Haiku, Sonnet, or Opus automatically. **Pipeline Profiles** (Simple/Standard/Complex) scale agent spawns with complexity — a Simple plan spawns ~2-3 agents and completes in minutes, Standard gets ~4-6, Complex gets the full ~7-10 multi-agent treatment. **Structured workflows that never skip the gate.**
 
 ## Why This Plugin
 
@@ -179,12 +179,14 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 | `ac:linter` | `"ac:linter"` | Haiku | low | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
 | `ac:plan-analysis` | `"ac:plan-analysis"` | Opus | high | Plan quality gate — dual-mode: pre-generation (Metis: hidden intentions, scope gaps, AI-slop risks) and post-generation (gap classification, tier sanity, acceptance criteria audit) |
 | `ac:plan-review` | `"ac:plan-review"` | Opus | high | Adversarial plan reviewer — Momus-class, bias toward REJECT, tier challenge, Gemini second eye, OKAY/REJECT verdict |
-| `ac:verifier` | `"ac:verifier"` | Opus | high | Post-execution compliance auditor — verifies done-when criteria, must-not-have exclusions, scope fidelity, APPROVE/REJECT verdict |
+| `ac:verifier` | `"ac:verifier"` | Opus | medium | Post-execution compliance auditor — verifies done-when criteria, must-not-have exclusions, scope fidelity, APPROVE/REJECT verdict |
 | `ac:challenger` | `"ac:challenger"` | Opus | high | Devil's advocate — gaps, risks, blind spots, alternative approaches |
 | `ac:feasibility` | `"ac:feasibility"` | Sonnet | medium | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
 | `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | medium | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
 | `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | medium | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline |
 | `ac:investigate` | `"ac:investigate"` | Opus | high | Root cause investigator — hypothesis-driven debugging with structured evidence |
+| `ac:security-reviewer` | `"ac:security-reviewer"` | Opus | high | OWASP-aware security scanner — severity×exploitability scoring, SECURE/VULNERABLE verdict. Optional in Complex verification |
+| `ac:code-simplifier` | `"ac:code-simplifier"` | Opus | medium | Post-implementation clarity pass — simplifications preserving behavior, CLAUDE.md-aware. Opt-in only |
 
 ## Skills
 
@@ -261,7 +263,7 @@ Idea/Request -> Classify (mode: idea refinement vs PRD vs PM task, detect --bulk
 
 **Complexity-driven verification** — Verification depth scales with plan complexity. Simple plans (1-2 steps) run build+test only. Standard plans add code-reviewer + linter agents. Complex plans get the full 3-agent wave (code-reviewer + verifier + linter). Build+test and verification agents launch concurrently to save time. Commit preflight is skipped via `--skip-preflight` when invoked by execute post-verification. Per-unit linter calls are advisory (early feedback), with the Phase 5 linter agent as the authoritative check.
 
-**Pipeline Profiles** — Complexity classification (Simple/Standard/Complex) extends from verification into the entire pipeline. A Lean profile (Simple) spawns ~2-3 agents total — direct Read instead of explore agents, skips pre-gen analysis, auto-executes without AskUserQuestion. Standard gets ~4-6 agents with 1 explore and opt-in Deep Review. Full profile (Complex) gets ~7-10 agents with multi-agent research, Metis pre-gen analysis, and recommended Deep Review. Agent spawn count drops 40-60% for typical workflows.
+**Pipeline Profiles** — Complexity classification (Simple/Standard/Complex) extends from verification into the entire pipeline. A Simple profile spawns ~2-3 agents total — direct Read instead of explore agents, skips pre-gen analysis, auto-executes without AskUserQuestion. Standard gets ~4-6 agents with 1 explore and opt-in Deep Review. Complex profile gets ~7-10 agents with multi-agent research, Metis pre-gen analysis, and recommended Deep Review. Agent spawn count drops 40-60% for typical workflows.
 
 **Pre-generation analysis** — For Complex plans, `plan-analysis` runs in Metis mode to surface hidden intentions, scope gaps, and AI-slop risks from the raw request. This front-loads quality — preventing weak plans from reaching the interview stage with unchallenged assumptions.
 
@@ -284,7 +286,7 @@ Daily work (Sonnet) -> Task detected -> Classify complexity → Select Pipeline 
 
 **Progressive disclosure** — Plugin metadata is always in context (~100 words per component). SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant.
 
-**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review, verifier) never have write tools. All 11 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
+**Read-only advisory** — Agents that advise (explore, librarian, plan-analysis, plan-review, verifier) never have write tools. All 13 agents enforce `disallowedTools: Write, Edit` as defense-in-depth on top of explicit tool allowlists. Only execution agents spawned by `/ac:execute` get full tool access.
 
 **Subagent-only architecture** — All agents use the subagent execution model (fresh context, custom model/tools). The fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory).
 
@@ -297,7 +299,7 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 11 user-invocable /ac:* commands
+├── commands/                    # 9 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── execute.md               # /ac:execute
 │   ├── ideate.md                # /ac:ideate
@@ -307,7 +309,7 @@ plugins/ac/
 │   ├── setup-language.md        # /ac:setup-language
 │   ├── setup-global-claude-md.md # /ac:setup-global-claude-md
 │   └── commit.md               # /ac:commit
-├── agents/                      # 11 read-only agent definitions
+├── agents/                      # 13 read-only agent definitions
 │   ├── explore.md               # Haiku codebase search
 │   ├── librarian.md             # Sonnet external docs
 │   ├── linter.md                # Haiku LSP code intelligence verifier
@@ -318,7 +320,9 @@ plugins/ac/
 │   ├── feasibility.md           # Sonnet feasibility evaluator
 │   ├── code-reviewer.md         # Sonnet spec + quality reviewer
 │   ├── gemini-vision.md         # Sonnet multimodal via Gemini
-│   └── investigate.md           # Opus root cause investigator
+│   ├── investigate.md           # Opus root cause investigator
+│   ├── security-reviewer.md     # Opus OWASP security scanner
+│   └── code-simplifier.md       # Opus post-implementation clarity pass
 ├── skills/
 │   └── ac-skill-creator/        # Component creation skill
 │       ├── SKILL.md
@@ -328,6 +332,7 @@ plugins/ac/
 │           ├── language-style-template.md
 │           ├── project-claude-md-template.md
 │           ├── global-claude-md-template.md
+│           ├── prd-template.md
 │           └── pm-base.md
 ├── CLAUDE.md
 ├── README.md

@@ -55,13 +55,20 @@ Do NOT flag:
 - Speculative performance concerns without evidence
 - Issues that exist in unmodified surrounding code
 
-Rate each issue:
+Rate each issue by severity AND confidence:
 
+Severity:
 - **CRITICAL** — will cause bugs, crashes, or incorrect behavior in normal use
 - **IMPORTANT** — should be fixed before shipping; risk of user-facing issues in edge cases
 - **MINOR** — worth noting, can defer without significant risk
 
-**Only report CRITICAL and IMPORTANT issues.** MINOR issues are noise unless the caller explicitly requests them.
+Confidence (0-100):
+- **90-100**: Certain — verified by reading the code path end-to-end
+- **70-89**: High — strong evidence but some paths unchecked
+- **50-69**: Medium — likely issue but depends on runtime context or config
+- **Below 50**: Low — speculative, mark with `[low-confidence]` tag
+
+**Only report CRITICAL and IMPORTANT issues with confidence >= 50.** MINOR issues and low-confidence findings are noise unless the caller explicitly requests them. Findings with confidence < 80 must include the `[confidence: N]` tag so the caller can triage.
 
 ## Output Guidance
 
@@ -81,11 +88,11 @@ Rate each issue:
 
 ### CRITICAL
 
-- `file:line` — [what the issue is, why it matters, concrete fix]
+- `file:line` — [what the issue is, why it matters, concrete fix] [confidence: N]
 
 ### IMPORTANT
 
-- `file:line` — [what the issue is, why it matters, concrete fix]
+- `file:line` — [what the issue is, why it matters, concrete fix] [confidence: N]
 
 ---
 
