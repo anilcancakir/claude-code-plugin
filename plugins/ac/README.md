@@ -4,7 +4,7 @@
 
 `ac` learns how you code, how you write, and how you think about architecture — then applies that knowledge to every task. It plans before coding, researches before asking, delegates to specialized agents, and never forgets your conventions.
 
-Built on a **reliability-first architecture** inspired by Sisyphus-quality workflows — every task goes through pre-generation analysis, parallel research, tier-routed execution, and a mandatory verification wave before commit. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Plan steps carry **tier assignments** (quick/mid/senior) so `/ac:execute` routes each worker to Haiku, Sonnet, or Opus automatically. **Structured workflows that never skip the gate.**
+Built on a **reliability-first architecture** inspired by Sisyphus-quality workflows — every task goes through pre-generation analysis, parallel research, tier-routed execution, and a mandatory verification wave before commit. When complexity spikes, Opus agents step in for planning, deep investigation, and architecture. Plan steps carry **tier assignments** (quick/mid/senior) so `/ac:execute` routes each worker to Haiku, Sonnet, or Opus automatically. **Pipeline Profiles** (Lean/Standard/Full) scale agent spawns with complexity — a Simple plan spawns ~2-3 agents and completes in minutes, Standard gets ~4-6, Complex gets the full ~7-10 multi-agent treatment. **Structured workflows that never skip the gate.**
 
 ## Why This Plugin
 
@@ -12,7 +12,7 @@ Claude Code is powerful out of the box, but without structure it burns tokens on
 
 - **It knows your style** — Analyzes your existing projects and writing to create personal `my-coding` and `my-language` skills that load automatically
 - **It plans before it codes** — Every non-trivial task goes through classify, research, interview, plan. No wasted cycles on wrong approaches
-- **It delegates intelligently** — Research agents (ac:explore + ac:librarian) always run in background (`run_in_background: true`) with anti-duplication routing so codebase and docs research happen in parallel without overlap. Each plan step gets tier-assigned (quick/mid/senior) and routed to Haiku/Sonnet/Opus automatically at execution time
+- **It delegates intelligently** — Pipeline Profiles scale agent spawns with complexity: Simple plans skip research agents entirely (direct Read), Standard uses 1 explore agent, Complex gets 2-3 explore + librarian. Each plan step gets tier-assigned (quick/mid/senior) and routed to Haiku/Sonnet/Opus automatically at execution time. Anti-duplication wisdom propagates discovered conventions to subsequent workers
 - **It scaffolds from reality** — Auto-generates `CLAUDE.md` and `.claude/rules/` from actual codebase analysis, not generic templates
 - **It's token-efficient** — Progressive disclosure loads context only when needed. Path-scoped rules inject only for matching files
 - **It's built on official patterns** — Pure markdown on Claude Code's native extension points (agents, skills, commands, rules, MCP). No custom runtime, no vendor lock-in
@@ -172,19 +172,19 @@ Or in `~/.claude/settings.json`:
 
 All agents are **read-only** — advisory roles never have write tools. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Commands invoke agents via the Agent tool with explicit `subagent_type` values (`"ac:explore"`, `"ac:librarian"`, etc.) to avoid routing to builtin agents.
 
-| Agent | `subagent_type` | Model | Role |
-|-------|----------------|-------|------|
-| `ac:explore` | `"ac:explore"` | Haiku | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
-| `ac:librarian` | `"ac:librarian"` | Sonnet | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
-| `ac:linter` | `"ac:linter"` | Haiku | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
-| `ac:plan-analysis` | `"ac:plan-analysis"` | Opus | Plan quality gate — dual-mode: pre-generation (Metis: hidden intentions, scope gaps, AI-slop risks) and post-generation (gap classification, tier sanity, acceptance criteria audit) |
-| `ac:plan-review` | `"ac:plan-review"` | Opus | Adversarial plan reviewer — Momus-class, bias toward REJECT, tier challenge, Gemini second eye, OKAY/REJECT verdict |
-| `ac:verifier` | `"ac:verifier"` | Opus | Post-execution compliance auditor — verifies done-when criteria, must-not-have exclusions, scope fidelity, APPROVE/REJECT verdict |
-| `ac:challenger` | `"ac:challenger"` | Opus | Devil's advocate — gaps, risks, blind spots, alternative approaches |
-| `ac:feasibility` | `"ac:feasibility"` | Sonnet | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
-| `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
-| `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline |
-| `ac:investigate` | `"ac:investigate"` | Opus | Root cause investigator — hypothesis-driven debugging with structured evidence |
+| Agent | `subagent_type` | Model | Effort | Role |
+|-------|----------------|-------|--------|------|
+| `ac:explore` | `"ac:explore"` | Haiku | low | Codebase search — files, patterns, relationships. Parallel Glob + Grep + Read |
+| `ac:librarian` | `"ac:librarian"` | Sonnet | medium | External docs — context7 MCP first, WebSearch fallback. Source-cited answers |
+| `ac:linter` | `"ac:linter"` | Haiku | low | LSP code intelligence verifier — interprets `<new-diagnostics>`, runs navigation checks, returns CLEAN/BLOCKED/UNAVAILABLE verdict |
+| `ac:plan-analysis` | `"ac:plan-analysis"` | Opus | high | Plan quality gate — dual-mode: pre-generation (Metis: hidden intentions, scope gaps, AI-slop risks) and post-generation (gap classification, tier sanity, acceptance criteria audit) |
+| `ac:plan-review` | `"ac:plan-review"` | Opus | high | Adversarial plan reviewer — Momus-class, bias toward REJECT, tier challenge, Gemini second eye, OKAY/REJECT verdict |
+| `ac:verifier` | `"ac:verifier"` | Opus | high | Post-execution compliance auditor — verifies done-when criteria, must-not-have exclusions, scope fidelity, APPROVE/REJECT verdict |
+| `ac:challenger` | `"ac:challenger"` | Opus | high | Devil's advocate — gaps, risks, blind spots, alternative approaches |
+| `ac:feasibility` | `"ac:feasibility"` | Sonnet | medium | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies |
+| `ac:code-reviewer` | `"ac:code-reviewer"` | Sonnet | medium | 2-stage review — spec compliance against plan acceptance criteria, then code quality (APPROVED/BLOCKED verdict) |
+| `ac:gemini-vision` | `"ac:gemini-vision"` | Sonnet | medium | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline |
+| `ac:investigate` | `"ac:investigate"` | Opus | high | Root cause investigator — hypothesis-driven debugging with structured evidence |
 
 ## Skills
 
@@ -197,24 +197,32 @@ All agents are **read-only** — advisory roles never have write tools. All agen
 ### Planning (`/ac:plan`)
 
 ```
-Request -> Classify (intent + complexity)
-        -> Research (parallel ac:explore + ac:librarian agents, always background, anti-duplication)
-        -> Pre-generation analysis (plan-analysis Metis mode: hidden intentions, AI-slop risks, scope gaps)
+Request -> Classify (intent + complexity) -> Select Pipeline Profile
+        -> Research (profile-conditional):
+           Simple: direct Read (0 agents)
+           Standard: 1 ac:explore agent
+           Complex: 2-3 ac:explore + ac:librarian agents
+        -> Pre-generation analysis (Complex only: plan-analysis Metis mode)
         -> Interview (AskUserQuestion with options)
         -> Draft plan: steps with Tier, done-when, QA scenarios, independence
-        -> Wave decomposition + Analysis gate (plan-analysis post-generation: gaps, tier sanity, Gemini second eye)
+        -> Wave decomposition + Analysis gate (plan-analysis post-generation)
         -> Save to .ac/plans/
-        -> User: Execute / Deep Review (plan-review Momus) / Adjust
+        -> Profile-conditional handoff:
+           Simple: auto-execute (no AskUserQuestion)
+           Standard: Execute recommended, opt-in Deep Review
+           Complex: Deep Review recommended
         -> Execute -> /ac:execute
 ```
 
 ### Execution (`/ac:execute`)
 
 ```
-Load plan -> Parse Waves
-          -> Wave 1: parallel background agents (quick→Haiku, mid→Sonnet, senior→Opus)
+Load plan -> Parse Waves + extract complexity
+          -> Wave 1: parallel background agents
+             quick→Haiku (lean template), mid→Sonnet (Atlas template), senior→Opus (Atlas template)
           -> Wave 2+: sequential after prior wave completes
           -> After each unit: extract wisdom, diagnostics, ac:linter
+          ->   Anti-duplication: wisdom injected into next workers ("prefer this context")
           ->   On agent failure: tier escalation (quick→Sonnet, mid→Opus, max 1 retry)
           -> Wisdom persisted to .ac/plans/{name}.wisdom.md
           -> Verification Wave (complexity-driven):
@@ -222,7 +230,7 @@ Load plan -> Parse Waves
           ->   Standard: code-reviewer + linter (skip Opus verifier)
           ->   Complex: full wave (code-reviewer + verifier + linter)
           ->   Build+test and agents launch concurrently
-          ->   ALL must pass → /ac:commit --skip-preflight (auto commit+push)
+          ->   ALL pass → /ac:commit --skip-preflight (auto commit+push)
           ->   ANY fail → present failures → Fix+Re-verify / Accept+Commit
 ```
 
@@ -253,17 +261,19 @@ Idea/Request -> Classify (mode: idea refinement vs PRD vs PM task, detect --bulk
 
 **Complexity-driven verification** — Verification depth scales with plan complexity. Simple plans (1-2 steps) run build+test only. Standard plans add code-reviewer + linter agents. Complex plans get the full 3-agent wave (code-reviewer + verifier + linter). Build+test and verification agents launch concurrently to save time. Commit preflight is skipped via `--skip-preflight` when invoked by execute post-verification. Per-unit linter calls are advisory (early feedback), with the Phase 5 linter agent as the authoritative check.
 
-**Pre-generation analysis** — Before drafting a plan, `plan-analysis` runs in Metis mode to surface hidden intentions, scope gaps, and AI-slop risks from the raw request. This front-loads quality — preventing weak plans from reaching the interview stage with unchallenged assumptions.
+**Pipeline Profiles** — Complexity classification (Simple/Standard/Complex) extends from verification into the entire pipeline. A Lean profile (Simple) spawns ~2-3 agents total — direct Read instead of explore agents, skips pre-gen analysis, auto-executes without AskUserQuestion. Standard gets ~4-6 agents with 1 explore and opt-in Deep Review. Full profile (Complex) gets ~7-10 agents with multi-agent research, Metis pre-gen analysis, and recommended Deep Review. Agent spawn count drops 40-60% for typical workflows.
+
+**Pre-generation analysis** — For Complex plans, `plan-analysis` runs in Metis mode to surface hidden intentions, scope gaps, and AI-slop risks from the raw request. This front-loads quality — preventing weak plans from reaching the interview stage with unchallenged assumptions.
 
 ```
-Daily work (Sonnet) -> Complex task detected
+Daily work (Sonnet) -> Task detected -> Classify complexity → Select Pipeline Profile
   -> Build/Refactor? -> /ac:plan
-       -> Pre-generation analysis (plan-analysis Metis mode)
-       -> Research (parallel background: ac:explore + ac:librarian)
+       -> Research (profile-conditional: 0 / 1 / 2-3 agents)
+       -> Pre-generation analysis (Complex only: Metis mode)
        -> Interview -> Draft (QA scenarios, tier assignments)
-       -> Post-generation analysis (parallel with Deep Review if selected)
-  -> /ac:execute -> Wave 1 parallel: quick→Haiku, mid→Sonnet, senior→Opus
-                 -> Wave 2+ sequential: same per-step routing
+       -> Handoff (Simple: auto-execute | Standard: opt-in review | Complex: recommended review)
+  -> /ac:execute -> Workers: quick→Haiku (lean), mid→Sonnet (Atlas), senior→Opus (Atlas)
+                 -> Anti-duplication wisdom propagation between waves
                  -> Verification Wave (complexity-driven):
                     Simple: build+test | Standard: +code-reviewer+linter | Complex: +verifier
                  -> ALL pass → /ac:commit --skip-preflight / Done
@@ -287,7 +297,7 @@ plugins/ac/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata (name: "ac")
 ├── .mcp.json                    # MCP server config (empty — MCP servers are user-installed)
-├── commands/                    # 9 user-invocable /ac:* commands
+├── commands/                    # 11 user-invocable /ac:* commands
 │   ├── plan.md                  # /ac:plan
 │   ├── execute.md               # /ac:execute
 │   ├── ideate.md                # /ac:ideate
@@ -307,7 +317,8 @@ plugins/ac/
 │   ├── challenger.md            # Opus devil's advocate
 │   ├── feasibility.md           # Sonnet feasibility evaluator
 │   ├── code-reviewer.md         # Sonnet spec + quality reviewer
-│   └── gemini-vision.md         # Sonnet multimodal via Gemini
+│   ├── gemini-vision.md         # Sonnet multimodal via Gemini
+│   └── investigate.md           # Opus root cause investigator
 ├── skills/
 │   └── ac-skill-creator/        # Component creation skill
 │       ├── SKILL.md
