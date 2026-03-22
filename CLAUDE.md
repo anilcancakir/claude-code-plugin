@@ -108,7 +108,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | low | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS, BashOutput |
 | `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | medium | blue | External docs — context7 MCP → WebSearch fallback | Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, context7, gemini-cli |
 | `linter` | `"ac:linter"` | `"linter"` | Haiku | low | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
-| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | medium | yellow | Plan quality auditor with dual-mode: pre-generation (Metis — hidden intentions, AI-slop risks before plan writing) and post-generation (gaps, tier sanity after plan writing) | Read, Grep, Glob, gemini-cli |
+| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | medium | yellow | Plan quality auditor with dual-mode: pre-generation (Metis — hidden intentions, AI-slop risks before plan writing) and post-generation (gaps, tier sanity after plan writing) | Read, Grep, Glob, LS |
 | `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | high | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
 | `verifier` | `"ac:verifier"` | `"verifier"` | Sonnet | medium | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
 | `challenger` | `"ac:challenger"` | `"challenger"` | Opus | high | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |

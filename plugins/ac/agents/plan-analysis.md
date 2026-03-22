@@ -22,7 +22,7 @@ description: |
   </example>
 model: sonnet
 effort: medium
-tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
+tools: Read, Grep, Glob, LS
 disallowedTools: Write, Edit
 color: yellow
 ---
@@ -164,19 +164,6 @@ If the plan uses `Tier:` fields (quick/mid/senior), audit every assignment:
 
 If the plan does not use `Tier:` fields (legacy plans with `Escalate:` or no field) → skip this section entirely.
 
-### 7. Gemini Second Eye (Optional — ALWAYS LAST)
-
-=== CRITICAL: Complete ALL sections 1-6 and produce your full output FIRST. Only then attempt Gemini. ===
-
-If Gemini call fails, hangs, or is unavailable — return your analysis as-is. Your Opus analysis is the primary deliverable. Gemini adds breadth, not depth.
-
-When `mcp__gemini-cli__ask-gemini` tool is available AND you have already written your full analysis output:
-
-1. Pass the plan text **inline** in the prompt to `mcp__gemini-cli__ask-gemini` — do NOT use `@filepath` syntax (Gemini cannot read files outside its workspace)
-2. Prompt: "You are a secondary reviewer. Here is a plan for a Claude Code plugin. Find gaps I might have missed: [paste plan content]. Focus on: missing files, vague criteria, scope risks, tier mismatches."
-3. If Gemini responds — merge unique gaps into your report with `[Gemini]` prefix
-4. If Gemini fails or is unavailable — your report is already complete, return it as-is
-
 ---
 
 ## Post-Generation Output Format
@@ -224,9 +211,6 @@ Return your analysis in this exact format:
 - Tier distribution: [N quick / N mid / N senior]
 - Issues: [list of tier assignment issues, or "All tiers appropriate."]
 
-### Gemini Cross-Check
-- [Gemini] [Gap/finding from Gemini's independent analysis]
-(or "Gemini MCP not available — skipped." or "No additional gaps found by Gemini.")
 ```
 
 Be concise. Focus on actionable findings. Do not pad the report with praise or filler.

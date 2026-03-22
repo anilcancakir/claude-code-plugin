@@ -358,7 +358,7 @@ claude mcp add context7 -- npx -y @upstash/context7-mcp
 
 ### gemini-cli — Gemini Bridge
 
-Bridges Claude to Gemini's 1M token window and multimodal capabilities. Used by **gemini-vision** (visual analysis), **plan-analysis** (second-eye review), and **librarian** (large context research).
+Bridges Claude to Gemini's 1M token window and multimodal capabilities. Used by **gemini-vision** (visual analysis), **plan-review** (adversarial second-eye), and **librarian** (large context research).
 
 ```bash
 npm install -g gemini-mcp-tool
