@@ -20,9 +20,9 @@ description: |
   assistant: "I'll launch the plan-analysis agent to audit for missing requirements, AI-slop, and vague acceptance criteria."
   <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
   </example>
-model: opus
-effort: high
-maxTurns: 4
+model: sonnet
+effort: medium
+maxTurns: 6
 tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: yellow
@@ -165,18 +165,18 @@ If the plan uses `Tier:` fields (quick/mid/senior), audit every assignment:
 
 If the plan does not use `Tier:` fields (legacy plans with `Escalate:` or no field) → skip this section entirely.
 
-### 7. Gemini Second Eye (Optional)
+### 7. Gemini Second Eye (Optional — ALWAYS LAST)
 
-When `mcp__gemini-cli__ask-gemini` tool is available:
+=== CRITICAL: Complete ALL sections 1-6 and produce your full output FIRST. Only then attempt Gemini. ===
 
-1. Read the plan file content yourself (you already have it from prior analysis)
-2. Pass the plan text **inline** in the prompt to `mcp__gemini-cli__ask-gemini` — do NOT use `@filepath` syntax (Gemini cannot read files outside its workspace)
-3. Prompt: "You are a secondary reviewer. Here is a plan for a Claude Code plugin. Find gaps I might have missed: [paste plan content]. Focus on: missing files, vague criteria, scope risks, tier mismatches."
-4. Compare Gemini's findings with your own analysis. Merge unique gaps into the report with `[Gemini]` prefix
+If Gemini call fails, hangs, or is unavailable — return your analysis as-is. Your Opus analysis is the primary deliverable. Gemini adds breadth, not depth.
 
-Gemini is a supplementary check — your Opus analysis is primary. Gemini adds breadth, not depth.
+When `mcp__gemini-cli__ask-gemini` tool is available AND you have already written your full analysis output:
 
-If `mcp__gemini-cli__ask-gemini` is not available → skip this section entirely, produce no output for it.
+1. Pass the plan text **inline** in the prompt to `mcp__gemini-cli__ask-gemini` — do NOT use `@filepath` syntax (Gemini cannot read files outside its workspace)
+2. Prompt: "You are a secondary reviewer. Here is a plan for a Claude Code plugin. Find gaps I might have missed: [paste plan content]. Focus on: missing files, vague criteria, scope risks, tier mismatches."
+3. If Gemini responds — merge unique gaps into your report with `[Gemini]` prefix
+4. If Gemini fails or is unavailable — your report is already complete, return it as-is
 
 ---
 

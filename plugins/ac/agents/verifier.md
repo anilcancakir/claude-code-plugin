@@ -14,7 +14,7 @@ description: |
   assistant: "Launching verifier agent to re-check plan compliance after fixes."
   <commentary>Triggered manually after user fixes REJECT issues. Same verification pass.</commentary>
   </example>
-model: opus
+model: sonnet
 effort: medium
 tools: Read, Grep, Glob, LS
 disallowedTools: Write, Edit

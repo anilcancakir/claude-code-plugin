@@ -14,7 +14,7 @@ description: |
   assistant: "Delegating to ac:code-simplifier for a clarity pass on modified files."
   <commentary>Triggered when implementation is correct but unnecessarily complex. Returns concrete simplification suggestions.</commentary>
   </example>
-model: opus
+model: sonnet
 effort: medium
 tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit

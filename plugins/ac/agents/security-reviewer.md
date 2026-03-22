@@ -14,8 +14,8 @@ description: |
   assistant: "Launching ac:security-reviewer to scan for injection, auth bypass, secrets, and dependency vulnerabilities."
   <commentary>Triggered by explicit security review request. Scans OWASP Top 10 categories with structured output.</commentary>
   </example>
-model: opus
-effort: high
+model: sonnet
+effort: medium
 tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit
 color: red

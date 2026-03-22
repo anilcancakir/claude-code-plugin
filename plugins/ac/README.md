@@ -292,7 +292,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `ac:plan-analysis` | Opus | Plan quality gate — catches hidden intentions, scope gaps, AI-slop |
+| `ac:plan-analysis` | Sonnet | Plan quality gate — catches hidden intentions, scope gaps, AI-slop |
 | `ac:plan-review` | Opus | Adversarial reviewer — bias toward REJECT, stress-tests executability |
 | `ac:challenger` | Opus | Devil's advocate — finds gaps, risks, and blind spots in proposals |
 | `ac:feasibility` | Sonnet | Pragmatic evaluator — codebase fit, effort, dependencies |
@@ -302,10 +302,10 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `ac:code-reviewer` | Sonnet | 2-stage review — spec compliance, then code quality with confidence scoring |
-| `ac:verifier` | Opus | Post-execution compliance audit — checks every "done when" criterion |
+| `ac:verifier` | Sonnet | Post-execution compliance audit — checks every "done when" criterion |
 | `ac:linter` | Haiku | LSP diagnostics — interprets `<new-diagnostics>`, navigation checks |
-| `ac:security-reviewer` | Opus | OWASP Top 10 scanner — severity x exploitability scoring. Optional |
-| `ac:code-simplifier` | Opus | Clarity pass — suggests simplifications preserving behavior. Opt-in |
+| `ac:security-reviewer` | Sonnet | OWASP Top 10 scanner — severity x exploitability scoring. Optional |
+| `ac:code-simplifier` | Sonnet | Clarity pass — suggests simplifications preserving behavior. Opt-in |
 
 ### Investigation
 
