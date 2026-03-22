@@ -16,7 +16,6 @@ description: |
   </example>
 model: opus
 effort: high
-maxTurns: 6
 tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini
 disallowedTools: Write, Edit
 color: green

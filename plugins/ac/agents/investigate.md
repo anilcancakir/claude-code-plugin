@@ -16,7 +16,6 @@ description: |
   </example>
 model: opus
 effort: high
-maxTurns: 6
 tools: Glob, Grep, Read, LS, BashOutput
 disallowedTools: Write, Edit
 color: red

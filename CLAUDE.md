@@ -103,21 +103,21 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 ## Agents (ac plugin)
 
-| Agent | `subagent_type` | NOT | Model | Effort | maxTurns | Color | Role | Tools |
-|-------|-----------------|-----|-------|--------|----------|-------|------|-------|
-| `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | low | — | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS, BashOutput |
-| `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | medium | — | blue | External docs — context7 MCP → WebSearch fallback | Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, context7, gemini-cli |
-| `linter` | `"ac:linter"` | `"linter"` | Haiku | low | — | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
-| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | medium | 6 | yellow | Plan quality auditor with dual-mode: pre-generation (Metis — hidden intentions, AI-slop risks before plan writing) and post-generation (gaps, tier sanity after plan writing) | Read, Grep, Glob, gemini-cli |
-| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | high | 6 | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
-| `verifier` | `"ac:verifier"` | `"verifier"` | Sonnet | medium | — | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
-| `challenger` | `"ac:challenger"` | `"challenger"` | Opus | high | — | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
-| `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | medium | — | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
-| `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | medium | — | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
-| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | medium | — | cyan | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline | Read, Glob, LS, gemini-cli |
-| `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | 6 | red | Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively for hairy bugs | Glob, Grep, Read, LS, BashOutput |
-| `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | — | red | OWASP-aware security scanner — severity×exploitability scoring (SECURE/VULNERABLE verdict). Optional in Complex verification | Glob, Grep, LS, Read |
-| `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | — | cyan | Post-implementation clarity pass — simplifications preserving behavior, CLAUDE.md-aware. Opt-in only, advisory | Glob, Grep, LS, Read |
+| Agent | `subagent_type` | NOT | Model | Effort | Color | Role | Tools |
+|-------|-----------------|-----|-------|--------|-------|------|-------|
+| `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | low | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS, BashOutput |
+| `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | medium | blue | External docs — context7 MCP → WebSearch fallback | Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, context7, gemini-cli |
+| `linter` | `"ac:linter"` | `"linter"` | Haiku | low | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
+| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | medium | yellow | Plan quality auditor with dual-mode: pre-generation (Metis — hidden intentions, AI-slop risks before plan writing) and post-generation (gaps, tier sanity after plan writing) | Read, Grep, Glob, gemini-cli |
+| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | high | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
+| `verifier` | `"ac:verifier"` | `"verifier"` | Sonnet | medium | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
+| `challenger` | `"ac:challenger"` | `"challenger"` | Opus | high | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
+| `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | medium | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
+| `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | medium | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
+| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | medium | cyan | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline | Read, Glob, LS, gemini-cli |
+| `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | red | Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively for hairy bugs | Glob, Grep, Read, LS, BashOutput |
+| `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | red | OWASP-aware security scanner — severity×exploitability scoring (SECURE/VULNERABLE verdict). Optional in Complex verification | Glob, Grep, LS, Read |
+| `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Post-implementation clarity pass — simplifications preserving behavior, CLAUDE.md-aware. Opt-in only, advisory | Glob, Grep, LS, Read |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
