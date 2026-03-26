@@ -221,6 +221,26 @@
                 "language-server",
                 "marksman"
             ]
+        },
+        {
+            "name": "browser-qa",
+            "description": "Browser QA testing — detect MCP backends, run ad-hoc tests, reproduce bugs, verify plan acceptance criteria, re-check fixes with structured reports.",
+            "version": "1.0.0",
+            "author": {
+                "name": "Anilcan Cakir",
+                "email": "anilcan.cakir@gmail.com"
+            },
+            "source": "./plugins/browser-qa",
+            "category": "testing",
+            "homepage": "https://github.com/anilcancakir/claude-code-plugin",
+            "tags": [
+                "browser",
+                "qa",
+                "testing",
+                "playwright",
+                "mcp",
+                "automation"
+            ]
         }
     ]
 }
