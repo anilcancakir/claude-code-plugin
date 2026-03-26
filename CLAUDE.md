@@ -16,10 +16,11 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
-│   │   ├── commands/             # 9 user-invocable /ac:* commands
-│   │   ├── agents/               # 13 read-only agent definitions
+│   │   ├── commands/             # 10 user-invocable /ac:* commands
+│   │   ├── agents/               # 14 read-only agent definitions
 │   │   ├── skills/
-│   │   │   └── ac-skill-creator/ # Skill + references/ for component creation
+│   │   │   ├── ac-skill-creator/ # Skill + references/ for component creation
+│   │   │   └── browser-qa/       # Skill + references/ for browser QA workflows
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── github-cli/               # GitHub CLI skill plugin
@@ -55,17 +56,6 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── prompt-engine/    # Shared prompt enhancement (not user-invocable)
 │   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, drift detection, Web Bridge, stitch-skills reference
 │   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI, baton schema, DESIGN.md v2, drift detection, stitch-skills
-│   │   ├── README.md
-│   │   └── LICENSE
-│   ├── browser-qa/               # Browser QA testing plugin
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── commands/
-│   │   │   └── test.md           # /browser-qa:test — 4-mode QA orchestrator
-│   │   ├── skills/
-│   │   │   └── browser-qa/
-│   │   │       ├── SKILL.md      # Workflow patterns, token strategies, self-healing
-│   │   │       └── references/   # MCP backends (512 lines), report format
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
@@ -111,6 +101,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` |
 | `/ac:commit` | Smart commit — preflight checks (skippable via `--skip-preflight`), convention detection, atomic commits |
 | `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
+| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Detects MCP browser backends, delegates execution to browser-qa agent, produces structured PASS/FAIL/BLOCKED reports |
 
 ## Agents (ac plugin)
 
@@ -129,6 +120,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | red | Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively for hairy bugs | Glob, Grep, Read, LS, BashOutput |
 | `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | red | OWASP-aware security scanner — severity×exploitability scoring (SECURE/VULNERABLE verdict). Optional in Complex verification | Glob, Grep, LS, Read |
 | `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Post-implementation clarity pass — simplifications preserving behavior, CLAUDE.md-aware. Opt-in only, advisory | Glob, Grep, LS, Read |
+| `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser QA execution — navigates pages, interacts with elements, captures evidence, returns structured test results. Spawned by /ac:browser-qa command | Read, Glob, LS, BashOutput |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -136,6 +128,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 
 ### ac plugin
 - `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
+- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns, MCP backend routing, token efficiency, self-healing. Has references/ for MCP backend tool schemas and report format
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
 - MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
 
@@ -152,12 +145,6 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, drift detection, design token extraction, Stitch Web Bridge, stitch-skills reference. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema, DESIGN.md v2 format, drift detection, and embedded Google stitch-skills
 - Commands: `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`, `/ac-designer:audit`
 - Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup) (official, 8 tools at `stitch.googleapis.com/mcp`)
-
-### browser-qa plugin
-- `browser-qa` (Sonnet, not user-invocable) — Browser QA workflow patterns, token efficiency strategies, self-healing, MCP backend routing. Loaded by `/browser-qa:test` command
-- Command: `/browser-qa:test` — 4 modes: ad-hoc URL testing, bug reproduction from docs (`--bug`), plan acceptance criteria verification (`--plan`), post-fix re-check (`--recheck`). Auto-detects MCP browser backend (Playwright MCP, Chrome DevTools, mcp-chrome, playwriter). Structured PASS/FAIL/BLOCKED reports with evidence
-- Has `references/` for MCP backend tool schemas (4 backends, 512 lines) and QA report format (verdict definitions, severity scale, defect taxonomy)
-- Requires user-installed MCP browser backend (recommended: `claude mcp add playwright -- npx @playwright/mcp@latest`)
 
 ### dart-lsp plugin
 - LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.

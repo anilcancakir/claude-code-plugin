@@ -5,13 +5,13 @@ argument-hint: "URL, bug doc path, plan path, or --recheck (e.g., 'localhost:300
 
 # Browser QA Test
 
-You are orchestrating browser-based QA testing. Detect available MCP browser backends, classify user intent into one of 4 modes, route to the best backend, execute browser tests, and produce a structured QA report.
+You are orchestrating browser-based QA testing. Detect available MCP browser backends, classify user intent into one of 4 modes, gather test context, delegate browser execution to the browser-qa agent, and produce a structured QA report.
 
-Load the browser-qa skill for MCP backend reference and workflow patterns:
+Load the browser-qa skill for workflow patterns:
 `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md`
 
-Load the MCP backends reference for tool schemas and routing:
-`${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/mcp-backends.md`
+Load report format reference:
+`${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/report-format.md`
 
 ## Core Principles
 
@@ -137,112 +137,43 @@ After installing, restart Claude Code and re-run this command.
 
 ---
 
-## Phase 3: Test Execution
+## Phase 3: Agent Delegation
 
-**Goal**: Execute each test case using the best available backend
+**Goal**: Delegate browser test execution to the browser-qa agent
 
-### Backend Selection (per test case)
+Determine the `SELECTED_BACKEND` for this session based on Phase 1 detection and Phase 2 routing decisions. Serialize the `TEST_CASES` list from Phase 2 as a JSON array.
 
-Use the routing matrix from mcp-backends.md. Per-case override:
+Launch the browser-qa agent to execute all test cases:
 
-| Task Signal | Best Backend | Fallback |
-|-------------|-------------|----------|
-| Console error inspection | Chrome DevTools MCP | mcp-chrome |
-| Network debugging | Chrome DevTools MCP | mcp-chrome |
-| Standard UI automation | Playwright MCP | playwriter |
-| Multi-step stateful flow | playwriter | Playwright MCP (`browser_run_code`) |
-| Performance audit | Chrome DevTools MCP | — |
-| Default | Playwright MCP | First available |
+Agent(
+  subagent_type: "ac:browser-qa",
+  prompt: "Execute browser QA tests.
 
-If the best backend is not in `AVAILABLE_BACKENDS`, fall back. If no fallback available, mark test case `BLOCKED` with reason.
+    **Mode**: [MODE]
+    **Selected Backend**: [SELECTED_BACKEND from Phase 1]
+    **Available Backends**: [AVAILABLE_BACKENDS list]
+    **Test Cases**: [TEST_CASES JSON array from Phase 2]
 
-### Execution Loop (per test case)
+    Load workflow patterns and tool routing:
+    ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
+    ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/mcp-backends.md
 
-For each test case in the list:
+    Execute each test case using the selected backend's MCP tools. Follow the execution loop, self-healing, and token efficiency patterns from the skill.
 
-1. **Navigate** to target URL using selected backend's navigate tool:
-   - Playwright MCP: `mcp__playwright__browser_navigate`
-   - Chrome DevTools MCP: `mcp__chrome-devtools__navigate_page`
-   - mcp-chrome: `mcp__chrome__chrome_navigate`
-   - playwriter: `mcp__playwriter__execute` with `page.goto(url)`
+    Return results as a JSON array:
+    [{id, description, verdict, severity, evidence: {screenshot?, console?, network?}, steps_executed}]",
+  model: "sonnet"
+)
 
-2. **Snapshot** — take accessibility snapshot (token-efficient, NOT screenshot):
-   - Playwright MCP: `mcp__playwright__browser_snapshot`
-   - Chrome DevTools MCP: `mcp__chrome-devtools__take_snapshot`
-   - mcp-chrome: `mcp__chrome__chrome_get_interactive_elements`
-   - playwriter: `mcp__playwriter__execute` with `snapshot()`
-
-3. **Execute test steps** — for each step in the test case, use the appropriate interaction tools from the selected backend. Refer to mcp-backends.md for complete tool parameter schemas.
-
-   **Playwright MCP** — use `ref` values from snapshot for element targeting:
-   - Click: `mcp__playwright__browser_click`
-   - Type: `mcp__playwright__browser_type`
-   - Fill form: `mcp__playwright__browser_fill_form`
-   - Select: `mcp__playwright__browser_select_option`
-   - Wait: `mcp__playwright__browser_wait_for`
-   - Multi-step batch: `mcp__playwright__browser_run_code`
-
-   **Chrome DevTools MCP** — use `uid` values from snapshot, pass `includeSnapshot: true` to auto-return snapshot after action:
-   - Click: `mcp__chrome-devtools__click`
-   - Fill: `mcp__chrome-devtools__fill`
-   - Type: `mcp__chrome-devtools__type_text`
-   - Form: `mcp__chrome-devtools__fill_form`
-   - Wait: `mcp__chrome-devtools__wait_for`
-   - Script: `mcp__chrome-devtools__evaluate_script`
-
-   **mcp-chrome** — use CSS selectors for element targeting:
-   - Click: `mcp__chrome__chrome_click_element`
-   - Fill: `mcp__chrome__chrome_fill_or_select`
-   - Script: `mcp__chrome__chrome_inject_script`
-   - Content: `mcp__chrome__chrome_get_web_content`
-
-   **playwriter** — all interactions via `mcp__playwriter__execute` with inline Playwright code:
-   - Use `page` object for interactions (`page.click()`, `page.fill()`, etc.)
-   - Use `state` object for cross-step data persistence
-   - Always call `snapshot()` after interactions
-
-4. **Re-snapshot** after each action to verify state change
-
-5. **Check for errors**:
-   - Console messages: `browser_console_messages` / `list_console_messages` / `chrome_console` / `getLatestLogs()`
-   - Network failures: `browser_network_requests` / `list_network_requests` / `chrome_network_capture_*`
-   - JS exceptions in console output
-
-6. **Capture evidence** on failure:
-   - Screenshot: `browser_take_screenshot` / `take_screenshot` / `chrome_screenshot` / via `execute`
-   - Console log excerpt (relevant error lines only)
-   - Network error details (status code, URL, response body excerpt)
-
-7. **Determine verdict**:
-   - `PASS` — expected state reached, no errors
-   - `FAIL` — unexpected state, errors found, or assertion failed
-   - `BLOCKED` — setup dependency missing, URL unreachable, or 3 consecutive selector failures
-
-### Self-Healing (on selector/ref failure)
-
-When an element interaction fails (ref not found, selector mismatch):
-
-1. Re-snapshot current DOM — get fresh accessibility tree
-2. Find element by semantic role/label (not brittle CSS class):
-   - Search by role: `button`, `link`, `textbox`, `heading`
-   - Search by accessible name / label text
-   - Search by nearby landmark or heading context
-3. Retry interaction with updated ref/uid/selector
-4. Max 3 retries → `BLOCKED` if all fail, with note: "Element not found after 3 retries: [description]"
-
-### Token Efficiency Rules
-
-- Use `browser_run_code` (Playwright MCP) or `execute` (playwriter) for multi-step flows — 1 tool call instead of N
-- Prefer accessibility snapshots over screenshots (text vs image tokens)
-- Use `selector` param to scope snapshots to relevant subtree (Playwright MCP: `browser_snapshot` → `{selector: "#main-content"}`)
-- Close and re-navigate rather than 20+ interactions in one session — prevents context bloat
-- For Chrome DevTools MCP: use `includeSnapshot: true` on input tools to auto-return snapshot after action (reduces round trips)
+Store the agent's returned results as `AGENT_RESULTS` — a JSON array of test case outcomes.
 
 ---
 
 ## Phase 4: Report Generation
 
-**Goal**: Produce a structured QA report
+**Goal**: Produce a structured QA report from the agent's execution results
+
+Parse `AGENT_RESULTS` to extract verdicts, evidence, and severity for each test case.
 
 Generate the report in this format:
 

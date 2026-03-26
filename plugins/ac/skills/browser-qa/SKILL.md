@@ -1,12 +1,12 @@
 ---
 name: browser-qa
-description: "Browser QA testing patterns — MCP backend routing, workflow orchestration, token efficiency, report format. Loaded by /browser-qa:test command."
+description: "Browser QA testing patterns — MCP backend routing, workflow orchestration, token efficiency, report format. Loaded by /ac:browser-qa command."
 user-invocable: false
 ---
 
 # Browser QA — Testing Knowledge Base
 
-Browser-based QA testing via MCP backends. This skill provides the routing logic, workflow patterns, token efficiency strategies, and self-healing patterns used by the `/browser-qa:test` command. Tool schemas live in `references/mcp-backends.md` — this file distills decision patterns and orchestration knowledge.
+Browser-based QA testing via MCP backends. This skill provides the routing logic, workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:browser-qa` command. Tool schemas live in `references/mcp-backends.md` — this file distills decision patterns and orchestration knowledge.
 
 ---
 

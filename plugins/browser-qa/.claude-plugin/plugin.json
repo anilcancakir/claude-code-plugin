@@ -1,8 +1,0 @@
-{
-  "name": "browser-qa",
-  "description": "Browser QA testing — MCP backend detection, smart routing, 4 operating modes (ad-hoc, bug-repro, plan-driven, post-fix verify), and structured QA reports.",
-  "author": {
-    "name": "Anilcan Cakir",
-    "email": "anilcan.cakir@gmail.com"
-  }
-}
