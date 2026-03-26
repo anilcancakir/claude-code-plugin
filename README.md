@@ -6,7 +6,7 @@ A curated marketplace of Claude Code plugins for structured development workflow
 
 | Plugin | Description | Category |
 |--------|-------------|----------|
-| **[ac](plugins/ac/)** | Structured development partner — plans before coding, investigates bugs with Opus, delegates to specialized agents with customizable model routing. | productivity |
+| **[ac](plugins/ac/)** | Structured development partner — plans before coding, investigates bugs with Opus, delegates to specialized agents with model routing, browser QA testing with evidence persistence. | productivity |
 | **[github-cli](plugins/github-cli/)** | GitHub CLI skill — comprehensive gh reference for issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), and scripting patterns. | productivity |
 | **[git-master](plugins/git-master/)** | Git expert skill — atomic commits with style detection, interactive rebase/squash, and history archaeology (blame, bisect, pickaxe). | productivity |
 | **[frontend-design](plugins/frontend-design/)** | Frontend design skill — production-grade UI for web and mobile with design systems, visual hierarchy, and distinctive aesthetics. | productivity |
@@ -47,9 +47,9 @@ After updating, sync your global config with new plugin features:
 │   ├── ac/                      # Main plugin — structured development partner
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/            # 12 /ac:* commands
-│   │   ├── agents/              # 9 read-only agents
-│   │   ├── skills/              # Component creation skill
+│   │   ├── commands/            # 10 /ac:* commands (incl. browser-qa)
+│   │   ├── agents/              # 14 read-only agents (incl. browser-qa)
+│   │   ├── skills/              # ac-skill-creator + browser-qa workflow
 │   │   └── README.md
 │   ├── github-cli/              # GitHub CLI skill plugin
 │   │   ├── .claude-plugin/
@@ -125,6 +125,51 @@ Then add an entry in `.claude-plugin/marketplace.json`:
     "category": "productivity"
 }
 ```
+
+## Browser QA Testing
+
+The ac plugin includes `/ac:browser-qa` — a browser-based QA testing command with 4 modes:
+
+| Mode | Trigger | Description |
+|------|---------|-------------|
+| **Ad-hoc** | URL or instructions | Navigate and test freeform |
+| **Bug repro** | `--bug <path>` | Reproduce bugs from a document |
+| **Plan verify** | `--plan <path>` | Verify plan acceptance criteria |
+| **Re-check** | `--recheck` | Re-run previously failed tests |
+
+### Evidence Persistence
+
+Test evidence is saved by default to `.ac/qa/` in the project directory:
+
+```
+.ac/qa/{testName}/
+  {YYYYMMDD}-{HHmmss}-{pagePath}.png    # Screenshots (on FAIL)
+  {YYYYMMDD}-{HHmmss}-{pagePath}.html   # Page HTML snapshots
+  {YYYYMMDD}-{HHmmss}-{pagePath}.json   # Console + network errors
+  report.md                              # Latest report
+```
+
+Disable with `--no-evidence` flag.
+
+### Required: Browser MCP Backend
+
+At least one browser MCP backend must be installed. The command auto-detects available backends at runtime.
+
+```bash
+# Playwright MCP (recommended — lowest token cost, richest tools)
+claude mcp add playwright -- npx @playwright/mcp@latest
+
+# Chrome DevTools MCP (debugging, performance, console/network)
+claude mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect
+
+# mcp-chrome (existing Chrome session via extension)
+npm i -g mcp-chrome-bridge && claude mcp add chrome -- npx mcp-chrome-bridge
+
+# playwriter (full Playwright API, stateful flows)
+claude mcp add playwriter -- playwriter mcp
+```
+
+Multiple backends can coexist — the command routes to the best one per test case.
 
 ## Contributing
 

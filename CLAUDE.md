@@ -101,7 +101,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` |
 | `/ac:commit` | Smart commit — preflight checks (skippable via `--skip-preflight`), convention detection, atomic commits |
 | `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
-| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Detects MCP browser backends, delegates execution to browser-qa agent, produces structured PASS/FAIL/BLOCKED reports |
+| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Detects MCP browser backends, delegates execution to browser-qa agent, produces structured PASS/FAIL/BLOCKED reports with evidence persistence to `.ac/qa/`. Supports `--no-evidence` to skip artifact saving |
 
 ## Agents (ac plugin)
 
@@ -120,7 +120,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | red | Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively for hairy bugs | Glob, Grep, Read, LS, BashOutput |
 | `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | red | OWASP-aware security scanner — severity×exploitability scoring (SECURE/VULNERABLE verdict). Optional in Complex verification | Glob, Grep, LS, Read |
 | `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Post-implementation clarity pass — simplifications preserving behavior, CLAUDE.md-aware. Opt-in only, advisory | Glob, Grep, LS, Read |
-| `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser QA execution — navigates pages, interacts with elements, captures evidence, returns structured test results. Spawned by /ac:browser-qa command | Read, Glob, LS, BashOutput |
+| `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser QA execution — navigates pages, interacts with elements, captures screenshots + HTML snapshots + error logs, returns structured test results with evidence flags for command-side persistence. Spawned by /ac:browser-qa command | Read, Glob, LS, BashOutput, + MCP browser tools (4 backends) |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -128,7 +128,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 
 ### ac plugin
 - `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
-- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns, MCP backend routing, token efficiency, self-healing. Has references/ for MCP backend tool schemas and report format
+- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns, MCP backend routing, token efficiency, self-healing, evidence persistence to `.ac/qa/`. Has references/ for MCP backend tool schemas and report format. Requires at least one MCP browser backend (see Browser MCP Backends below)
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
 - MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
 
@@ -158,6 +158,19 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 ### markdown-lsp plugin
 - LSP plugin — Markdown language server via `marksman`. Link navigation, find references, and document symbols for `.md` and `.mdx` files. Binary: `brew install marksman`.
 
+### Browser MCP Backends (for `/ac:browser-qa`)
+
+At least one browser MCP backend is required for browser QA testing. Install via `claude mcp add`:
+
+| Backend | Install Command | Best For |
+|---------|----------------|----------|
+| **Playwright MCP** (recommended) | `claude mcp add playwright -- npx @playwright/mcp@latest` | General testing — lowest token cost, richest tool set, accessibility snapshots |
+| **Chrome DevTools MCP** | `claude mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect` | Debugging, performance audits, console/network inspection |
+| **mcp-chrome** | `npm i -g mcp-chrome-bridge && claude mcp add chrome -- npx mcp-chrome-bridge` | Testing against existing Chrome session (requires browser extension) |
+| **playwriter** | `claude mcp add playwriter -- playwriter mcp` | Full Playwright API, stateful multi-step flows |
+
+The `/ac:browser-qa` command auto-detects installed backends at runtime and routes to the best one per test case. Multiple backends can coexist.
+
 ## Design Principles
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
@@ -171,7 +184,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) when selected.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
-- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/` in the working directory. Not gitignored by default — each project decides
+- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
 - **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:
   - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section (required)
@@ -191,6 +204,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `plugins/ac/skills/ac-skill-creator/references/pm-base.md` — Shared ideation reference used by `/ac:ideate` — task file format, INVEST validation, interview dimensions, triage format
 - `.ac/plans/` — Generated execution plans (project-local, created by /ac:plan)
 - `.ac/tasks/` — Generated task documents (project-local, created by /ac:ideate)
+- `.ac/qa/` — QA evidence archive (project-local, created by /ac:browser-qa) — screenshots, HTML snapshots, error logs per test run
 
 ## Adding a New Plugin
 
