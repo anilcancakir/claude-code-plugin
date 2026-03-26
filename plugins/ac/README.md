@@ -202,6 +202,7 @@ The `--loop` flag chains ideation → planning → execution automatically. `ac`
 | `/ac:execute <plan>` | Execute plan — parallel agents for independent steps, sequential for dependent ones |
 | `/ac:commit` | Preflight checks (lint + tests) → convention detection → atomic commits → push |
 | `/ac:ideate <idea>` | Socratic refinement → adversarial challenge → Jira-ready tasks. Flags: `--bulk`, `--loop` |
+| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flag: `--no-evidence` |
 
 ### Project Setup
 
@@ -279,7 +280,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 
 ## Agents
 
-`ac` includes 13 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
+`ac` includes 14 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
 
 ### Search & Research
 
@@ -307,12 +308,60 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | `ac:security-reviewer` | Sonnet | OWASP Top 10 scanner — severity x exploitability scoring. Optional |
 | `ac:code-simplifier` | Sonnet | Clarity pass — suggests simplifications preserving behavior. Opt-in |
 
-### Investigation
+### Investigation & Testing
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `ac:investigate` | Opus | Root cause analysis — hypothesis-driven, 3-cycle ceiling, structured evidence |
 | `ac:gemini-vision` | Sonnet | Multimodal analysis — video recordings, multi-image comparison via Gemini |
+| `ac:browser-qa` | Sonnet | Browser test executor — navigates pages via MCP backends, captures screenshots + HTML + errors, returns structured verdicts |
+
+## Browser QA Testing
+
+`/ac:browser-qa` runs browser-based tests through MCP browser backends. It orchestrates the full flow: detect backends → classify mode → gather context → delegate to `ac:browser-qa` agent → generate report → persist evidence.
+
+### Modes
+
+| Mode | Trigger | Description |
+|------|---------|-------------|
+| **Ad-hoc** | URL or instructions | Navigate and test freeform |
+| **Bug repro** | `--bug <path>` | Reproduce bugs from a document |
+| **Plan verify** | `--plan <path>` | Verify plan acceptance criteria |
+| **Re-check** | `--recheck` | Re-run previously failed tests |
+
+### Evidence Persistence
+
+By default, test artifacts are saved to `.ac/qa/` for audit trail and debugging:
+
+```
+.ac/qa/{testName}/
+  {YYYYMMDD}-{HHmmss}-{pagePath}.png    # Screenshots (on FAIL)
+  {YYYYMMDD}-{HHmmss}-{pagePath}.html   # Page HTML snapshots
+  {YYYYMMDD}-{HHmmss}-{pagePath}.json   # Console + network errors
+  report.md                              # Latest report
+```
+
+Disable with `--no-evidence`.
+
+### Required: Browser MCP Backend
+
+At least one browser MCP backend must be installed:
+
+```bash
+# Playwright MCP (recommended — lowest token cost, richest tools)
+claude mcp add playwright -- npx @playwright/mcp@latest
+
+# Chrome DevTools MCP (debugging, performance, console/network)
+claude mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect
+
+# mcp-chrome (existing Chrome session via extension)
+npm i -g mcp-chrome-bridge && claude mcp add chrome -- npx mcp-chrome-bridge
+
+# playwriter (full Playwright API, stateful flows)
+claude mcp add playwriter -- playwriter mcp
+```
+
+Multiple backends can coexist — the command auto-detects and routes to the best one per test case.
 
 ## Model Customization
 
@@ -420,19 +469,22 @@ Restart Claude Code after updating the plugin. Some changes (new commands, agent
 - **Plan-first** — All commands follow: classify → research → interview → generate → review. No code is written during planning
 - **Reliability-first** — Default to correctness, not cost savings. Opus handles planning and architecture, Haiku handles search. Failed agents escalate one tier before logging failure
 - **Progressive disclosure** — Plugin metadata is always in context. SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant
-- **Read-only advisory** — All 13 agents enforce `disallowedTools: Write, Edit`. Only execution workers spawned by `/ac:execute` get write access
+- **Read-only advisory** — All 14 agents enforce `disallowedTools: Write, Edit`. Only execution workers spawned by `/ac:execute` get write access
 - **Pure markdown** — Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies, no vendor lock-in
 
 ## Plugin Structure
 
 ```
 plugins/ac/
-├── commands/          # 9 user-invocable /ac:* commands
-├── agents/            # 13 read-only agent definitions
+├── commands/          # 10 user-invocable /ac:* commands (incl. browser-qa)
+├── agents/            # 14 read-only agent definitions (incl. browser-qa)
 ├── skills/
-│   └── ac-skill-creator/
-│       ├── SKILL.md
-│       └── references/    # Templates for coding style, language style, CLAUDE.md, PRDs
+│   ├── ac-skill-creator/
+│   │   ├── SKILL.md
+│   │   └── references/    # Templates for coding style, language style, CLAUDE.md, PRDs
+│   └── browser-qa/
+│       ├── SKILL.md       # Browser QA workflow patterns, MCP routing, self-healing
+│       └── references/    # MCP backend tool schemas, report format, evidence schema
 ├── .claude-plugin/
 │   └── plugin.json
 └── README.md
