@@ -125,6 +125,7 @@ Return results as a JSON array. One object per test case:
     "backend": "playwright",
     "steps_executed": 4,
     "duration_estimate": "~8s",
+    "page_url": "http://localhost:3000/login",
     "evidence": null
   },
   {
@@ -134,8 +135,10 @@ Return results as a JSON array. One object per test case:
     "backend": "playwright",
     "steps_executed": 3,
     "duration_estimate": "~12s",
+    "page_url": "http://localhost:3000/register",
     "evidence": {
-      "screenshot": true,
+      "screenshot_taken": true,
+      "page_html_captured": true,
       "console_errors": ["TypeError: Cannot read property 'value' of null at registration.js:42"],
       "network_errors": [],
       "failure_detail": "Email validation message not displayed after submitting empty form"
@@ -148,8 +151,10 @@ Return results as a JSON array. One object per test case:
     "backend": "chrome-devtools",
     "steps_executed": 1,
     "duration_estimate": "~3s",
+    "page_url": "http://localhost:3000/dashboard",
     "evidence": {
-      "screenshot": false,
+      "screenshot_taken": false,
+      "page_html_captured": false,
       "console_errors": [],
       "network_errors": ["GET /api/dashboard/stats → 503 Service Unavailable"],
       "failure_detail": "Element not found after 3 retries: 'Revenue chart canvas'"
@@ -157,6 +162,12 @@ Return results as a JSON array. One object per test case:
   }
 ]
 ```
+
+**Evidence capture rules** (for command-side persistence):
+- On FAIL: always take screenshot + capture page HTML via `document.documentElement.outerHTML` (through `browser_run_code` / `evaluate_script` / `execute`). Set `screenshot_taken` and `page_html_captured` to `true`
+- On BLOCKED: attempt screenshot if page is loaded, skip HTML capture if navigation failed
+- On PASS: no evidence capture needed (command may optionally snapshot HTML for audit trail)
+- Include `page_url` on every result — the command uses this to derive evidence file names
 
 After the JSON array, provide a one-line summary: `X/Y passed, Z failed, W blocked`.
 

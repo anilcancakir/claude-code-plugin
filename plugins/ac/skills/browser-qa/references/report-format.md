@@ -39,9 +39,14 @@ Deep-dive reference for QA report structure, evidence schema, and persistence fo
 Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 
 **Screenshot**
-- Capture on FAIL only
-- Format: PNG, saved to `.browser-qa/screenshots/tc-{id}.png` (e.g. `tc-002.png`)
-- Reference inline or by path in the report
+- Capture on FAIL only (attempt on BLOCKED if page loaded)
+- Format: PNG, persisted to `.ac/qa/{testName}/{timestamp}-{pagePath}.png`
+- Reference by path in the report
+
+**Page HTML Snapshot**
+- Capture on FAIL via `document.documentElement.outerHTML`
+- Format: HTML, persisted to `.ac/qa/{testName}/{timestamp}-{pagePath}.html`
+- Useful for post-mortem DOM inspection without re-running tests
 
 **Console Errors**
 - Capture JS exceptions, unhandled rejections, and `console.error` calls
@@ -51,6 +56,10 @@ Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 **Network Failures**
 - Record: HTTP status, full URL, response excerpt (max 200 chars)
 - Flag: 4xx/5xx responses, CORS failures, request timeouts
+
+**Error Logs**
+- Combined console + network errors persisted to `.ac/qa/{testName}/{timestamp}-{pagePath}.json`
+- Schema: `{test_id, timestamp, console_errors[], network_errors[], page_url}`
 
 **Accessibility Snapshot**
 - Include only the relevant subtree (the component under test)
@@ -117,7 +126,7 @@ Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 
 ## JSON Schema (last-report.json)
 
-Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to diff against prior results.
+Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to diff against prior results. Evidence paths point to `.ac/qa/` directory.
 
 ```json
 {
@@ -139,7 +148,7 @@ Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to
       "description": "Register form validates email format",
       "verdict": "FAIL",
       "evidence": {
-        "screenshot": ".browser-qa/screenshots/tc-002.png",
+        "screenshot": ".ac/qa/register-validation/20260326-143000-register.png",
         "console": ["TypeError: Cannot read property 'validate' of undefined"],
         "expected": "Validation error shown for invalid email",
         "actual": "Form submitted without validation, JS error in console"
@@ -154,6 +163,40 @@ Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to
 ```
 
 `diff` field is present only in RECHECK mode runs. Omit entirely for all other modes.
+
+---
+
+## Evidence Persistence (`.ac/qa/`)
+
+QA evidence is persisted by default to `.ac/qa/` for audit trail, debugging, and historical comparison. Disable with `--no-evidence` flag.
+
+### Directory Structure
+
+```
+.ac/qa/
+  {testName}/
+    {YYYYMMDD}-{HHmmss}-{pagePath}.png        # Screenshot on FAIL
+    {YYYYMMDD}-{HHmmss}-{pagePath}.html        # Page HTML snapshot
+    {YYYYMMDD}-{HHmmss}-{pagePath}.json        # Console + network errors
+    report.md                                   # Latest report for this test
+```
+
+### Naming Convention
+
+| Token | Source | Example |
+|-------|--------|---------|
+| `{testName}` | AD_HOC → URL path slug, BUG_REPRO → bug doc filename, PLAN_VERIFY → plan filename, RECHECK → `recheck-{original}` | `register`, `auth-plan`, `recheck-register` |
+| `{YYYYMMDD}-{HHmmss}` | UTC timestamp of test run | `20260326-143000` |
+| `{pagePath}` | URL path slug, max 40 chars | `settings-profile`, `app-dashboard` |
+
+### What Gets Saved
+
+| Artifact | When | Format |
+|----------|------|--------|
+| Screenshot | FAIL verdict (attempt on BLOCKED if page loaded) | PNG |
+| HTML snapshot | FAIL verdict, key PASS milestones (optional) | HTML |
+| Error log | FAIL or BLOCKED with errors | JSON |
+| Report copy | Every run | Markdown |
 
 ---
 

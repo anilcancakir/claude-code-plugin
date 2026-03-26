@@ -39,6 +39,12 @@ Load report format reference:
 | URL or natural language instruction | `AD_HOC` | Navigate, interact, verify — freeform testing |
 | No arguments | — | Ask user with mode options (below) |
 
+Global flags (combinable with any mode):
+
+| Flag | Effect |
+|------|--------|
+| `--no-evidence` | Skip saving evidence artifacts to `.ac/qa/`. Report still generated, just no file persistence |
+
 2. If no arguments provided, ask the user: "What would you like to test?" with these options:
    - **Ad-hoc test** — "Give me a URL and instructions — I'll navigate and test"
    - **Bug reproduction** — "Give me a bug document — I'll reproduce each bug"
@@ -161,7 +167,9 @@ Agent(
     Execute each test case using the selected backend's MCP tools. Follow the execution loop, self-healing, and token efficiency patterns from the skill.
 
     Return results as a JSON array:
-    [{id, description, verdict, severity, evidence: {screenshot?, console?, network?}, steps_executed}]",
+    [{id, title, verdict, severity, page_url, evidence: {screenshot_taken?, page_html_captured?, console_errors?, network_errors?, failure_detail?}, steps_executed}]
+
+    On FAIL: capture screenshot + page HTML (document.documentElement.outerHTML). On BLOCKED: attempt screenshot if page loaded. Include page_url on every result.",
   model: "sonnet"
 )
 
@@ -239,9 +247,9 @@ Generate the report in this format:
 
 ## Phase 5: State Persistence
 
-**Goal**: Save results for RECHECK mode and audit trail
+**Goal**: Save results for RECHECK mode, audit trail, and QA evidence archive
 
-**Actions**:
+### 5a. RECHECK State (always)
 
 1. Create `.browser-qa/` directory if it doesn't exist
 
@@ -268,7 +276,7 @@ Generate the report in this format:
          "description": "Register form validates email format",
          "verdict": "FAIL",
          "evidence": {
-           "screenshot": ".browser-qa/screenshots/tc-002.png",
+           "screenshot": ".ac/qa/register-validation/20260326-143000-register.png",
            "console": ["TypeError: Cannot read property 'validate' of undefined"],
            "expected": "Validation error shown for invalid email",
            "actual": "Form submitted without validation, JS error in console"
@@ -288,7 +296,56 @@ Generate the report in this format:
    }
    ```
 
-5. Present the report to the user — output the full markdown report
+### 5b. Evidence Archive (default ON, skip with `--no-evidence`)
+
+Persist key test artifacts to `.ac/qa/` for audit trail, debugging, and historical comparison. Similar to `.ac/plans/` and `.ac/tasks/` — project-local, not gitignored by default.
+
+**Directory structure**:
+```
+.ac/qa/
+  {testName}/
+    {YYYYMMDD}-{HHmmss}-{pagePath}.png        # Screenshot evidence
+    {YYYYMMDD}-{HHmmss}-{pagePath}.html        # Page HTML snapshot
+    {YYYYMMDD}-{HHmmss}-{pagePath}.json        # Console + network errors
+    report.md                                   # Latest report for this test
+```
+
+**Naming rules**:
+- `{testName}` — slugified from test context: AD_HOC → URL path slug (e.g., `register`, `dashboard-settings`), BUG_REPRO → bug doc filename, PLAN_VERIFY → plan filename, RECHECK → `recheck-{original-testName}`
+- `{YYYYMMDD}-{HHmmss}` — UTC timestamp of the test run
+- `{pagePath}` — short slug of the page URL path (e.g., `/app/settings/profile` → `settings-profile`). Max 40 chars, truncate with trailing hash if longer
+
+**What to save** (per test case with FAIL or key milestone steps):
+1. **Screenshots** (`.png`) — captured by agent on FAIL verdicts. Save the raw screenshot data returned by MCP screenshot tools
+2. **HTML snapshots** (`.html`) — page HTML at the moment of failure or key checkpoint. Capture via `document.documentElement.outerHTML` through `browser_run_code` / `evaluate_script` / `execute`
+3. **Error logs** (`.json`) — console errors + network failures for that test case:
+   ```json
+   {
+     "test_id": "TC-002",
+     "timestamp": "2026-03-26T14:30:12Z",
+     "console_errors": ["TypeError: Cannot read property 'validate' of undefined"],
+     "network_errors": ["POST /api/register → 422 Unprocessable Entity"],
+     "page_url": "http://localhost:3000/register"
+   }
+   ```
+4. **Report copy** (`report.md`) — overwrite with the latest Phase 4 report for this test name
+
+**Actions**:
+1. Derive `{testName}` from mode + target
+2. Create `.ac/qa/{testName}/` directory
+3. For each FAIL test case: save screenshot `.png`, HTML snapshot `.html`, and error log `.json` using the naming convention above
+4. For PASS test cases at key milestones (first page load, final state): optionally save HTML snapshot only (lightweight audit trail)
+5. Copy the Phase 4 report to `.ac/qa/{testName}/report.md`
+6. Update evidence paths in `.browser-qa/last-report.json` to point to `.ac/qa/` files
+
+### 5c. Present Report
+
+Present the full markdown report to the user — output the Phase 4 report directly.
+
+If evidence was saved, append a summary:
+```
+📁 Evidence saved to .ac/qa/{testName}/ — {N} screenshots, {M} HTML snapshots, {K} error logs
+```
 
 ---
 
