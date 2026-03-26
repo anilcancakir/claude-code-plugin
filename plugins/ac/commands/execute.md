@@ -26,11 +26,27 @@ Plan identifier: $ARGUMENTS
 
 6. **Extract conventions**: Parse the plan file for a `### Conventions` section. If present, store its content as PLAN_CONVENTIONS for injection into worker prompts. If absent, set PLAN_CONVENTIONS to: "Read existing files in your scope and match their patterns, naming, and style before modifying."
 
-7. **Extract tier assignments**: For each step, read `Tier:` field. Map: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`. If absent, check legacy `Escalate:` field: `true`→senior, `false`/absent→mid. Maintains backward compatibility with pre-tier plans.
+7. **Read project CLAUDE.md** (execute-time context supplement):
+   - Attempt to read `./CLAUDE.md` from the working directory
+   - [If file is not present:] Set RUNTIME_CONTEXT to empty. Skip remaining sub-steps.
+   - [If file is present:] Extract the following into RUNTIME_CONTEXT (keep concise — max ~2000 tokens for mid/senior steps, ~1000 for quick steps):
+     - Build, test, and lint commands (exact commands and flags)
+     - Critical gotchas and known pitfalls explicitly called out in the file
+     - Naming conventions and code style rules
+     - Architectural rules (e.g., "thin controllers, fat services", "no business logic in controllers")
+   - **Deduplicate**: Before storing each extracted rule, perform a literal-string check against PLAN_CONVENTIONS. If the rule text already appears verbatim in PLAN_CONVENTIONS, skip it. Only add rules not already covered.
+   - Store the deduplicated extracted content as **RUNTIME_CONTEXT**. Keep RUNTIME_CONTEXT as a separate variable — do not merge into PLAN_CONVENTIONS.
 
-8. **Initialize wisdom accumulator**: Set ACCUMULATED_WISDOM to empty. Populated after each work unit completes and injected into subsequent worker prompts to prevent repeated discovery and pattern drift.
+8. **Extract tier assignments**: For each step, read `Tier:` field. Map: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`. If absent, check legacy `Escalate:` field: `true`→senior, `false`/absent→mid. Maintains backward compatibility with pre-tier plans.
 
-9. **Extract plan complexity**: Parse the plan file for `**Complexity**:` metadata. Extract value: `Simple`, `Standard`, or `Complex`. If not found, derive from step count: 1-2 steps → Simple, 3-6 steps → Standard, 7+ steps → Complex. Store as PLAN_COMPLEXITY for Phase 5 verification depth routing.
+9. **Extract Codebase State and apply tier escalation**: Parse the plan file's `### Research Summary` section for a `**Codebase State**:` line. Store the value as **CODEBASE_STATE**.
+   - [If not found:] Set **CODEBASE_STATE** = `Transitional`. No escalation.
+   - [If **CODEBASE_STATE** is `Chaotic` or `Legacy`:] Auto-escalate all `quick` tier steps to `mid` (Haiku→Sonnet). These areas require more reasoning capability — Haiku is insufficient for establishing patterns or navigating degraded code. Update the in-memory tier assignments from step 8 (do not modify the plan file).
+   - [If **CODEBASE_STATE** is `Disciplined` or `Transitional`:] No escalation needed. Proceed with tier assignments as-is.
+
+10. **Initialize wisdom accumulator**: Set ACCUMULATED_WISDOM to empty. Populated after each work unit completes and injected into subsequent worker prompts to prevent repeated discovery and pattern drift.
+
+11. **Extract plan complexity**: Parse the plan file for `**Complexity**:` metadata. Extract value: `Simple`, `Standard`, or `Complex`. If not found, derive from step count: 1-2 steps → Simple, 3-6 steps → Standard, 7+ steps → Complex. Store as PLAN_COMPLEXITY for Phase 5 verification depth routing.
 
 ---
 
@@ -130,6 +146,9 @@ Mixed-tier waves are fine — CC supports different `model:` values per Agent() 
 
 **Conventions**: [Inject PLAN_CONVENTIONS or "Read existing files and match patterns before modifying."]
 
+[If RUNTIME_CONTEXT is non-empty:]
+**Project Context**: [Inject RUNTIME_CONTEXT — supplementary project rules from CLAUDE.md not already in PLAN_CONVENTIONS]
+
 Follow instructions literally. Do not abbreviate output, do not skip steps. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
 
 [If ACCUMULATED_WISDOM is non-empty:]
@@ -174,6 +193,11 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 
 **Codebase Conventions**:
 [Inject PLAN_CONVENTIONS extracted from plan file in Phase 1. If no conventions section was found in the plan, use: "Read existing files and match patterns before modifying."]
+
+[If RUNTIME_CONTEXT is non-empty:]
+## Project Context
+
+[Inject RUNTIME_CONTEXT — supplementary project rules from CLAUDE.md not already covered by Codebase Conventions above. Includes: build/test/lint commands, gotchas, naming conventions, architectural rules.]
 
 [If step has Tier: senior, append:]
 **Senior Tier**: This task was flagged for senior-level reasoning. Explore the codebase deeply before acting. Consider edge cases, cross-cutting concerns, and architectural impact. Quality over speed. Consider downstream effects on callers and dependents before modifying.
@@ -277,15 +301,15 @@ Route based on PLAN_COMPLEXITY (extracted in Phase 1):
 **Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents concurrently (skip verifier — Opus is expensive for standard work):
 
 ```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].", run_in_background: true)
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].", run_in_background: true)
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
 ```
 
 **Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents concurrently (full wave). Optionally add security-reviewer if plan touches auth, user input, file I/O, or external APIs:
 
 ```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list].", run_in_background: true)
-Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity.", run_in_background: true)
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].", run_in_background: true)
+Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity. Also verify convention compliance: check that implementation follows project conventions from [PLAN_CONVENTIONS].", run_in_background: true)
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
 # Optional — include when plan involves security-sensitive code:
 Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified files: [list]. Check OWASP Top 10 categories, secrets in code, path traversal, and cryptographic issues.", run_in_background: true)

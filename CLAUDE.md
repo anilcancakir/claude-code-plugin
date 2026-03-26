@@ -91,8 +91,8 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 | Command | Description |
 |---------|-------------|
-| `/ac:plan` | Classify → research → interview → pre-generation analysis → plan (with QA scenarios) |
-| `/ac:execute` | Execute approved plan (parallel background agents or sequential, Opus escalation for flagged steps) → Complexity-driven Verification Wave (Simple: build+test only, Standard: code-reviewer + linter, Complex: full 3-agent wave) |
+| `/ac:plan` | Classify → research (with CLAUDE.md + my-coding context extraction) → interview → pre-generation analysis → plan (with QA scenarios, required Conventions section) |
+| `/ac:execute` | Execute approved plan with project context propagation (PLAN_CONVENTIONS + RUNTIME_CONTEXT → worker prompts, convention-aware verification) → Complexity-driven Verification Wave + Codebase State tier escalation |
 | `/ac:init-claude-md` | Generate/enhance project CLAUDE.md |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
@@ -169,6 +169,12 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
+- **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:
+  - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section (required)
+  - **Execute-time** (`execute.md`): Reads CLAUDE.md fresh → extracts build/test/lint commands + gotchas as `RUNTIME_CONTEXT` (deduplicated against `PLAN_CONVENTIONS`) → injected into worker prompts (compact for quick tier, full for mid/senior)
+  - **Verification-time** (`execute.md` Phase 5): `PLAN_CONVENTIONS` + `RUNTIME_CONTEXT` passed to code-reviewer and verifier agent prompts for convention compliance checking
+  - **Ideation-time** (`ideate.md`): Reads CLAUDE.md → extracts as `PROJECT_CONVENTIONS` → injected into challenger and feasibility agent prompts
+  - **Codebase State**: Plan classifies target area (Disciplined/Transitional/Legacy/Chaotic) → execute uses for tier escalation (Chaotic/Legacy auto-escalates quick→mid)
 
 ## Key Files
 
@@ -201,3 +207,4 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - Commands delegate to `ac-skill-creator` for file generation — they don't write files directly
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
 - ac-designer has a soft dependency on ac plugin for `ac:explore` (codebase scanning) and `ac:gemini-vision` (file-based visual analysis — video, multi-image). Pasted images are analyzed inline by Claude or via direct `mcp__gemini-cli__ask-gemini` call — graceful fallback when absent
+- CC subagents receive `userContext: {}` (no CLAUDE.md) by design — ac's context propagation pipeline compensates by extracting and injecting project rules at plan/execute/verify time via prompt variables (PROJECT_CONTEXT, PLAN_CONVENTIONS, RUNTIME_CONTEXT)

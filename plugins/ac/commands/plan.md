@@ -87,8 +87,28 @@ Research depth is profile-conditional (see Pipeline Profiles table for agent cou
    - Set investigation confidence: if High → skip Phase 2 entirely, proceed to Phase 3 with pre-vetted findings. If Medium/Low → run Phase 2 but scope agents to validate/extend investigation findings rather than fresh exploration
    - Announce: "Investigation findings detected (confidence: [level]) — using root cause analysis as pre-research."
    - Add `### Investigation Context` to the final plan output showing: source investigation, root cause, confidence, key evidence
-1. Check if `my-coding` skill exists (look for `~/.claude/skills/my-coding/SKILL.md`). If found, load it for coding standards alignment. If not found, skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules."
-2. Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch.
+1. **Extract my-coding skill conventions** (if available): Check if `my-coding` skill exists at `~/.claude/skills/my-coding/SKILL.md`. [If found:] Read the file and extract coding conventions:
+   - Naming conventions (variable, function, class, module naming patterns)
+   - Type hints and strictness rules
+   - Trailing commas and formatting rules
+   - TDD/testing rules (test-first, assertions, coverage)
+   - Coding patterns (error handling, validation, abstraction preferences)
+   - Any project-specific coding style directives
+   Store extracted conventions as **MY_CODING_RULES** variable. [If not found:] Skip and note to user: "Consider running `/ac:setup-coding` to create personalized coding rules." Set **MY_CODING_RULES** = empty string.
+2. **Project context extraction**: Read project-level configuration files AND merge my-coding conventions to capture full coding standards for downstream agents. Store combined output as **PROJECT_CONTEXT** (max ~3000 tokens — prioritize: conventions > gotchas > build commands > architecture):
+   1. Read `./CLAUDE.md` if present — extract: Stack, Rules, Gotchas, Architecture notes, Build/test/lint commands
+   2. Read `./CLAUDE.local.md` if present — extract same categories (private project rules override CLAUDE.md on conflict)
+   3. Read `.claude/rules/` directory if present — list files via Glob, read each rule file, extract path-scoped conventions
+   4. Merge extracted content into **PROJECT_CONTEXT** — deduplicate overlapping rules, keep the most specific version
+   5. [If **MY_CODING_RULES** is non-empty (from step 1):] Append **MY_CODING_RULES** to **PROJECT_CONTEXT** under a "## Personal Coding Conventions" subsection. Merge all extracted content into **PROJECT_CONTEXT** output.
+   6. [If **PROJECT_CONTEXT** is non-empty:] Append to every ac:explore agent prompt as a STYLE CONSTRAINTS block:
+      ```
+      STYLE CONSTRAINTS (from project CLAUDE.md and my-coding skill):
+      [PROJECT_CONTEXT content]
+      Research WITH these constraints in mind — flag any codebase patterns that conflict with them.
+      ```
+   7. Carry **PROJECT_CONTEXT** forward to Phase 3 — inject into the plan's `### Conventions` section alongside explore agent findings
+3. **Launch research agents**: Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch. [If **PROJECT_CONTEXT** is non-empty:] Inject the **STYLE CONSTRAINTS** block (from step 2) into each agent's prompt so they align with project conventions.
 
 ### Agent Routing by Intent
 
@@ -139,7 +159,7 @@ Each agent should:
 
 1. Once agents return, read all key files identified by agents to build deep understanding
 2. Summarize findings: patterns found, files to modify, dependencies, external best practices discovered
-3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings. Four subsections: **Key Files** (file:line references with one-line descriptions), **Patterns Found** (architecture, naming, code organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming patterns, file organization, coding style). Format must be structured — maximum ~30 lines total.
+3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings. Four subsections: **Key Files** (file:line references with one-line descriptions), **Patterns Found** (architecture, naming, code organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming patterns, file organization, coding style). Format must be structured — maximum ~30 lines total. Merge **PROJECT_CONTEXT** (extracted from CLAUDE.md, CLAUDE.local.md, .claude/rules/, and my-coding skill in Phase 2) into the **Conventions** subsection alongside explore agent findings. **PROJECT_CONTEXT** rules take priority over agent-discovered patterns where they conflict.
 4. **Codebase state assessment**: After reading key files from agent findings, classify the target area's codebase state and code quality:
    - **Disciplined**: Consistent patterns, good test coverage, strong typing → follow existing patterns exactly
    - **Transitional**: Mixed old/new patterns coexisting → follow the NEW pattern direction, don't copy legacy
@@ -199,8 +219,8 @@ Plans must follow this exact structure for ac:execute compatibility:
 - `### Waves` — wave-based parallel decomposition: Wave 1 (no deps, all parallel), Wave 2 (after Wave 1), etc. Each step annotated with tier `[quick/mid/senior]`
 - `### Must NOT Have` — explicit exclusions
 - `### Risks` — optional risk section
-- `### Research Summary` — structured findings from Phase 2 (Key Files, Patterns Found, Dependencies)
-- `### Conventions` — naming patterns, file organization, coding style detected from explore agents
+- `### Research Summary` — structured findings from Phase 2 (Key Files, Patterns Found, Dependencies, `**Codebase State**: [Disciplined|Transitional|Legacy|Chaotic]`)
+- `### Conventions` — (required) naming patterns, file organization, coding style — merged from **PROJECT_CONTEXT** (CLAUDE.md, CLAUDE.local.md, .claude/rules/, my-coding skill) and explore agent findings; PROJECT_CONTEXT rules take priority
 - `### Task Context` — (task mode only) source task file path, type, size, priority, extracted User Story + Acceptance Criteria
 
 ### Symbol Verification (if LSP tool available)
