@@ -1,6 +1,6 @@
 ---
 name: github-cli
-description: GitHub CLI (gh) usage patterns for Claude Code — issues, PRs, releases, actions, secrets, labels, and gh api. Teaches effective gh workflows including JSON output, jq filtering, GraphQL, scripting, and CI/CD integration. Use when the user works with GitHub issues, pull requests, releases, GitHub Actions, repository management, or any gh command. Triggers on any mention of GitHub CLI, gh, pull request creation, issue management, or GitHub API calls.
+description: "GitHub CLI (gh) patterns — issues, PRs, releases, actions, gh api (REST + GraphQL), jq filtering, scripting. Use for GitHub operations."
 ---
 
 # GitHub CLI Skill

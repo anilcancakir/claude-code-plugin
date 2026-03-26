@@ -1,5 +1,5 @@
 ---
-description: "Smart commit orchestrator — runs preflight checks (lint, tests), detects project commit conventions, and creates well-structured atomic commits. Delegates to git-master skill when available. Use for: 'commit changes', 'commit what I have', 'stage and commit', 'smart commit'."
+description: "Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available."
 argument-hint: Optional commit scope or message hint
 allowed-tools: AskUserQuestion, Bash, Grep, Read, Glob
 effort: low

@@ -1,19 +1,6 @@
 ---
 name: challenger
-description: |
-  Devil's advocate — finds gaps, risks, and blind spots in a proposed idea. Use when stress-testing a feature proposal, architecture decision, or implementation approach before committing to it.
-  <example>
-  Context: User proposes adding a caching layer to speed up API responses
-  user: "I'm thinking we add Redis caching in front of the database for all read endpoints."
-  assistant: "I'll launch a challenger agent to stress-test the caching proposal — identifying gaps, risks, and alternative approaches."
-  <commentary>Triggered by a concrete implementation proposal that needs adversarial review before commitment. Challenger finds what the proposer missed.</commentary>
-  </example>
-  <example>
-  Context: User wants to validate a migration strategy before executing
-  user: "We should split the monolith by extracting the billing module into a separate service first."
-  assistant: "Let me launch a challenger agent to probe that extraction strategy for hidden dependencies and risks."
-  <commentary>Triggered by an architectural decision with high stakes. Challenger identifies coupling, data integrity risks, and surfaces alternatives the user hasn't considered.</commentary>
-  </example>
+description: Devil's advocate for proposals and architecture decisions. Use when stress-testing an idea before committing.
 model: opus
 effort: high
 tools: Glob, Grep, LS, Read

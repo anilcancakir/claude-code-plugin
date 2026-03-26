@@ -1,19 +1,6 @@
 ---
 name: code-simplifier
-description: |
-  Post-implementation clarity pass — suggests simplifications that preserve behavior and align with project conventions. Read-only advisory, opt-in only. Use after implementation when code feels over-engineered or when a fresh eye could spot unnecessary complexity.
-  <example>
-  Context: Implementation complete, code works but feels complex
-  user: "Simplify the code in these files"
-  assistant: "Launching ac:code-simplifier to find simplification opportunities while preserving behavior."
-  <commentary>Triggered by explicit simplification request. Suggests changes without modifying files — advisory only.</commentary>
-  </example>
-  <example>
-  Context: Post-implementation review reveals over-engineering
-  user: [internally via Agent tool after code changes]
-  assistant: "Delegating to ac:code-simplifier for a clarity pass on modified files."
-  <commentary>Triggered when implementation is correct but unnecessarily complex. Returns concrete simplification suggestions.</commentary>
-  </example>
+description: Suggests simplifications preserving behavior. Use after implementation when code feels over-engineered. Read-only advisory.
 model: sonnet
 effort: medium
 tools: Glob, Grep, LS, Read

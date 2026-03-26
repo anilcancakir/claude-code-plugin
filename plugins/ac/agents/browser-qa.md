@@ -1,19 +1,6 @@
 ---
 name: browser-qa
-description: |
-  Browser test executor — receives pre-built test cases and backend info from /ac:browser-qa, executes browser interactions via MCP tools, captures evidence, returns structured verdicts. Never generates test cases — only executes what it receives.
-  <example>
-  Context: The /ac:browser-qa command has generated test cases and needs them executed
-  user: "Execute these 5 test cases against http://localhost:3000 using Playwright MCP backend. Test cases: [JSON array with steps, expected outcomes, backend selection]"
-  assistant: "Executing test cases against Playwright MCP. Navigating to target, running each case with snapshot-driven interactions, capturing evidence on failures."
-  <commentary>Spawned by /ac:browser-qa command with pre-built test cases and backend selection. Agent executes the loop: navigate → snapshot → interact → re-snapshot → check errors → evidence → verdict.</commentary>
-  </example>
-  <example>
-  Context: Plan verification needs acceptance criteria checked in browser
-  user: "Verify these acceptance criteria against the running app at http://localhost:8080. Criteria: [list with action sequences and expected states]. Backend: Chrome DevTools MCP."
-  assistant: "Running plan verification. Navigating fresh per criterion, executing action sequences, capturing verdicts with evidence."
-  <commentary>Spawned for PLAN_VERIFY workflow. Agent receives extracted acceptance criteria as test cases, executes each with clean state, returns per-criterion PASS/FAIL/BLOCKED verdicts.</commentary>
-  </example>
+description: "Browser test executor — runs pre-built test cases via MCP tools, captures evidence, returns structured verdicts. Spawned by /ac:browser-qa."
 model: sonnet
 effort: medium
 tools: Read, Glob, LS, BashOutput, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_run_code, mcp__playwright__browser_wait_for, mcp__playwright__browser_select_option, mcp__chrome-devtools__navigate_page, mcp__chrome-devtools__take_snapshot, mcp__chrome-devtools__click, mcp__chrome-devtools__fill, mcp__chrome-devtools__type_text, mcp__chrome-devtools__take_screenshot, mcp__chrome-devtools__list_console_messages, mcp__chrome-devtools__evaluate_script, mcp__chrome__chrome_navigate, mcp__chrome__chrome_get_interactive_elements, mcp__chrome__chrome_click_element, mcp__chrome__chrome_fill_or_select, mcp__chrome__chrome_screenshot, mcp__playwriter__execute, mcp__playwriter__reset

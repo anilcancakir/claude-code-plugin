@@ -1,5 +1,5 @@
 ---
-description: Generate or enhance project-level CLAUDE.md — auto-discovers codebase, interviews developer, produces optimized context file. Re-run after project changes to update commands, architecture, and extensions while preserving custom sections.
+description: "Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections."
 argument-hint: update or enhance (optional)
 ---
 

@@ -1,19 +1,6 @@
 ---
 name: code-reviewer
-description: |
-  2-stage code review — verifies implementation against plan acceptance criteria, then checks code quality (SOLID, anti-patterns, logic correctness). Use after implementation to confirm spec compliance before marking work complete.
-  <example>
-  Context: ac:execute finishes implementing a feature, wants quality gate before completion
-  user: [internally via Agent tool after code changes]
-  assistant: "Launching ac:code-reviewer to verify spec compliance and code quality on modified files."
-  <commentary>Triggered after implementation. Code-reviewer checks acceptance criteria first, then quality.</commentary>
-  </example>
-  <example>
-  Context: ac:execute Phase 5 verification, code changes span 4+ files
-  user: [internally via Agent tool]
-  assistant: "Delegating to ac:code-reviewer for 2-stage spec + quality review."
-  <commentary>Triggered by ac:execute when complexity is Standard or Complex. Returns CRITICAL/IMPORTANT/MINOR findings.</commentary>
-  </example>
+description: "2-stage code reviewer — spec compliance against plan criteria, then code quality. Use after implementation before marking complete."
 model: sonnet
 effort: medium
 tools: Glob, Grep, LS, Read

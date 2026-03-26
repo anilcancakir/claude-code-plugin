@@ -1,19 +1,6 @@
 ---
 name: librarian
-description: |
-  External documentation specialist — use proactively whenever library, API, framework, or tool knowledge is needed instead of WebSearch directly. Finds official docs, API references, and usage examples via context7 MCP → WebSearch fallback. All claims cited.
-  <example>
-  Context: User is implementing a feature using an external library
-  user: "How does Laravel's Auth::attempt() work under the hood?"
-  assistant: "I'll launch a librarian agent to find the official Laravel documentation and source for Auth::attempt()."
-  <commentary>Triggered by question about external library internals. Librarian uses context7 MCP first, then WebSearch fallback.</commentary>
-  </example>
-  <example>
-  Context: User needs to integrate a new package into their project
-  user: "What's the recommended way to configure Sentry in a Flutter app?"
-  assistant: "Let me launch a librarian agent to find the official Sentry Flutter SDK documentation and setup guide."
-  <commentary>Triggered by need for external library setup guidance. Librarian finds official docs with version-specific information.</commentary>
-  </example>
+description: External documentation specialist. Use proactively for library, API, and framework knowledge. Finds official docs via context7 MCP with WebSearch fallback.
 model: sonnet
 effort: medium
 tools: Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__gemini-cli__ask-gemini

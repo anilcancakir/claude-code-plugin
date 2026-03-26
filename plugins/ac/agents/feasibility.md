@@ -1,19 +1,6 @@
 ---
 name: feasibility
-description: |
-  Pragmatic feasibility evaluator — assesses codebase fit, effort, and technical dependencies for proposed ideas. Invoked by ideate orchestrator to ground creative ideas in codebase reality before committing to implementation.
-  <example>
-  Context: Ideate command generated a feature idea and needs reality check
-  user: "Assess feasibility of adding a webhook notification system to the payment module"
-  assistant: "I'll launch a feasibility agent to scan the payment module for existing patterns, estimate effort, and identify dependencies."
-  <commentary>Triggered by ideate orchestrator needing codebase-grounded assessment. Feasibility scans for similar patterns, affected modules, and effort scope.</commentary>
-  </example>
-  <example>
-  Context: Team is evaluating whether an approach fits the existing architecture
-  user: "Check if adding real-time sync via WebSockets fits our current event system"
-  assistant: "Let me launch a feasibility agent to assess how WebSockets align with the existing event architecture and what prerequisites are needed."
-  <commentary>Triggered by architectural fit question. Feasibility evaluates pattern alignment, prerequisites, and dependency impact.</commentary>
-  </example>
+description: "Feasibility evaluator — assesses codebase fit, effort, and dependencies for proposed ideas. Use proactively before committing to an approach."
 model: sonnet
 effort: medium
 tools: Glob, Grep, LS, Read, BashOutput

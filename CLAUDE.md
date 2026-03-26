@@ -94,52 +94,52 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 |---------|-------------|
 | `/ac:plan` | Classify → research (with CLAUDE.md + my-coding context extraction) → interview → pre-generation analysis → plan (with QA scenarios, required Conventions section) |
 | `/ac:execute` | Execute approved plan with project context propagation (PLAN_CONVENTIONS + RUNTIME_CONTEXT → worker prompts, convention-aware verification) → Complexity-driven Verification Wave + Codebase State tier escalation |
-| `/ac:init-claude-md` | Generate/enhance project CLAUDE.md |
+| `/ac:init-claude-md` | Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
-| `/ac:setup-language` | Analyze writing → interview → generate `my-language` skill |
-| `/ac:setup-global-claude-md` | Detect plugin skills + global MCP → interview → generate `~/.claude/CLAUDE.md` |
-| `/ac:commit` | Smart commit — preflight checks (skippable via `--skip-preflight`), convention detection, atomic commits |
-| `/ac:ideate` | Unified idea refinement — Socratic interview with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports `--bulk` for meeting notes triage and `--loop` for autonomous plan→execute |
-| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Detects MCP browser backends, delegates execution to browser-qa agent, produces structured PASS/FAIL/BLOCKED reports with evidence persistence to `.ac/qa/`. Supports `--no-evidence` to skip artifact saving |
+| `/ac:setup-language` | Interactive writing style analyzer — scans existing content, interviews developer, generates my-language skill |
+| `/ac:setup-global-claude-md` | Generate global CLAUDE.md — interviews developer, detects skills, produces orchestration config |
+| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available |
+| `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports `--bulk` and `--loop` |
+| `/ac:browser-qa` | Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Auto-detects MCP backends |
 
 ## Agents (ac plugin)
 
 | Agent | `subagent_type` | NOT | Model | Effort | Color | Role | Tools |
 |-------|-----------------|-----|-------|--------|-------|------|-------|
-| `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | low | green | Codebase search — files, patterns, relationships | Glob, Grep, Read, LS, BashOutput |
-| `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | medium | blue | External docs — context7 MCP → WebSearch fallback | Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, context7, gemini-cli |
-| `linter` | `"ac:linter"` | `"linter"` | Haiku | low | yellow | LSP code intelligence verifier — `<new-diagnostics>` + navigation checks, VERDICT output | LSP, Glob, Read |
-| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | medium | yellow | Plan quality auditor with dual-mode: pre-generation (Metis — hidden intentions, AI-slop risks before plan writing) and post-generation (gaps, tier sanity after plan writing) | Read, Grep, Glob, LS |
-| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | high | green | Adversarial plan reviewer — Momus-class, bias toward REJECT (OKAY/REJECT) | Read, Grep, Glob, gemini-cli |
-| `verifier` | `"ac:verifier"` | `"verifier"` | Sonnet | medium | green | Post-execution plan compliance audit (APPROVE/REJECT) | Read, Grep, Glob, LS |
-| `challenger` | `"ac:challenger"` | `"challenger"` | Opus | high | red | Devil's advocate — gaps, risks, blind spots, alternative approaches | Glob, Grep, LS, Read |
-| `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | medium | cyan | Pragmatic evaluator — codebase fit, effort, prerequisites, dependencies | Glob, Grep, LS, Read, BashOutput |
-| `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | medium | yellow | 2-stage review — spec compliance against plan acceptance criteria, then code quality (CRITICAL/IMPORTANT/MINOR, APPROVED/BLOCKED verdict) | Glob, Grep, LS, Read |
-| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | medium | cyan | File-based multimodal analysis — video, multi-image, large visual contexts via Gemini. Pasted images analyzed inline | Read, Glob, LS, gemini-cli |
-| `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | red | Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively for hairy bugs | Glob, Grep, Read, LS, BashOutput |
-| `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | red | OWASP-aware security scanner — severity×exploitability scoring (SECURE/VULNERABLE verdict). Optional in Complex verification | Glob, Grep, LS, Read |
-| `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Post-implementation clarity pass — simplifications preserving behavior, CLAUDE.md-aware. Opt-in only, advisory | Glob, Grep, LS, Read |
-| `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser QA execution — navigates pages, interacts with elements, captures screenshots + HTML snapshots + error logs, returns structured test results with evidence flags for command-side persistence. Spawned by /ac:browser-qa command | Read, Glob, LS, BashOutput, + MCP browser tools (4 backends) |
+| `explore` | `"ac:explore"` | `"Explore"`, `"explore"` | Haiku | low | green | Codebase search specialist — files, patterns, relationships. Returns file:line references | Glob, Grep, Read, LS, BashOutput |
+| `librarian` | `"ac:librarian"` | `"librarian"` | Sonnet | medium | blue | External docs specialist — official docs via context7 MCP with WebSearch fallback | Glob, Grep, LS, Read, BashOutput, WebSearch, WebFetch, context7, gemini-cli |
+| `linter` | `"ac:linter"` | `"linter"` | Haiku | low | yellow | LSP code intelligence verifier — diagnostics and symbol structure checks | LSP, Glob, Read |
+| `plan-analysis` | `"ac:plan-analysis"` | `"plan-analysis"` | Sonnet | medium | yellow | Plan quality auditor — pre-generation directives and post-generation gap/slop detection | Read, Grep, Glob, LS |
+| `plan-review` | `"ac:plan-review"` | `"plan-review"` | Opus | high | green | Adversarial plan reviewer — bias toward REJECT (OKAY/REJECT verdict) | Read, Grep, Glob, gemini-cli |
+| `verifier` | `"ac:verifier"` | `"verifier"` | Sonnet | medium | green | Post-execution plan compliance auditor (APPROVE/REJECT) | Read, Grep, Glob, LS |
+| `challenger` | `"ac:challenger"` | `"challenger"` | Opus | high | red | Devil's advocate for proposals and architecture decisions | Glob, Grep, LS, Read |
+| `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | medium | cyan | Feasibility evaluator — codebase fit, effort, dependencies | Glob, Grep, LS, Read, BashOutput |
+| `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | medium | yellow | 2-stage code reviewer — spec compliance, then quality (APPROVED/BLOCKED) | Glob, Grep, LS, Read |
+| `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | medium | cyan | File-path visual analysis via Gemini — video, multi-image, large directories | Read, Glob, LS, gemini-cli |
+| `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | red | Root cause investigator — hypothesis-driven debugging for multi-file bugs | Glob, Grep, Read, LS, BashOutput |
+| `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | red | OWASP-aware security scanner with severity×exploitability scoring | Glob, Grep, LS, Read |
+| `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Simplification advisor — preserves behavior, read-only, opt-in | Glob, Grep, LS, Read |
+| `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser test executor — runs pre-built test cases via MCP, returns structured verdicts. Spawned by /ac:browser-qa | Read, Glob, LS, BashOutput, + MCP browser tools (4 backends) |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
 ## Skills & MCP
 
 ### ac plugin
-- `ac-skill-creator` (Opus) — Create skills, agents, commands, rules for Claude Code. Has `references/` with templates
-- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns, MCP backend routing, token efficiency, self-healing, evidence persistence to `.ac/qa/`. Has references/ for MCP backend tool schemas and report format. Requires at least one MCP browser backend (see Browser MCP Backends below)
+- `ac-skill-creator` (Opus) — Create or improve Claude Code extension components. Has `references/` with templates
+- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns and MCP backend routing. Has references/ for tool schemas and report format. Requires at least one MCP browser backend (see Browser MCP Backends below)
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
 - MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
 
 ### github-cli plugin
-- `github-cli` (Sonnet) — Comprehensive gh CLI reference: issues, PRs, releases, actions, secrets, labels, search, gh api (REST + GraphQL), jq patterns, scripting
+- `github-cli` (Sonnet) — gh patterns for issues, PRs, releases, actions, gh api (REST + GraphQL), scripting
 
 ### git-master plugin
-- `git-master` (Sonnet) — Git expert: atomic commits with style detection, interactive rebase/squash, history archaeology (blame, bisect, pickaxe)
+- `git-master` (Sonnet) — Atomic commits with style detection, rebase/squash, history archaeology
 
 ### frontend-design plugin
-- `frontend-design` (Sonnet) — Production-grade UI for web and mobile: design systems (spacing/type/shadow/color), visual hierarchy, distinctive aesthetics, mobile patterns. Has `references/` for hierarchy, color system, and mobile components
+- `frontend-design` (Sonnet) — Production-grade UI for web and mobile with design systems and visual hierarchy. Has `references/`
 
 ### ac-designer plugin
 - `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, drift detection, design token extraction, Stitch Web Bridge, stitch-skills reference. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema, DESIGN.md v2 format, drift detection, and embedded Google stitch-skills

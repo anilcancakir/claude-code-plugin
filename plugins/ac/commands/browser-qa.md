@@ -1,5 +1,5 @@
 ---
-description: "Browser QA testing — detect MCP backends, run ad-hoc tests, reproduce bugs, verify plan acceptance criteria, re-check fixes. Supports Playwright MCP, Chrome DevTools MCP, mcp-chrome, and playwriter. Use when: testing UI changes, reproducing bugs, verifying plan completion."
+description: "Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Auto-detects MCP backends."
 argument-hint: "URL, bug doc path, plan path, or --recheck (e.g., 'localhost:3000/register', '--bug repro.md', '--plan .ac/plans/auth.md', '--recheck')"
 ---
 

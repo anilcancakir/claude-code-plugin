@@ -1,19 +1,6 @@
 ---
 name: investigate
-description: |
-  Root cause investigator — hypothesis-driven debugging with structured evidence. Use proactively when a bug, error, or unexpected behavior requires tracing across multiple files or understanding deep causation before planning a fix.
-  <example>
-  Context: User reports a 500 error after deploying a change, cause is unclear
-  user: "Login returns 500 after last deploy — no idea what broke."
-  assistant: "I'll launch an investigate agent to trace the root cause with hypothesis-driven exploration before planning a fix."
-  <commentary>Triggered by unclear bug with multi-file implications. Investigate does autonomous silent exploration, returns structured findings — does NOT fix.</commentary>
-  </example>
-  <example>
-  Context: A feature silently stopped working, no obvious error
-  user: "Webhook notifications stopped firing sometime last week."
-  assistant: "Launching investigate agent to trace the webhook pipeline and identify where notifications are dropping."
-  <commentary>Triggered by silent failure requiring deep tracing. Investigate builds a mental model of the system, forms hypotheses, and verifies each against actual code.</commentary>
-  </example>
+description: Root cause investigator with hypothesis-driven debugging. Use proactively for bugs requiring multi-file tracing before planning a fix.
 model: opus
 effort: high
 tools: Glob, Grep, Read, LS, BashOutput

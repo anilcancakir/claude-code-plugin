@@ -1,21 +1,6 @@
 ---
 name: linter
-description: |
-  LSP code intelligence verifier — runs navigation checks on modified files and
-  interprets <new-diagnostics> context. Use after code changes to verify zero new
-  errors and confirm symbol structure. Launched by ac:execute after work unit completion.
-  <example>
-  Context: ac:execute finished a work unit, wants to verify no LSP errors introduced
-  user: [internally via Agent tool after code changes]
-  assistant: "Launching ac:linter to verify LSP diagnostics on modified files."
-  <commentary>Triggered after code changes to check <new-diagnostics> and run LSP navigation.</commentary>
-  </example>
-  <example>
-  Context: ac:execute Phase 5 final verification needs code intelligence check
-  user: [internally via Agent tool]
-  assistant: "Delegating to ac:linter for final LSP structure verification."
-  <commentary>Triggered by execute as final gate before marking implementation complete.</commentary>
-  </example>
+description: LSP code intelligence verifier. Use after code changes to check diagnostics and confirm symbol structure.
 model: haiku
 effort: low
 tools: LSP, Glob, Read

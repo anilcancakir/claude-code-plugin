@@ -1,6 +1,6 @@
 ---
 name: browser-qa
-description: "Browser QA testing patterns — MCP backend routing, workflow orchestration, token efficiency, report format. Loaded by /ac:browser-qa command."
+description: "Browser QA workflow patterns and MCP backend routing. Loaded by /ac:browser-qa command."
 user-invocable: false
 ---
 

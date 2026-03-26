@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: "Frontend design skill — production-grade UI implementation for web and mobile with design system thinking, visual hierarchy, and distinctive aesthetics. Use for ALL frontend work: landing pages, dashboards, auth screens, components, mobile apps, Flutter UI, React components, Vue pages. Covers design process, spacing systems, type scales, color palettes (HSL), shadows, motion, layout, mobile patterns, and finishing touches. Triggers on: 'build a page', 'create a component', 'design a screen', 'landing page', 'dashboard', 'card design', 'button design', 'form design', 'color palette', 'typography', 'layout', 'mobile UI', 'app design', 'beautiful interface', 'premium feel', 'hero section', 'navigation', 'dark mode'."
+description: "Production-grade UI for web and mobile — design systems, visual hierarchy, distinctive aesthetics. Use for frontend implementation and design decisions."
 ---
 
 # Frontend Design

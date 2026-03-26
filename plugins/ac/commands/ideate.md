@@ -1,5 +1,5 @@
 ---
-description: "Unified idea refinement — interactive Socratic discussion with mathematical ambiguity scoring, adversarial challenge, and Jira-ready task generation. Supports --bulk for meeting notes triage and --loop for autonomous plan-execute."
+description: "Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports --bulk and --loop."
 argument-hint: Raw idea, feature concept, or customer request
 effort: high
 ---

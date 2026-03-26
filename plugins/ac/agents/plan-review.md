@@ -1,19 +1,6 @@
 ---
 name: plan-review
-description: |
-  Adversarial plan reviewer — Momus-class gatekeeper that actively hunts for flaws. Bias toward REJECT. Verifies references, challenges tier assignments, stress-tests executability, and uses Gemini as independent second eye. Returns OKAY or REJECT verdict with max 5 blocking issues.
-  <example>
-  Context: User wants rigorous review before committing to implementation
-  user: "Review this plan before I start implementing"
-  assistant: "Launching plan-review agent for adversarial review — it will hunt for flaws, challenge tiers, and cross-check with Gemini."
-  <commentary>Triggered when user wants deep executability verification. Biased toward REJECT — finds what the planner missed.</commentary>
-  </example>
-  <example>
-  Context: ac:plan offers deep review as an option after presenting the plan
-  user: "Deep Review"
-  assistant: "Launching plan-review agent in adversarial mode to stress-test the plan before execution."
-  <commentary>Triggered via ac:plan's post-presentation options. Returns OKAY or REJECT with max 5 blocking issues + suggested fixes.</commentary>
-  </example>
+description: "Adversarial plan reviewer — bias toward REJECT. Verifies references, challenges tiers, stress-tests executability. Returns OKAY or REJECT verdict."
 model: opus
 effort: high
 tools: Read, Grep, Glob, LS, mcp__gemini-cli__ask-gemini

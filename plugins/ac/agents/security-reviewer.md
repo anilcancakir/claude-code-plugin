@@ -1,19 +1,6 @@
 ---
 name: security-reviewer
-description: |
-  OWASP-aware security reviewer — scans implementation for vulnerabilities with severity×exploitability scoring. Use after implementation when the project handles user input, authentication, file I/O, or external APIs. Optional in verification wave for Complex plans.
-  <example>
-  Context: ac:execute Complex verification, code touches auth or user input
-  user: [internally via Agent tool after code changes]
-  assistant: "Launching ac:security-reviewer to scan for OWASP Top 10 vulnerabilities in modified files."
-  <commentary>Triggered by Complex verification wave when security-sensitive code is involved. Returns findings with severity×exploitability priority.</commentary>
-  </example>
-  <example>
-  Context: User wants a security audit before shipping
-  user: "Check these files for security issues"
-  assistant: "Launching ac:security-reviewer to scan for injection, auth bypass, secrets, and dependency vulnerabilities."
-  <commentary>Triggered by explicit security review request. Scans OWASP Top 10 categories with structured output.</commentary>
-  </example>
+description: "OWASP-aware security scanner with severity×exploitability scoring. Use after implementation on security-sensitive code."
 model: sonnet
 effort: medium
 tools: Glob, Grep, LS, Read

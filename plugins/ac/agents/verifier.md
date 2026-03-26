@@ -1,19 +1,6 @@
 ---
 name: verifier
-description: |
-  Post-execution plan compliance auditor — verifies every "Done when" criterion against actual file state, searches for forbidden patterns from "Must NOT Have", and checks scope fidelity. Returns APPROVE or REJECT verdict.
-  <example>
-  Context: ac:execute completed all steps, needs plan compliance verification
-  user: [internally invoked by ac:execute Phase 5 after build/test/lint pass]
-  assistant: "Launching verifier agent to audit plan compliance — checking done-when criteria, forbidden patterns, and scope fidelity."
-  <commentary>Triggered automatically by ac:execute as mandatory final gate. APPROVE means safe to commit.</commentary>
-  </example>
-  <example>
-  Context: User wants to re-verify after fixing issues from a previous REJECT
-  user: "Re-verify the plan"
-  assistant: "Launching verifier agent to re-check plan compliance after fixes."
-  <commentary>Triggered manually after user fixes REJECT issues. Same verification pass.</commentary>
-  </example>
+description: "Post-execution plan compliance auditor. Verifies done-when criteria, forbidden patterns, and scope fidelity. Returns APPROVE or REJECT."
 model: sonnet
 effort: medium
 tools: Read, Grep, Glob, LS

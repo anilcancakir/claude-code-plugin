@@ -1,5 +1,5 @@
 ---
-description: Interactive writing style analyzer — scans existing articles, documentation, and written content, interviews the developer, generates a personalized my-language skill
+description: "Interactive writing style analyzer — scans existing content, interviews developer, generates my-language skill"
 argument-hint: Path to writing samples or documentation directory (optional)
 ---
 

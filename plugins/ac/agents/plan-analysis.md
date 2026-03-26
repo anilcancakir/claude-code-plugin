@@ -1,25 +1,6 @@
 ---
 name: plan-analysis
-description: |
-  Dual-mode plan quality auditor — pre-generation mode (raw request + research → directives that shape the plan before it's written) and post-generation mode (plan file → gap classification, AI-slop detection, tier sanity, acceptance criteria audit). Use pre-generation mode before ac:plan writes the plan; use post-generation mode after plan generation, before presenting to user or handing to executor.
-  <example>
-  Context: ac:plan has gathered research and is about to generate a plan
-  user: [invoked automatically by ac:plan before plan generation]
-  assistant: "Launching plan-analysis agent in pre-generation mode to detect hidden intentions, unstated requirements, and AI-slop risks before writing the plan."
-  <commentary>Pre-generation mode runs BEFORE plan generation. Produces MUST DO / MUST NOT DO / QUESTIONS directives that constrain what the plan should contain.</commentary>
-  </example>
-  <example>
-  Context: ac:plan has generated a plan and needs quality review before presenting
-  user: [invoked automatically by ac:plan's analysis gate]
-  assistant: "Launching plan-analysis agent in post-generation mode to audit the plan for gaps, scope risks, and AI-slop patterns."
-  <commentary>Post-generation mode runs AFTER plan generation as mandatory quality gate. Catches issues before user sees the plan.</commentary>
-  </example>
-  <example>
-  Context: User wants to verify a plan's quality before committing resources
-  user: "Check this plan for gaps and scope creep"
-  assistant: "I'll launch the plan-analysis agent to audit for missing requirements, AI-slop, and vague acceptance criteria."
-  <commentary>Triggered by explicit quality review request. Returns structured gap classification with actionable fixes.</commentary>
-  </example>
+description: Plan quality auditor with pre-generation (directives before writing) and post-generation (gap classification, AI-slop detection) modes. Use before and after plan generation.
 model: sonnet
 effort: medium
 tools: Read, Grep, Glob, LS

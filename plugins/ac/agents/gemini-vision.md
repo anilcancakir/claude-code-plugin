@@ -1,19 +1,6 @@
 ---
 name: gemini-vision
-description: |
-  ONLY for file-path-based visual analysis — video recordings, multi-image comparison, large image directories. NEVER spawn for pasted images — pasted image data is base64 in parent memory, it CANNOT be forwarded to subagents or MCP tools. Pasted images must be analyzed inline by Claude in parent context.
-  <example>
-  Context: User provides a video recording (file path) of their app for UX review
-  user: "Here's a screen recording of the onboarding flow — what UX issues do you see?"
-  assistant: "I'll launch a gemini-vision agent to analyze the video recording and identify UX issues in the onboarding flow."
-  <commentary>Triggered by a file path to a video recording. Gemini-vision handles video analysis that Claude cannot perform inline.</commentary>
-  </example>
-  <example>
-  Context: User provides multiple mockup files (file paths) for A/B comparison
-  user: "Compare these two mockup files and tell me which layout has stronger visual hierarchy."
-  assistant: "I'll launch a gemini-vision agent to analyze both mockup files and compare their visual hierarchy."
-  <commentary>Triggered by file paths to multiple images for comparison. Gemini-vision processes the files and returns a structured comparison.</commentary>
-  </example>
+description: "File-path-based visual analysis via Gemini — video, multi-image, large directories. NEVER for pasted images (analyze those inline)."
 model: sonnet
 effort: medium
 tools: Read, Glob, LS, mcp__gemini-cli__ask-gemini

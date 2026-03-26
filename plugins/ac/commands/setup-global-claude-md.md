@@ -1,5 +1,5 @@
 ---
-description: Interactive global CLAUDE.md generator — interviews developer, detects skills, produces orchestration config. Re-run after plugin updates to sync workflow routing and skill references while preserving your personal preferences.
+description: "Generate global CLAUDE.md — interviews developer, detects skills, produces orchestration config."
 argument-hint: update, enhance, or overwrite (optional)
 allowed-tools: AskUserQuestion, Read, Write, Bash
 ---
