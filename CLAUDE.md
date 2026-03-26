@@ -57,6 +57,17 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI, baton schema, DESIGN.md v2, drift detection, stitch-skills
 │   │   ├── README.md
 │   │   └── LICENSE
+│   ├── browser-qa/               # Browser QA testing plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── commands/
+│   │   │   └── test.md           # /browser-qa:test — 4-mode QA orchestrator
+│   │   ├── skills/
+│   │   │   └── browser-qa/
+│   │   │       ├── SKILL.md      # Workflow patterns, token strategies, self-healing
+│   │   │       └── references/   # MCP backends (512 lines), report format
+│   │   ├── README.md
+│   │   └── LICENSE
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
@@ -141,6 +152,12 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, drift detection, design token extraction, Stitch Web Bridge, stitch-skills reference. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema, DESIGN.md v2 format, drift detection, and embedded Google stitch-skills
 - Commands: `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`, `/ac-designer:audit`
 - Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup) (official, 8 tools at `stitch.googleapis.com/mcp`)
+
+### browser-qa plugin
+- `browser-qa` (Sonnet, not user-invocable) — Browser QA workflow patterns, token efficiency strategies, self-healing, MCP backend routing. Loaded by `/browser-qa:test` command
+- Command: `/browser-qa:test` — 4 modes: ad-hoc URL testing, bug reproduction from docs (`--bug`), plan acceptance criteria verification (`--plan`), post-fix re-check (`--recheck`). Auto-detects MCP browser backend (Playwright MCP, Chrome DevTools, mcp-chrome, playwriter). Structured PASS/FAIL/BLOCKED reports with evidence
+- Has `references/` for MCP backend tool schemas (4 backends, 512 lines) and QA report format (verdict definitions, severity scale, defect taxonomy)
+- Requires user-installed MCP browser backend (recommended: `claude mcp add playwright -- npx @playwright/mcp@latest`)
 
 ### dart-lsp plugin
 - LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.

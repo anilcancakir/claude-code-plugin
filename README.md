@@ -14,6 +14,7 @@ A curated marketplace of Claude Code plugins for structured development workflow
 | **[dart-lsp](plugins/dart-lsp/)** | Dart/Flutter language server — go-to-definition, find references, hover, and real-time diagnostics for Claude Code. | development |
 | **[json-lsp](plugins/json-lsp/)** | JSON language server — schema validation, hover, and diagnostics for .json and .jsonc files. | development |
 | **[yaml-lsp](plugins/yaml-lsp/)** | YAML language server — schema validation, hover, and diagnostics for .yaml and .yml files. | development |
+| **[browser-qa](plugins/browser-qa/)** | Browser QA testing — control real browsers via MCP, reproduce bugs, verify plan acceptance criteria, and run ad-hoc tests with structured reports. | testing |
 | **[markdown-lsp](plugins/markdown-lsp/)** | Markdown language server (marksman) — link navigation, find references, and document symbols for .md files. | development |
 
 ## Installation
@@ -75,6 +76,14 @@ After updating, sync your global config with new plugin features:
 │   │   │   └── plugin.json
 │   │   ├── skills/              # Design orchestration + references
 │   │   │   └── references/      # Design mappings, prompt rules, Refactoring UI
+│   │   ├── README.md
+│   │   └── LICENSE
+│   ├── browser-qa/              # Browser QA testing plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── commands/            # /browser-qa:test command
+│   │   ├── skills/              # Workflow patterns + references
+│   │   │   └── references/      # MCP backends, report format
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── dart-lsp/                # Dart/Flutter LSP plugin
