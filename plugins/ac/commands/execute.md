@@ -149,6 +149,8 @@ Mixed-tier waves are fine — CC supports different `model:` values per Agent() 
 [If RUNTIME_CONTEXT is non-empty:]
 **Project Context**: [Inject RUNTIME_CONTEXT — supplementary project rules from CLAUDE.md not already in PLAN_CONVENTIONS]
 
+Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions — they may contain rules not captured above.
+
 Follow instructions literally. Do not abbreviate output, do not skip steps. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
 
 [If ACCUMULATED_WISDOM is non-empty:]
@@ -177,6 +179,7 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 
 ## Must Do
 
+- Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions — they may contain rules not captured in this prompt
 - Read existing files before modifying — match patterns and conventions
 - Implement ONLY your assigned step. Do not touch files outside your scope
 - Run verification after changes (build, tests, lint)
