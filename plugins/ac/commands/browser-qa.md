@@ -64,7 +64,7 @@ Global flags (combinable with any mode):
 
 Probe in priority order: Playwright MCP first, then Chrome DevTools, mcp-chrome, playwriter.
 
-5. If **NO backends detected** — display setup guide and stop:
+5. If NO backends detected — display setup guide and stop:
 
 ```
 No browser MCP backends detected. Install at least one:
@@ -94,7 +94,7 @@ After installing, restart Claude Code and re-run this command.
 
 ### AD_HOC mode
 
-1. If TARGET is a URL → store as `TEST_URL`
+1. If TARGET is a URL → store as `TEST_URL`.
 2. If TARGET is natural language → extract intent, infer URL from context:
    - Check for running dev servers: `lsof -i -P | grep LISTEN` to find local ports
    - If a port is found (e.g., 3000, 5173, 8080), suggest: "Found dev server on port {port}. Test at localhost:{port}?"
@@ -107,38 +107,27 @@ After installing, restart Claude Code and re-run this command.
 
 ### BUG_REPRO mode
 
-1. Read the bug document at TARGET path
-2. Parse structure — look for numbered bugs, each with:
-   - Bug title/ID
-   - Preconditions (if any)
-   - Reproduction steps (numbered)
-   - Expected result
-   - Actual result (if documented)
-3. Store as `BUG_LIST`:
-   ```
-   [{id: "BUG-001", title: "...", preconditions: "...", steps: ["Step 1", "Step 2", ...], expected: "...", url: "..."}]
-   ```
-4. If bug doc lacks structured format → treat entire doc as natural language instructions, extract bugs by paragraph/section breaks
-5. Route: Playwright MCP (default — clean state per bug) or playwriter (if steps require state persistence across bugs)
+1. Read the bug document at TARGET path.
+2. Parse numbered bugs — extract: title/ID, preconditions, reproduction steps, expected result, actual result.
+3. Store as `BUG_LIST`: `[{id: "BUG-001", title, preconditions, steps[], expected, url}]`
+4. No structured format → treat entire doc as natural language, extract by paragraph/section.
+5. Route: Playwright MCP (default) or playwriter (if steps require state persistence across bugs).
 
 ### PLAN_VERIFY mode
 
-1. Read plan file at TARGET path
-2. Extract `Done when:` / acceptance criteria blocks
-3. For each criterion, generate a test case:
-   ```
-   {id: "AC-001", criterion_text: "...", action_sequence: ["navigate to...", "click...", "verify..."], expected_outcome: "...", url_hint: "<inferred from criterion>"}
-   ```
-4. If plan has no `Done when:` blocks → fall back to extracting any bulleted checklist items as test cases
-5. Route: Playwright MCP (default — clean state, assertion tools with `--caps=testing`)
+1. Read plan file at TARGET path.
+2. Extract `Done when:` / acceptance criteria blocks.
+3. For each criterion: `{id: "AC-001", criterion_text, action_sequence[], expected_outcome, url_hint}`
+4. No `Done when:` blocks → extract bulleted checklist items as test cases.
+5. Route: Playwright MCP (default — clean state, `--caps=testing`).
 
 ### RECHECK mode
 
-1. Read `.browser-qa/last-report.json`
+1. Read `.browser-qa/last-report.json`.
 2. If file not found → inform user: "No previous QA session found. Run a test first." Stop.
-3. Filter to `FAIL` and `BLOCKED` items only
-4. Rebuild test case list from failed items — preserve original IDs
-5. Route: same backend as original run (read from `last-report.json` → `backend` field)
+3. Filter to `FAIL` and `BLOCKED` items only.
+4. Rebuild test case list from failed items — preserve original IDs.
+5. Route: same backend as original run (read from `last-report.json` → `backend` field).
 6. Announce: "Re-checking {N} failed items from {timestamp}"
 
 ---
@@ -226,12 +215,12 @@ Generate the report in this format:
 [If ALL PASS: confirm all criteria met, suggest next steps]
 ```
 
-**Severity classification**:
+Severity classification:
 - **High**: Functionality broken, user cannot complete flow, data loss, security issue
 - **Medium**: Feature works but with unexpected behavior, UI glitch affecting usability
 - **Low**: Cosmetic issue, minor inconsistency, non-blocking annoyance
 
-**RECHECK diff section** (RECHECK mode only — append after Recommendations):
+RECHECK diff section (RECHECK mode only — append after Recommendations):
 
 ```markdown
 ## Re-check Diff (vs previous run)
@@ -251,50 +240,25 @@ Generate the report in this format:
 
 ### 5a. RECHECK State (always)
 
-1. Create `.browser-qa/` directory if it doesn't exist
-
-2. Save human-readable report to `.browser-qa/last-report.md` — the full report from Phase 4
-
+1. Create `.browser-qa/` directory if it doesn't exist.
+2. Save human-readable report to `.browser-qa/last-report.md` — the full report from Phase 4.
 3. Save structured data to `.browser-qa/last-report.json`:
    ```json
    {
-     "timestamp": "2026-03-26T14:30:00Z",
-     "mode": "AD_HOC",
-     "backend": "playwright",
-     "target": "http://localhost:3000/register",
-     "verdict": "FAILURES_FOUND",
+     "timestamp": "ISO8601", "mode": "AD_HOC", "backend": "playwright",
+     "target": "http://localhost:3000/register", "verdict": "FAILURES_FOUND",
      "stats": {"pass": 3, "fail": 1, "blocked": 0, "total": 4},
      "results": [
-       {
-         "id": "TC-001",
-         "description": "Register form accepts valid input",
-         "verdict": "PASS",
-         "evidence": {}
-       },
-       {
-         "id": "TC-002",
-         "description": "Register form validates email format",
-         "verdict": "FAIL",
-         "evidence": {
-           "screenshot": ".ac/qa/register-validation/20260326-143000-register.png",
-           "console": ["TypeError: Cannot read property 'validate' of undefined"],
-           "expected": "Validation error shown for invalid email",
-           "actual": "Form submitted without validation, JS error in console"
-         }
-       }
+       {"id": "TC-001", "verdict": "PASS", "evidence": {}},
+       {"id": "TC-002", "verdict": "FAIL", "evidence": {
+         "screenshot": ".ac/qa/register-validation/20260326-143000-register.png",
+         "console": ["TypeError: Cannot read property 'validate' of undefined"],
+         "expected": "...", "actual": "..."
+       }}
      ]
    }
    ```
-
-4. For RECHECK mode: include a `diff` field in JSON showing which items changed:
-   ```json
-   {
-     "diff": [
-       {"id": "TC-002", "previous": "FAIL", "current": "PASS", "change": "fixed"},
-       {"id": "TC-005", "previous": "FAIL", "current": "FAIL", "change": "still_failing"}
-     ]
-   }
-   ```
+4. RECHECK mode: include a `diff` field — `[{"id": "TC-002", "previous": "FAIL", "current": "PASS", "change": "fixed"}, ...]`
 
 ### 5b. Evidence Archive (default ON, skip with `--no-evidence`)
 
@@ -316,35 +280,22 @@ Persist key test artifacts to `.ac/qa/` for audit trail, debugging, and historic
 - `{pagePath}` — short slug of the page URL path (e.g., `/app/settings/profile` → `settings-profile`). Max 40 chars, truncate with trailing hash if longer
 
 **What to save** (per test case with FAIL or key milestone steps):
-1. **Screenshots** (`.png`) — captured by agent on FAIL verdicts. Save the raw screenshot data returned by MCP screenshot tools
-2. **HTML snapshots** (`.html`) — page HTML at the moment of failure or key checkpoint. Capture via `document.documentElement.outerHTML` through `browser_run_code` / `evaluate_script` / `execute`
-3. **Error logs** (`.json`) — console errors + network failures for that test case:
-   ```json
-   {
-     "test_id": "TC-002",
-     "timestamp": "2026-03-26T14:30:12Z",
-     "console_errors": ["TypeError: Cannot read property 'validate' of undefined"],
-     "network_errors": ["POST /api/register → 422 Unprocessable Entity"],
-     "page_url": "http://localhost:3000/register"
-   }
-   ```
-4. **Report copy** (`report.md`) — overwrite with the latest Phase 4 report for this test name
+1. **Screenshots** (`.png`) — agent captures on FAIL. Save raw screenshot data from MCP tools.
+2. **HTML snapshots** (`.html`) — page HTML at failure/checkpoint via `document.documentElement.outerHTML`.
+3. **Error logs** (`.json`) — `{test_id, timestamp, console_errors[], network_errors[], page_url}`.
+4. **Report copy** (`report.md`) — overwrite with the latest Phase 4 report for this test name.
 
-**Actions**:
-1. Derive `{testName}` from mode + target
-2. Create `.ac/qa/{testName}/` directory
-3. For each FAIL test case: save screenshot `.png`, HTML snapshot `.html`, and error log `.json` using the naming convention above
-4. For PASS test cases at key milestones (first page load, final state): optionally save HTML snapshot only (lightweight audit trail)
-5. Copy the Phase 4 report to `.ac/qa/{testName}/report.md`
-6. Update evidence paths in `.browser-qa/last-report.json` to point to `.ac/qa/` files
+1. Derive `{testName}` from mode + target. Create `.ac/qa/{testName}/` directory.
+2. For each FAIL: save `.png`, `.html`, `.json` using the naming convention above.
+3. For PASS at key milestones: optionally save `.html` only (lightweight audit trail).
+4. Copy Phase 4 report to `.ac/qa/{testName}/report.md`.
+5. Update evidence paths in `.browser-qa/last-report.json` to `.ac/qa/` files.
 
 ### 5c. Present Report
 
-Present the full markdown report to the user — output the Phase 4 report directly.
-
-If evidence was saved, append a summary:
+Output the Phase 4 report directly. If evidence was saved, append:
 ```
-📁 Evidence saved to .ac/qa/{testName}/ — {N} screenshots, {M} HTML snapshots, {K} error logs
+Evidence saved to .ac/qa/{testName}/ — {N} screenshots, {M} HTML snapshots, {K} error logs
 ```
 
 ---

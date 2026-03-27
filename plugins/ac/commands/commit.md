@@ -9,7 +9,7 @@ effort: low
 
 You are a commit orchestrator. You ensure code quality before committing, detect project conventions, and create well-structured atomic commits.
 
-**CRITICAL**: Never commit without passing preflight checks. Default: auto commit+push. Use --interactive for manual control.
+Never commit without passing preflight checks. Default: auto commit+push. Use --interactive for manual control.
 
 Request context: $ARGUMENTS
 
@@ -83,20 +83,14 @@ git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "NO_UPSTREAM"
 
 **Goal**: Ensure code quality before committing. Green lint + green tests = safe to commit.
 
-**Important**: If `--skip-preflight` flag was detected in Phase 1 → skip this entire phase (preflight already passed in caller's verification wave). Jump directly to Phase 3.
-
-**Actions**:
+If `--skip-preflight` detected in Phase 1 → skip this entire phase. Jump to Phase 3.
 
 ### LSP Diagnostic Pre-check
 
-Before running lint/test commands, check for auto-injected diagnostics:
-
-If `<new-diagnostics>` context contains entries for files to be staged:
-- `ERROR` severity → do NOT stage. Report to user:
-  > "LSP found errors — fix before committing: `[file:line — message]`"
+Check `<new-diagnostics>` context for files to be staged:
+- `ERROR` severity → do NOT stage. Report: "LSP found errors — fix before committing: `[file:line — message]`"
 - `WARNING` severity → note in commit report, do not block
-
-If `<new-diagnostics>` is empty or LSP not available → proceed to tooling detection below.
+- Empty or LSP unavailable → proceed to tooling detection below.
 
 1. Detect project tooling — check for:
 
@@ -134,29 +128,26 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
 
 **Goal**: Determine how to structure commits — delegate to git-master or use built-in logic.
 
-**Actions**:
+1. Check if `git-master:git-master` skill is available (git-master plugin installed in session).
 
-1. **Check if `git-master:git-master` skill is available** — it is available if the git-master plugin is installed in this Claude Code session (check if the skill metadata is loaded in context).
-
-2. **If git-master is available** → delegate the entire commit workflow:
-   - Pass the git context (status, diff, branch, convention findings) to the git-master skill
-   - git-master handles: style detection from history, atomic unit planning, dependency ordering, commit execution
-   - Incorporate any `PROJECT_CONVENTION` found in Phase 1 as an override — tell git-master to follow project rules over detected history style
+2. If git-master available → delegate entire commit workflow:
+   - Pass git context (status, diff, branch, convention findings) to the git-master skill
+   - git-master handles: style detection, atomic unit planning, dependency ordering, commit execution
+   - Pass any `PROJECT_CONVENTION` from Phase 1 as override
    - Skip to Phase 4 with git-master's commit plan output
 
-3. **If git-master is NOT available** → use built-in logic:
+3. If git-master NOT available → use built-in logic:
 
    a. **Style detection** — analyze last 20 commit messages:
-      - If `PROJECT_CONVENTION` exists → use it (highest priority)
-      - Else count patterns: `feat:`, `fix:`, etc. (semantic) vs plain vs short
-      - Pick majority style
+      - `PROJECT_CONVENTION` exists → use it (highest priority)
+      - Otherwise count patterns: `feat:`, `fix:`, etc. (semantic) vs plain vs short; pick majority style.
 
    b. **Staging decision**:
-      - If changes are already staged → commit only staged changes
-      - If nothing staged → stage all changes (`git add -A`)
-      - If mix of staged and unstaged:
-        - **Auto mode (default)**: stage all changes (`git add -A`, excluding .env/credentials/secrets)
-        - **Interactive mode**: ask user via AskUserQuestion: "You have both staged and unstaged changes. What to commit?" Options: Staged only / All changes / Let me stage manually
+      - Changes already staged → commit only staged changes.
+      - Nothing staged → stage all changes (`git add -A`).
+      - Mix of staged and unstaged:
+        - **Auto mode**: stage all changes (`git add -A`, excluding .env/credentials/secrets).
+        - **Interactive mode**: ask via AskUserQuestion: "You have both staged and unstaged changes. What to commit?" Options: Staged only / All changes / Let me stage manually
 
    c. **Commit grouping** (when >3 files changed):
       - Group by directory/module first, then by concern
@@ -164,7 +155,7 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
       - Different directories = different commits (unless tightly coupled)
       - Aim for logical, reviewable units — not one-file-per-commit
 
-   d. **Draft commit messages** matching detected style
+   d. Draft commit messages matching detected style.
 
 ---
 
@@ -172,27 +163,17 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
 
 **Goal**: Present the commit plan and get user approval before executing.
 
-**Actions**:
+**Skip if auto mode (default).**
 
-1. Present the commit plan clearly:
+1. Present the commit plan:
 
 ```
 ## Commit Plan
-
-**Style**: [detected style or project convention]
-**Branch**: [current branch]
-
-### Commit 1: [draft message]
-- path/to/file1.ts
-- path/to/file1.test.ts
-
-### Commit 2: [draft message]
-- path/to/other-file.ts
-
+**Style**: [detected] **Branch**: [current]
+### Commit 1: [message]
+- path/to/file1.ts, path/to/file1.test.ts
 **Preflight**: ✅ Lint passed, ✅ Tests passed
 ```
-
-**Skip if auto mode (default).**
 
 2. Use AskUserQuestion for approval:
    - question: "Review the commit plan above. Ready to commit?"
@@ -207,11 +188,7 @@ If `<new-diagnostics>` is empty or LSP not available → proceed to tooling dete
      - label: "Cancel"
        description: "Don't commit"
 
-3. Handle responses:
-   - **Commit** → proceed to Phase 5
-   - **Adjust messages** → ask user for preferred messages, update plan, re-present
-   - **Adjust grouping** → ask user how to regroup, update plan, re-present
-   - **Cancel** → stop
+3. Commit → Phase 5. Adjust messages → revise and re-present. Adjust grouping → regroup and re-present. Cancel → stop.
 
 ---
 
@@ -229,28 +206,19 @@ git diff --staged --stat
 git commit -m "<message>"
 ```
 
-2. After all commits, verify:
-
-```bash
-git status
-git log --oneline -<N>  # Show the N new commits
-```
+2. After all commits, verify: `git status` and `git log --oneline -<N>`.
 
 3. Present results:
 
 ```
 ## Commits Created
-
 | # | Message | Files |
 |---|---------|-------|
 | 1 | feat: add user validation | 3 |
-| 2 | test: add validation tests | 2 |
-
-**Branch**: feature/auth
-**Status**: Clean working tree
+**Branch**: feature/auth  **Status**: Clean working tree
 ```
 
-**Auto mode (default)**: Push automatically after commit — `git push` (or `git push -u origin <branch>` if no upstream). Skip to step 5.
+**Auto mode (default)**: Push automatically — `git push` (or `git push -u origin <branch>` if no upstream). Skip to step 5.
 
 **Interactive mode**: If upstream exists, use AskUserQuestion:
    - question: "Commits created. Push to remote?"

@@ -6,7 +6,7 @@ allowed-tools: AskUserQuestion, Read, Write, Bash
 
 # Setup Global CLAUDE.md
 
-You are orchestrating an interactive session to build the developer's global `~/.claude/CLAUDE.md` file. This file is injected as user-rules in every Claude Code conversation. The goal: turn Claude Code into a structured orchestrator by shaping how it uses its native tools (TodoWrite, Agent, EnterPlanMode, AskUserQuestion).
+You are orchestrating an interactive session to build the developer's global `~/.claude/CLAUDE.md` file. This file is injected as user-rules in every Claude Code conversation. Goal: turn Claude Code into a structured orchestrator by shaping how it uses native tools (TodoWrite, Agent, EnterPlanMode, AskUserQuestion).
 
 ## Core Principles
 
@@ -16,8 +16,6 @@ You are orchestrating an interactive session to build the developer's global `~/
 - **Observe before asking**: Detect existing skills and environment first, then interview
 
 ## Section Ownership
-
-Sections in the generated CLAUDE.md have two ownership types:
 
 | Type | Sections | Update Behavior |
 |------|----------|----------------|
@@ -30,70 +28,44 @@ On **update** mode: skip interview, regenerate plugin-managed sections from curr
 
 ## Phase 1: Discovery
 
-**Goal**: Detect existing configuration and environment
-
-**Actions**:
+Detect existing configuration and environment.
 
 1. Check if `~/.claude/CLAUDE.md` exists and determine mode:
-   - If exists and `$ARGUMENTS` is "update": read it, announce "Update mode — syncing plugin sections, preserving your preferences". Extract user-managed sections (Identity, Tech Stack, Rules) verbatim for reuse in Phase 3. Skip Phase 2 interview entirely.
-   - If exists and `$ARGUMENTS` is "enhance" or no argument: read it, announce "Found existing CLAUDE.md — I'll enhance it". Pre-fill interview answers from existing content.
-   - If exists and `$ARGUMENTS` is "overwrite": announce "Will create fresh CLAUDE.md (existing backed up)"
-   - If not exists: announce "Creating new CLAUDE.md"
-2. Detect all global user skills via Bash:
+   - If exists and `$ARGUMENTS` is "update" → read it, announce "Update mode — syncing plugin sections, preserving your preferences". Extract user-managed sections (Identity, Tech Stack, Rules) verbatim for reuse in Phase 3. Skip Phase 2 interview entirely.
+   - If exists and `$ARGUMENTS` is "enhance" or no argument → read it, announce "Found existing CLAUDE.md — I'll enhance it". Pre-fill interview answers from existing content.
+   - If exists and `$ARGUMENTS` is "overwrite" → announce "Will create fresh CLAUDE.md (existing backed up)"
+   - If not exists → announce "Creating new CLAUDE.md"
+2. Detect global user skills:
 
    ```bash
    find ~/.claude/skills -name "SKILL.md" -maxdepth 3 2>/dev/null
    ```
 
-   - For each found: read frontmatter (name, description) and first paragraph
-   - Special handling: `my-coding` → note North Star section, `my-language` → note purpose
-3. Detect active marketplace plugin skills from your current session's available skills list:
-   - Plugin skills use namespaced format: `<plugin>:<skill>` (e.g., `github-cli:github-cli`, `frontend-design:frontend-design`, `git-master:git-master`)
-   - A plugin skill is active if it appears in your available skills list for this session
-   - **Always exclude** `ac-skill-creator` and `ac:ac-skill-creator` — user-invoked on demand, must never appear in the generated Skills table
-   - For each active plugin skill: note its namespaced name and description for Phase 3
-4. Detect global MCP servers via Bash:
+   - For each found: read frontmatter (name, description) and first paragraph. `my-coding` → note North Star section; `my-language` → note purpose.
+3. Detect active marketplace plugin skills from session's available skills list. Plugin skills use namespaced format: `<plugin>:<skill>`. Always exclude `ac-skill-creator` and `ac:ac-skill-creator`.
+4. Detect global MCP servers:
 
    ```bash
    cat ~/.claude/.mcp.json 2>/dev/null
    cat ~/.claude.json 2>/dev/null
    ```
 
-   - `~/.claude/.mcp.json` — MCP servers installed by plugins or by the user (e.g., context7, gemini-cli)
-   - `~/.claude.json` — user-global MCP servers: parse the full `mcpServers` object, not just a grep preview
-   - For each server: extract name, infer capability from command/args (one-line description), check enabled status
-   - Cross-reference with your session's available MCP tools (look for `mcp__<server>__*` tool patterns to confirm active servers)
-5. Cross-reference all detected items (user skills, plugin skills, MCP servers) with your current session capabilities — check if you can call specific MCP tools (e.g., try resolving a context7 library), verify agent names appear in your available agent list. This confirms detection accuracy against runtime state.
-6. Detect environment via Bash:
-   - OS and architecture: `uname -ms`
-   - Shell: `echo $SHELL`
-   - Common tools: check for `docker`, `git`, `node`, `php`, `dart`, `python3`, `go`
-7. Detect global Claude Code settings via Bash:
+   Parse full `mcpServers` object from `~/.claude.json` (not just a grep preview). For each server: extract name, infer capability from command/args, check enabled status. Cross-reference with session's `mcp__<server>__*` tool patterns.
+5. Cross-reference all detected items with session capabilities — check if specific MCP tools resolve, verify agent names in available agent list.
+6. Detect environment: `uname -ms` (OS/arch), `echo $SHELL`, check for `docker`, `git`, `node`, `php`, `dart`, `python3`, `go`.
+7. Detect global settings: `cat ~/.claude/settings.json 2>/dev/null` — parse `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`, `env.CLAUDE_CODE_ENABLE_TASKS`, `teammateMode`. Mark missing keys for optional safe merge.
 
-   ```bash
-   cat ~/.claude/settings.json 2>/dev/null
-   ```
-
-   - Parse `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`
-   - Parse `env.CLAUDE_CODE_ENABLE_TASKS`
-   - Parse `teammateMode`
-   - Mark missing keys for optional safe merge during install
-
-**Error Recovery**: If environment detection fails for any tool (command not found, permission denied), skip that tool entry and continue detection. Do not fail the entire discovery phase due to a single tool detection failure. Note skipped items for the interview phase.
+   If any detection fails → skip that entry and continue. Do not fail the phase. Note skipped items for the interview.
 
 ---
 
 ## Phase 2: Interview
 
-**Goal**: Gather developer identity, preferences, and workflow rules
+Gather developer identity, preferences, and workflow rules. **Skip entirely in update mode** — user-managed sections preserved, proceed to Phase 3.
 
-**Skip entirely in update mode** — user-managed sections are preserved from existing file. Proceed to Phase 3.
+1. Present discovery findings: "Here's what I detected about your environment and existing skills."
 
-**Actions**:
-
-1. Present Discovery findings first: "Here's what I detected about your environment and existing skills."
-
-2. Use AskUserQuestion to gather preferences. Skip questions already answered by detected skills or pre-filled from existing CLAUDE.md (enhance mode). Ask up to 4 questions per AskUserQuestion call.
+2. Use AskUserQuestion to gather preferences. Skip questions already answered by detected skills or pre-filled from existing CLAUDE.md. Ask up to 4 questions per call.
 
 **First AskUserQuestion call** — core preferences (Q1-Q3):
 
@@ -149,7 +121,7 @@ Question 6 (only if additional skills, plugin skills, or MCP servers detected be
 - multiSelect: true
 - options: Build dynamically from detected items:
   - User skills beyond my-coding/my-language from `~/.claude/skills/` detection
-  - Active marketplace plugin skills from session (namespaced `<plugin>:<skill>` format) — **never list ac-skill-creator**
+  - Active marketplace plugin skills from session (namespaced `<plugin>:<skill>` format) — never list ac-skill-creator
   - MCP servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers
 - Each option: label is the name, description is one-line capability
 
@@ -165,25 +137,25 @@ Question 7:
 
 ## Phase 3: Composition
 
-**Goal**: Map interview answers + detected data to CLAUDE.md sections
+**Goal**: Map interview answers + detected data to CLAUDE.md sections.
 
 **Actions**:
 
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/global-claude-md-template.md`
 
-2. **Update mode** (skip interview path): ALWAYS reconstruct the file from scratch by combining:
-   - **User-managed sections** (copy verbatim from existing file): Identity block (everything before `## Stack`), Tech Stack section, Rules section
-   - **Plugin-managed sections** (ALWAYS regenerate from template — never reuse existing text): Build the Workflow section fresh from the template's Sisyphus Brain Workflow block. Build Skills table from detected skills. Build MCP table from detected servers. Build LSP section from template. Do NOT compare existing sections against template — always overwrite plugin-managed sections with template content populated with discovery data.
-   - **Diff report**: After composing the new file, compare it line-by-line against the existing file. Report every changed line to the user in Phase 5. If no lines differ, announce "No changes needed" and skip install.
+2. **Update mode**: Reconstruct the file by combining:
+   - **User-managed sections** (verbatim from existing file): Identity block (everything before `## Stack`), Tech Stack section, Rules section
+   - **Plugin-managed sections** (always regenerate from template — never reuse existing text): Workflow section from template's Sisyphus Brain Workflow block. Skills table from detected skills. MCP table from detected servers. LSP section from template. Do NOT compare existing sections against template — always overwrite plugin-managed sections with template content populated with discovery data.
+   - **Diff report**: Compare composed file line-by-line against existing file. Report every changed line in Phase 5. If no lines differ → announce "No changes needed" and skip install.
 
-3. **Enhance/New mode** (interview path): Build all sections from interview answers + detected data:
+3. **Enhance/New mode**: Build all sections from interview answers + detected data:
    - **Identity block**: Communication style from Q1
    - **Tech Stack**: From Q2 or detected from `my-coding` skill
-   - **Workflow — Sisyphus Brain**: Copy the entire Workflow section from the template verbatim. This includes: Intent Gate (6-type intent classification table + verbalization format), Delegation Check (3-step DELEGATE bias), Investigation Protocol (surgical vs hairy), Codebase State Awareness, Research delegation, Execution, and Verification. The template's Workflow section is the complete orchestration core — do not modify, abbreviate, or rewrite it.
+   - **Workflow — Sisyphus Brain**: Copy the entire Workflow section from the template verbatim. This includes: Intent Gate (6-type intent classification table + verbalization format), Delegation Check (3-step DELEGATE bias), Investigation Protocol (surgical vs hairy), Codebase State Awareness, Research delegation, Execution, and Verification. Do not modify, abbreviate, or rewrite it.
    - **Workflow — Compression guard**: Two subsections must survive context compression verbatim: (1) Intent Gate table with 6 intent types — primary routing mechanism, and (2) Research delegation with "proactively" keyword — primary agent-triggering enforcement. NEVER soften, summarize, or abbreviate these.
-   - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>` from session). User skills: trigger description from frontmatter. Plugin skills: trigger description from frontmatter. **Never include `ac-skill-creator` or `ac:ac-skill-creator`** — omit entirely regardless of detection. If no skills detected, omit this section
-   - **MCP section**: If user approved MCP references in Q6, include all active MCP servers from both `~/.claude/.mcp.json` and `~/.claude.json` mcpServers. For each: `| server-name | one-line capability |`. Only enabled servers. Infer capability from command/args if no description available. Omit if none detected or user declined
-   - **LSP (Code Intelligence)** — if the user has LSP plugins installed or plans to use them. Include this concise block (5 lines max) in the generated CLAUDE.md:
+   - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>`). Never include `ac-skill-creator` or `ac:ac-skill-creator`. Omit section if no skills detected.
+   - **MCP section**: If user approved MCP references in Q6, include all active MCP servers from both `~/.claude/.mcp.json` and `~/.claude.json` mcpServers. For each: `| server-name | one-line capability |`. Only enabled servers. Omit if none detected or user declined.
+   - **LSP (Code Intelligence)** — if LSP plugins are installed or planned. Include this block (5 lines max):
 
      ```
      ## LSP (Code Intelligence)
@@ -195,7 +167,6 @@ Question 7:
      - Graceful: if LSP returns error → fall back to Grep silently
      ```
 
-     Include in both "enhance existing CLAUDE.md" and "create new CLAUDE.md" modes.
    - **Rules section**: Compile from Q3 non-negotiables + Q4 architecture + Q7 extras. Deduplicate against `my-coding` skill rules
 
 4. Count total lines — if over 120, trim Rules section (defer detailed rules to `my-coding` skill reference)
@@ -204,38 +175,20 @@ Question 7:
 
 ## Phase 4: Generation
 
-**Goal**: Produce the final CLAUDE.md content
-
-**Actions**:
-
-1. Generate the file following the template structure
-2. Ensure every workflow directive uses official Claude Code tool names:
-   - `TodoWrite` not "create a task list"
-   - `ac:explore` for codebase exploration, `ac:librarian` for external docs — not "launch an explorer"
-   - `skill: "ac:plan"` for planning workflows
-   - `skill: "ac:plan"` for Build/Refactor intents — delegates to plan→execute pipeline via Intent Gate routing
-   - `AskUserQuestion` not "ask the user"
-   - `run_in_background: true` for parallel execution
-3. Ensure no duplicate rules — each rule appears exactly once
-4. Verify conditional sections:
-   - Skills section present only if skills detected
-   - Stack section populated from interview or skill detection
-   - Rules section compiled from all sources, deduplicated
+1. Generate following the template structure.
+2. Every workflow directive uses official CC tool names: `TodoWrite`, `AskUserQuestion`, `ac:explore`/`ac:librarian`, `skill: "ac:plan"`, `run_in_background: true`.
+3. No duplicate rules — each rule appears exactly once.
+4. Verify conditional sections: Skills present only if detected, Stack populated from interview or skill detection, Rules deduplicated from all sources.
 
 ---
 
 ## Phase 5: Review & Install
 
-**Goal**: Present the generated file, iterate, and install
+Do not install without user approval.
 
-CRITICAL: Do not install without user approval.
-
-**Actions**:
-
-1. Present the generated CLAUDE.md content to the developer
-2. Highlight: line count, detected skills referenced, number of rules
-3. In update mode: show a concrete diff of what changed. For each changed line, show `- old line` / `+ new line`. If no lines changed, announce "No changes detected — your CLAUDE.md is already in sync with the current plugin template." and stop (do not present file or ask for approval).
-4. Use AskUserQuestion for review:
+1. Present the generated CLAUDE.md: line count, detected skills referenced, number of rules.
+2. In update mode → show concrete diff (`- old` / `+ new` per changed line). If no lines changed → announce "No changes detected — already in sync." and stop.
+3. Use AskUserQuestion for review:
    - question: "Review the CLAUDE.md above. What needs adjustment?"
    - header: "Review"
    - options:
@@ -243,19 +196,13 @@ CRITICAL: Do not install without user approval.
      - Adjust — "I want to change specific sections"
      - Restart — "Start the interview over from scratch"
    - If "Approve" → proceed to install
-   - If "Adjust" → ask what to change, update, re-present, and ask again
+   - If "Adjust" → ask what to change, update, re-present, ask again
    - If "Restart" → return to Phase 2
-5. Once approved:
-   - If existing `~/.claude/CLAUDE.md`, backup: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak`
-   - Write the new file: `~/.claude/CLAUDE.md`
-   - If `~/.claude/settings.json` exists or can be created, perform safe merge for background-agent reliability keys:
-     - Ensure `env` object exists
-     - Add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"` only if missing
-     - Add `env.CLAUDE_CODE_ENABLE_TASKS = "true"` only if missing
-     - Never overwrite existing values
-     - Never modify existing `teammateMode`
-6. Confirm installation:
-   - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md`"
-   - "It will be injected into every Claude Code conversation automatically."
-   - If settings keys were added: "Added missing background-agent settings keys in `~/.claude/settings.json` without changing existing teammateMode or user-defined values."
-   - If `my-coding` or `my-language` not detected: "Consider running `/ac:setup-coding` and `/ac:setup-language` to create personalized skills that this CLAUDE.md can reference."
+4. Once approved:
+   - If existing `~/.claude/CLAUDE.md` → backup: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak`
+   - Write: `~/.claude/CLAUDE.md`
+   - Safe merge into `~/.claude/settings.json`: ensure `env` object exists, add `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"` and `env.CLAUDE_CODE_ENABLE_TASKS = "true"` only if missing. Never overwrite existing values or modify `teammateMode`.
+5. Confirm:
+   - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md` — injected into every Claude Code conversation."
+   - If settings keys added: "Added missing background-agent keys in `~/.claude/settings.json` without changing existing values."
+   - If `my-coding` or `my-language` not detected: "Consider running `/ac:setup-coding` and `/ac:setup-language`."

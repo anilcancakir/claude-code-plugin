@@ -10,7 +10,7 @@
         {
             "name": "ac",
             "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with hypothesis discipline, delegates to specialized agents with reliability-first model routing.",
-            "version": "4.6.3",
+            "version": "4.6.4",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"

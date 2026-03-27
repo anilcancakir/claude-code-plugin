@@ -26,19 +26,18 @@ Initial request: $ARGUMENTS
 
 **Actions**:
 
-1. Parse $ARGUMENTS — extract idea/concept, target area, any stated constraints. Slugify the idea name as `$ideateName`. Derive task storage path: tasks are stored in .ac/tasks/ relative to the working directory. Create the directory if it doesn't exist
+1. Parse $ARGUMENTS — extract idea/concept, target area, any stated constraints. Slugify the idea name as `$ideateName`. Derive task storage path: tasks are stored in .ac/tasks/ relative to the working directory. Create the directory if it doesn't exist.
 2. Classify scope:
    - **Greenfield**: New project, empty or near-empty repo. Heuristic: if ac:explore returns < 5 relevant files, treat as greenfield
    - **Brownfield**: Existing project with codebase to respect
-3. If **brownfield**: Launch 2 ac:explore agents in parallel (single message, 2 Agent tool calls):
-CRITICAL: Both Agent calls MUST be in a SINGLE assistant message (multiple tool_use content blocks). DO NOT split across messages.
+3. If **brownfield**: Launch both agents in a single message block (parallel foreground — CC waits for all automatically):
    - ac:explore agent 1: "CONTEXT: Evaluating idea: [idea]. GOAL: Map existing codebase state in target area. DOWNSTREAM: Feasibility assessment. REQUEST: Find existing implementations, patterns, and architecture in the area this idea would affect. Return file:line references."
    - ac:explore agent 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns already in the codebase. How has the team solved related problems?"
 4. If **greenfield**: Skip codebase research. Note: "Greenfield project — no existing constraints to discover."
 5. Set initial ambiguity scores (0.0-1.0) for all dimensions based on how much $ARGUMENTS already specifies.
 6. Detect `--loop` flag in $ARGUMENTS. If present: announce "Loop mode active — all phases will be automatically planned and executed sequentially after task generation." Strip `--loop` from arguments before further processing.
-7. Detect `--bulk` flag in $ARGUMENTS. If present: announce "Bulk mode active — reading items for rapid triage." Strip `--bulk` from arguments. If remaining $ARGUMENTS is a file path: read the file contents. Otherwise treat $ARGUMENTS as inline bulk text. Set $bulkMode = true. Skip Phase 3 Interview and Phase 4 Challenge — proceed to Phase 2 Triage, then Phase 5 Generate.
-8. If both `--bulk` and `--loop` are present: bulk mode generates flat task files (no overview.md). Phase 6 Orchestrate will collect tasks by globbing files with `project: $ideateName` frontmatter instead of reading an overview checklist.
+7. Detect `--bulk` flag in $ARGUMENTS. If present: announce "Bulk mode active — reading items for rapid triage." Strip `--bulk` from arguments. If remaining $ARGUMENTS is a file path → read the file contents. Otherwise treat $ARGUMENTS as inline bulk text. Set $bulkMode = true. Skip Phase 3 Interview and Phase 4 Challenge — proceed to Phase 2 Triage, then Phase 5 Generate.
+8. If both `--bulk` and `--loop` present: bulk mode generates flat task files (no overview.md). Phase 6 Orchestrate will collect tasks by globbing files with `project: $ideateName` frontmatter instead of reading an overview checklist.
 
 ## Agent Routing
 
@@ -95,30 +94,30 @@ Brownfield: ambiguity = 1 - (goal × 0.35 + constraints × 0.25 + success × 0.2
 
 1. Set initial dimension scores (0.0-1.0) from Phase 1 assessment. Calculate initial ambiguity.
 2. Each round:
-   a. Identify dimension with LOWEST weighted contribution (score x weight)
-   b. If round >= 4 and CONTRARIAN mode not yet used: inject Contrarian challenge into question framing — "What if the opposite were true? Challenge the core assumption."
-   c. If round >= 6 and SIMPLIFIER mode not yet used: inject Simplifier framing — "What's the simplest version that's still valuable?"
-   d. If round >= 8 and ambiguity > 30% and ONTOLOGIST mode not yet used: inject Ontologist reframe — "What IS this, really? Describe in one sentence."
+   a. Identify dimension with LOWEST weighted contribution (score × weight).
+   b. Round ≥ 4 and CONTRARIAN mode not yet used → inject Contrarian challenge: "What if the opposite were true? Challenge the core assumption."
+   c. Round ≥ 6 and SIMPLIFIER mode not yet used → inject Simplifier framing: "What's the simplest version that's still valuable?"
+   d. Round ≥ 8, ambiguity > 30%, and ONTOLOGIST mode not yet used → inject Ontologist reframe: "What IS this, really? Describe in one sentence."
    e. Craft a single targeted question via AskUserQuestion (2-4 concrete options). Always include a final option: "Done — proceed to Challenge phase"
-   f. After answer, update ALL affected dimension scores
-   g. Recalculate ambiguity using the formula above
+   f. After answer, update ALL affected dimension scores.
+   g. Recalculate ambiguity using the formula above.
    h. Re-emit the full score table (MANDATORY every round — this is the state mechanism):
 
       | Dimension | Score | Weight | Weighted | Gap |
       |-----------|-------|--------|----------|-----|
-      | Goal      | [0.0-1.0] | [w] | [score x w] | [what's unclear, or "Clear"] |
-      | Constraints | [0.0-1.0] | [w] | [score x w] | [gap or "Clear"] |
-      | Success   | [0.0-1.0] | [w] | [score x w] | [gap or "Clear"] |
-      | Context   | [0.0-1.0] | [w] | [score x w] | [brownfield only] |
+      | Goal      | [0.0-1.0] | [w] | [score × w] | [what's unclear, or "Clear"] |
+      | Constraints | [0.0-1.0] | [w] | [score × w] | [gap or "Clear"] |
+      | Success   | [0.0-1.0] | [w] | [score × w] | [gap or "Clear"] |
+      | Context   | [0.0-1.0] | [w] | [score × w] | [brownfield only] |
       | **Ambiguity** | | | **[X]%** | |
 
       Then: "Next: targeting [dimension with lowest weighted score]"
 
-3. **Exit conditions** (any triggers exit):
-   - Ambiguity <= 20% (threshold met — proceed)
+3. Exit conditions (any triggers exit):
+   - Ambiguity ≤ 20% → proceed
    - 10 rounds completed (hard cap)
    - User signals "enough" / "move on" / "proceed"
-   - Stall: ambiguity unchanged (+/-5%) for 3 consecutive rounds — activate Ontologist immediately. If Ontologist was already used and stall persists for 2 more rounds → force exit and proceed to Phase 4
+   - Stall: ambiguity unchanged (+/-5%) for 3 consecutive rounds → activate Ontologist immediately. If Ontologist was already used and stall persists for 2 more rounds → force exit and proceed to Phase 4.
 4. Round 5 warning: if ambiguity > 50%, warn: "Several dimensions are still unclear. Challenge phase may surface generic issues. Continue or proceed anyway?"
 
 ---
@@ -131,27 +130,24 @@ Brownfield: ambiguity = 1 - (goal × 0.35 + constraints × 0.25 + success × 0.2
 
 **Actions**:
 
-1. Compile idea summary from Phase 1 research + Phase 3 interview answers
-2. Read project conventions: check for CLAUDE.md in the working directory. If present, extract the coding conventions, stack, and workflow rules as **PROJECT_CONVENTIONS**. If not present, set **PROJECT_CONVENTIONS** to "No explicit project conventions found — infer from codebase patterns."
-3. Launch 2 agents in parallel (single message, 2 Agent tool calls):
-CRITICAL: Both Agent calls MUST be in a SINGLE assistant message (multiple tool_use content blocks). DO NOT proceed to synthesis until BOTH agents have returned.
-   - Agent with `subagent_type: "ac:challenger"`: "CONTEXT: Ideating on: [idea summary with all decisions from interview]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Surface gaps and blind spots in the idea. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, and blind spots. Are there missing user flows? Overlooked edge cases? Scope that's too ambitious for v1? Propose alternatives. Steelman the strongest alternative."
+1. Compile idea summary from Phase 1 research + Phase 3 interview answers.
+2. Read project conventions: check for CLAUDE.md in the working directory. If present, extract coding conventions, stack, and workflow rules as **PROJECT_CONVENTIONS**. If not present → set **PROJECT_CONVENTIONS** to "No explicit project conventions found — infer from codebase patterns."
+3. Launch both agents in a single message block (parallel foreground — CC waits for all automatically):
+   - Agent with `subagent_type: "ac:challenger"`: "CONTEXT: Ideating on: [idea summary with all decisions from interview]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Surface gaps and blind spots in the idea. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, and blind spots. Missing user flows? Overlooked edge cases? Scope too ambitious for v1? Propose alternatives. Steelman the strongest alternative."
    - Agent with `subagent_type: "ac:feasibility"`: "CONTEXT: Evaluating idea: [idea summary]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Assess implementation viability. DOWNSTREAM: Effort estimates feed into task sizing and phase decomposition. REQUEST: Assess codebase fit, estimate effort, identify prerequisites and dependencies. Flag features that may be harder than they appear."
-4. Synthesize findings: merge gap reports (deduplicate, keep highest severity), combine feasibility with alternatives
-5. Identify unresolved CRITICAL concerns
-6. **Zero-gap CRITICAL policy**: if CRITICAL gaps exist, present via AskUserQuestion:
+4. Synthesize findings: merge gap reports (deduplicate, keep highest severity), combine feasibility with alternatives.
+5. Identify unresolved CRITICAL concerns.
+6. Zero-gap CRITICAL policy: if CRITICAL gaps exist, present via AskUserQuestion:
    - Question: "Challenge phase found [N] critical concerns: [list]. How to proceed?"
    - Options: "Address now (refine idea)" / "Accept risk and proceed"
-   - Do NOT proceed to Phase 5 with unresolved CRITICAL gaps unless user explicitly accepts
-7. If "Address now": revise understanding in-place; do NOT re-launch challenge agents unless user requests
+   - Do NOT proceed to Phase 5 with unresolved CRITICAL gaps unless user explicitly accepts.
+7. If "Address now": revise understanding in-place; do NOT re-launch challenge agents unless user requests.
 
 ---
 
 ## Phase 5: Generate
 
 **Goal**: Produce overview and INVEST-validated task files
-
-**Actions**:
 
 **If $bulkMode is true**: Generate one flat task file per item from Phase 2 Triage. No phase decomposition, no overview.md, no phase-tracking checklist. INVEST validation applies — failing items stay as `status: draft` with fix suggestions. After all files generated, present summary (item count, draft/ready split). Then go to Handoff below.
 
@@ -174,10 +170,10 @@ CRITICAL: Both Agent calls MUST be in a SINGLE assistant message (multiple tool_
    - YAML frontmatter: `type` (story/bug/spike/chore), `size` (XS-XL), `priority` (P0-P3), `status`, `design`, `project: $ideateName`, `phase: N`, `created: YYYY-MM-DD`
    - Body sections: User Story (`As a {persona}, I want to {action}, so that {outcome}`), Context, Acceptance Criteria (Given/When/Then), Scope (In/Out), Open Questions, Notes
    - Must NOT include `### Research Summary` — forces ac:plan to run fresh codebase research
-   - If brownfield: include `### Codebase Context` section with key file:line references from Phase 1 exploration (structural references only — file paths, patterns found, not analytical conclusions). This helps ac:plan start from known locations rather than searching from scratch
+   - If brownfield: include `### Codebase Context` section with key file:line references from Phase 1 exploration (structural references only — file paths, patterns found, not analytical conclusions). This helps ac:plan start from known locations rather than searching from scratch.
    - Use `type: spike` for technical decisions
    - Split any scope exceeding size L into multiple tasks
-6. **INVEST validation gate** — check each task against all 6 criteria:
+6. INVEST validation gate — check each task against all 6 criteria:
 
    | Criterion | Pass? | Fix |
    |-----------|-------|-----|
@@ -190,7 +186,7 @@ CRITICAL: Both Agent calls MUST be in a SINGLE assistant message (multiple tool_
 
    All 6 pass → `status: ready`. Any fail → `status: draft` + surface failing criteria with fix suggestions.
 
-7. Present summary: phase count, task count per phase, files written
+7. Present summary: phase count, task count per phase, files written.
 
 **Handoff** (when `--loop` is NOT present):
 
@@ -207,8 +203,8 @@ AskUserQuestion:
       description: "Documents saved. Return later with /ac:plan pointing to a task file."
 ```
 
-If `--loop` was detected in Phase 1, OR user selects "Plan All Phases": proceed to Phase 6 Orchestrate.
-If user selects "Plan Phase 1": invoke ac:plan with: "Plan implementation based on PRD task at: [first phase-1 task file path]. This is a product requirements document task — run full codebase research."
+If `--loop` was detected in Phase 1, OR user selects "Plan All Phases" → proceed to Phase 6 Orchestrate.
+If user selects "Plan Phase 1" → invoke ac:plan with: "Plan implementation based on PRD task at: [first phase-1 task file path]. This is a product requirements document task — run full codebase research."
 
 ---
 
@@ -227,8 +223,8 @@ If user selects "Plan Phase 1": invoke ac:plan with: "Plan implementation based 
    c. For each task file:
       1. Invoke ac:plan: "Plan implementation based on PRD task at: [task-file-path]. This is a product requirements document task — run full codebase research."
       2. Invoke ac:execute with the generated plan.
-      3. Succeeded: update task frontmatter `status: done`.
-      4. Failed: increment retry counter. If retries < 3: re-invoke ac:plan with failure context ("Previous attempt failed: [reason]. Adjust plan to address: [failures]"), return to step (1). If retries ≥ 3: update `status: failed`, ask user: "Task [name] failed after 3 retries. Continue to next task or stop?"
+      3. Succeeded → update task frontmatter `status: done`.
+      4. Failed → increment retry counter. Retries < 3 → re-invoke ac:plan with failure context ("Previous attempt failed: [reason]. Adjust plan to address: [failures]"), return to step (1). Retries ≥ 3 → update `status: failed`, ask user: "Task [name] failed after 3 retries. Continue to next task or stop?"
    d. Update overview.md: `[x]` done (all tasks) or `[!]` partial (some failed).
 3. Present final summary: phases completed, tasks completed/failed per phase. Invoke `/ac:commit` to commit and push all changes.
 

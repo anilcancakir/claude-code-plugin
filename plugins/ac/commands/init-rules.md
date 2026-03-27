@@ -11,7 +11,7 @@ You are generating `.claude/rules/*.md` files for the active codebase. These are
 
 > **Rules hold "how to code HERE" — CLAUDE.md holds "what this project IS".**
 >
-> Rules are ADDITIVE to CLAUDE.md, never duplicating it. They provide deep, domain-specific knowledge that's only relevant when touching files in that domain.
+> Rules are ADDITIVE to CLAUDE.md, never duplicating it. They provide deep, domain-specific knowledge only relevant when touching files in that domain.
 
 ## Context Layer Stack
 
@@ -50,13 +50,9 @@ Stack and domain globs can overlap — stack provides general conventions, domai
 
 ## Phase 1: Discovery
 
-**Goal**: Detect tech stacks, score directories, extract conventions.
+Detect tech stacks, score directories, extract conventions. Use ac:explore agents for all research — source code always takes priority over docs.
 
-**Critical**: Use ac:explore agents for ALL research. Source code patterns always take priority over docs.
-
-**Actions**:
-
-1. Launch 3 ac:explore agents in a **single message** (parallel):
+1. Launch 3 ac:explore agents in a single message block (parallel foreground):
 
    ac:explore 1 — **Tech Stack Detection**:
    "CONTEXT: Generating .claude/rules/ for this project. GOAL: Detect all tech stacks. REQUEST: Find package.json, composer.json, pubspec.yaml, Cargo.toml, go.mod, pyproject.toml, Gemfile. For each: framework, version, key dependencies. Check monorepo (workspaces, packages/). Report: stack | framework | version | root path"
@@ -67,7 +63,7 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    ac:explore 3 — **Convention Extraction**:
    "CONTEXT: Finding real coding conventions for rule content. GOAL: Extract actual patterns per domain. REQUEST: For each major directory, examine 3-5 source files and extract: import style, naming pattern, architectural pattern (facades, repos, controllers, middleware), API usage patterns (key methods, common chaining), anti-patterns (DO NOT/NEVER/DEPRECATED comments), domain gotchas. Also check linter configs (eslintrc, phpstan, analysis_options). PRIORITY: Source code > docs. Report: directory | conventions list | gotchas"
 
-2. While agents run, main session gathers dedup context via Bash:
+2. While agents run, gather dedup context:
 
    ```bash
    ls -la .claude/rules/ 2>/dev/null
@@ -77,10 +73,8 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    find . -maxdepth 3 -type f \( -name "*.dart" -o -name "*.php" -o -name "*.ts" -o -name "*.vue" -o -name "*.py" -o -name "*.go" -o -name "*.rs" \) | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn | head -20
    ```
 
-   - Detect existing rules → if found, read each rule file fully to identify user-added vs auto-generated content
-   - Read CLAUDE.md files for dedup reference
-   - Get file distribution per directory
-   - If `$ARGUMENTS` is "update": mark update mode — preserve user-added conventions in existing rules, only update auto-detected patterns
+   - If existing rules found → read each rule file fully to identify user-added vs auto-generated content
+   - If `$ARGUMENTS` is "update" → mark update mode — preserve user-added conventions in existing rules, only update auto-detected patterns
 
 3. Collect all agent results
 4. Merge into: stacks detected + directory scores + conventions per domain
@@ -89,9 +83,7 @@ Stack and domain globs can overlap — stack provides general conventions, domai
 
 ## Phase 2: Scoring & Rule Planning
 
-**Goal**: Decide which rules to create and their content.
-
-**Actions**:
+Decide which rules to create and their content.
 
 1. Apply scoring to each directory:
 
@@ -114,16 +106,14 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    - Path glob(s)
    - Content outline
 
-3. **Deduplication Algorithm**:
+3. **Deduplication Algorithm** — for each proposed rule, check against existing sources (project CLAUDE.md, global CLAUDE.md, my-coding skill):
 
-   For each proposed rule, check against existing sources (project CLAUDE.md, global CLAUDE.md, my-coding skill) using this 4-step process:
+   1. **Exact match**: identical text in any source → **skip**
+   2. **Semantic overlap**: broader existing rule covers this case → **skip** (e.g., existing "use strict types" already covers "type all function parameters")
+   3. **Conflict**: proposed rule contradicts an existing rule → **flag for user decision** in Phase 3 (present both rules, ask which takes precedence)
+   4. **Complement**: proposed rule adds specificity to a broad rule → **keep** (e.g., existing "use strict types" + proposed "use backed enums for status fields")
 
-   1. **Exact match**: If identical text exists in any source → **skip** (already covered)
-   2. **Semantic overlap**: If a broader existing rule covers this specific case → **skip** (e.g., existing "use strict types" already covers proposed "type all function parameters")
-   3. **Conflict**: If proposed rule contradicts an existing rule → **flag for user decision** in Phase 3 interview (present both rules, ask which takes precedence)
-   4. **Complement**: If proposed rule adds specificity to an existing broad rule → **keep** (e.g., existing "use strict types" + proposed "use backed enums for status fields" — the enum rule adds value)
-
-   **Priority when conflicts arise**: Project-level CLAUDE.md > my-coding skill > proposed rule (most specific scope wins).
+   Priority when conflicts arise: Project CLAUDE.md > my-coding skill > proposed rule (most specific scope wins).
 
    - Compare across proposed rules → no rule-to-rule duplication
 
@@ -133,9 +123,7 @@ Stack and domain globs can overlap — stack provides general conventions, domai
 
 ## Phase 3: Interactive Review
 
-**Goal**: Get user approval on proposed rules.
-
-**Actions**:
+Get user approval on proposed rules.
 
 1. Present proposed rules table:
 
@@ -169,10 +157,6 @@ Stack and domain globs can overlap — stack provides general conventions, domai
 
 ## Phase 4: Generation
 
-**Goal**: Write rule files.
-
-**Actions**:
-
 1. For each approved rule, generate following format:
 
    ```markdown
@@ -187,26 +171,16 @@ Stack and domain globs can overlap — stack provides general conventions, domai
    - <gotcha>
    ```
 
-2. Content depth by tier:
-   - **Stack rules** (10-20 lines): import patterns, naming, general framework conventions
-   - **Domain rules** (15-40 lines): can include short code examples for key API patterns, must-know method signatures, domain-specific gotchas
-
-3. Create `.claude/rules/` directory if it doesn't exist
+2. Content depth by tier: **Stack rules** (10-20 lines): import patterns, naming, general framework conventions. **Domain rules** (15-40 lines): short code examples, must-know method signatures, domain-specific gotchas.
+3. Create `.claude/rules/` directory if it doesn't exist.
 4. Write each file:
    - **New rule**: write directly
-   - **Existing rule (update/enhance)**: read existing content → identify user-added lines (not matching any auto-detected pattern) → merge: keep user-added lines, update auto-detected patterns with fresh findings, append new discoveries → write
-5. Validate:
-   - No rule duplicates CLAUDE.md content
-   - No rule-to-rule duplication
-   - Line count within limits
+   - **Existing rule (update/enhance)**: read → identify user-added lines → merge: keep user-added lines, update auto-detected patterns, append new discoveries → write
+5. Validate: no rule duplicates CLAUDE.md content, no rule-to-rule duplication, line count within limits.
 
 ---
 
 ## Phase 5: Summary
-
-**Goal**: Confirm results to user.
-
-**Actions**:
 
 Present:
 

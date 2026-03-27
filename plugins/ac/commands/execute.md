@@ -8,69 +8,30 @@ effort: medium
 
 You are executing an approved plan. Read the plan, classify steps by independence, and execute using the optimal strategy.
 
-**IMPORTANT**: This command spawns agents to do the work — it does NOT implement code itself.
+This command spawns agents to do the work — it does not implement code directly.
 
 ## Phase 1: Load Plan
 
-**Goal**: Find and parse the approved plan file.
-
 Plan identifier: $ARGUMENTS
 
-**Actions**:
-
-1. **Plan storage**: Plans are stored in .ac/plans/ relative to the working directory.
-2. If `$ARGUMENTS` is a full path, use it directly. If it's a slug (e.g., `auth-system`), resolve to `.ac/plans/$ARGUMENTS.md`
-3. Read the plan file. If it doesn't exist, inform the user and stop
-4. Parse the plan into structured steps — extract: step number, title, description, files to create/modify, acceptance criteria (done-when), dependencies, tier field (quick/mid/senior)
-5. **Expected Plan Format**: `# Plan: [Title]` heading, steps with `**Step N**:` / `Files:` / `Done when:` / `Independence:` / `Tier:` fields, `### Waves` section (or legacy `### Work Units`), `### Must NOT Have` section. If no Waves section found, auto-analyze step independence from file overlap. If format is unexpected, warn user and attempt best-effort parsing.
-
-6. **Extract conventions**: Parse the plan file for a `### Conventions` section. If present, store its content as PLAN_CONVENTIONS for injection into worker prompts. If absent, set PLAN_CONVENTIONS to: "Read existing files in your scope and match their patterns, naming, and style before modifying."
-
-7. **Read project CLAUDE.md** (execute-time context supplement):
-   - Attempt to read `./CLAUDE.md` from the working directory
-   - [If file is not present:] Set RUNTIME_CONTEXT to empty. Skip remaining sub-steps.
-   - [If file is present:] Extract the following into RUNTIME_CONTEXT (keep concise — max ~2000 tokens for mid/senior steps, ~1000 for quick steps):
-     - Build, test, and lint commands (exact commands and flags)
-     - Critical gotchas and known pitfalls explicitly called out in the file
-     - Naming conventions and code style rules
-     - Architectural rules (e.g., "thin controllers, fat services", "no business logic in controllers")
-   - **Deduplicate**: Before storing each extracted rule, perform a literal-string check against PLAN_CONVENTIONS. If the rule text already appears verbatim in PLAN_CONVENTIONS, skip it. Only add rules not already covered.
-   - Store the deduplicated extracted content as **RUNTIME_CONTEXT**. Keep RUNTIME_CONTEXT as a separate variable — do not merge into PLAN_CONVENTIONS.
-
-8. **Extract tier assignments**: For each step, read `Tier:` field. Map: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`. If absent, check legacy `Escalate:` field: `true`→senior, `false`/absent→mid. Maintains backward compatibility with pre-tier plans.
-
-9. **Extract Codebase State and apply tier escalation**: Parse the plan file's `### Research Summary` section for a `**Codebase State**:` line. Store the value as **CODEBASE_STATE**.
-   - [If not found:] Set **CODEBASE_STATE** = `Transitional`. No escalation.
-   - [If **CODEBASE_STATE** is `Chaotic` or `Legacy`:] Auto-escalate all `quick` tier steps to `mid` (Haiku→Sonnet). These areas require more reasoning capability — Haiku is insufficient for establishing patterns or navigating degraded code. Update the in-memory tier assignments from step 8 (do not modify the plan file).
-   - [If **CODEBASE_STATE** is `Disciplined` or `Transitional`:] No escalation needed. Proceed with tier assignments as-is.
-
-10. **Initialize wisdom accumulator**: Set ACCUMULATED_WISDOM to empty. Populated after each work unit completes and injected into subsequent worker prompts to prevent repeated discovery and pattern drift.
-
-11. **Extract plan complexity**: Parse the plan file for `**Complexity**:` metadata. Extract value: `Simple`, `Standard`, or `Complex`. If not found, derive from step count: 1-2 steps → Simple, 3-6 steps → Standard, 7+ steps → Complex. Store as PLAN_COMPLEXITY for Phase 5 verification depth routing.
+1. Plans are stored in `.ac/plans/`. If `$ARGUMENTS` is a full path, use it directly. If it's a slug (e.g., `auth-system`), resolve to `.ac/plans/$ARGUMENTS.md`.
+2. Read the plan file. If it doesn't exist, inform the user and stop.
+3. Parse into structured steps — extract: step number, title, description, files, acceptance criteria (done-when), dependencies, tier (quick/mid/senior).
+4. **Expected format**: `# Plan: [Title]` heading, steps with `**Step N**:` / `Files:` / `Done when:` / `Independence:` / `Tier:` fields, `### Waves` section (or legacy `### Work Units`), `### Must NOT Have` section. If no Waves section, auto-analyze step independence from file overlap. Warn on unexpected format and attempt best-effort parsing.
+5. **Extract conventions**: Parse for `### Conventions` section. If present → store as PLAN_CONVENTIONS. If absent → set PLAN_CONVENTIONS to: "Read existing files in your scope and match their patterns, naming, and style before modifying."
+6. **Read project CLAUDE.md** (execute-time supplement): Attempt to read `./CLAUDE.md`. If absent → set RUNTIME_CONTEXT to empty. If present → extract into RUNTIME_CONTEXT (max ~2000 tokens for mid/senior, ~1000 for quick): build/test/lint commands, critical gotchas, naming conventions, architectural rules. Deduplicate against PLAN_CONVENTIONS (skip verbatim matches). Store as a separate variable — do not merge into PLAN_CONVENTIONS.
+7. **Extract tier assignments**: Read `Tier:` field per step. Map: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`. If absent, check legacy `Escalate:` field: `true`→senior, `false`/absent→mid.
+8. **Extract Codebase State and apply tier escalation**: Parse `### Research Summary` for `**Codebase State**:`. If not found → set CODEBASE_STATE = `Transitional`, no escalation. If `Chaotic` or `Legacy` → auto-escalate all `quick` steps to `mid` (update in-memory assignments only). If `Disciplined` or `Transitional` → no escalation.
+9. **Initialize wisdom accumulator**: Set ACCUMULATED_WISDOM to empty. Populated after each work unit, injected into subsequent worker prompts.
+10. **Extract plan complexity**: Parse for `**Complexity**:` metadata. If not found → derive: 1-2 steps → Simple, 3-6 → Standard, 7+ → Complex. Store as PLAN_COMPLEXITY for Phase 5 routing.
 
 ---
 
 ## Phase 2: Classify Execution Strategy
 
-**Goal**: Determine parallel vs sequential execution.
-
-**Actions**:
-
-1. **Check for Waves section** in the plan file:
-   - If `### Waves` section exists → use it directly (plan already decomposed by `ac:plan`)
-   - Also accept legacy `### Work Units` section for backward compatibility
-   - Parse each Wave/Unit: name, step numbers, file list, verification command
-   - Identify Sequential steps (if listed)
-   - Skip to step 4
-
-2. **Auto-analyze** (only if neither Waves nor Work Units section found):
-   - Check each step's `Independence` field
-   - Group independent steps (no shared files, no dependency chain)
-   - Group dependent steps into sequential chains
-
-3. **Validate** (whether plan-provided or auto-analyzed):
-   - Verify no file overlaps between parallel units
-
+1. **Check for Waves section**: If `### Waves` exists → use directly. Also accept legacy `### Work Units`. Parse each: name, step numbers, file list, verification command. Skip to step 4.
+2. **Auto-analyze** (only if neither section found): Check `Independence` fields, group independent steps (no shared files, no dependency chain).
+3. **Validate**: Verify no file overlaps between parallel units.
 4. Select execution strategy:
 
 | Condition | Strategy |
@@ -80,7 +41,7 @@ Plan identifier: $ARGUMENTS
 | Mixed parallel + sequential | Parallel units first, then sequential steps |
 | All sequential | Sequential agents — one at a time |
 
-1. Present execution plan to the user:
+5. Present execution plan to the user:
 
 ```
 ## Execution Strategy
@@ -103,48 +64,25 @@ Proceed? [Execute / Adjust Wave Grouping / Cancel]
 
 ## Phase 3: Execute
 
-**Goal**: Launch agents and track progress with deterministic behavior.
-
-**Execution guardrails (official-aligned):**
-- Do not sleep between commands that can run immediately
-- Do not retry failing commands in sleep loops
-- If waiting on background tasks, rely on completion notifications and TaskOutput checks
+**Execution guardrails**: Do not sleep between commands. Do not retry in sleep loops. Use TaskOutput for background results — do not poll.
 
 ### For Parallel Waves (2+ independent steps)
 
-For each wave, launch ALL agents in a **single message block** (multiple Agent tool calls):
+Launch all agents in a single message block (parallel background — CC waits for wave completion):
 
 ```
 Agent(
   prompt: "[full self-contained task prompt — see template below]",
-  model: "[tier-based: \"haiku\" for quick, \"sonnet\" for mid, \"opus\" for senior]",
+  model: "[haiku for quick | sonnet for mid | opus for senior]",
   run_in_background: true
 )
 ```
 
-**Model routing**: Each step gets its own model based on tier — launch multiple Agent() calls in the same message, each with its own `model:` parameter:
-
-- `quick` → `model: "haiku"`
-- `mid` → `model: "sonnet"`
-- `senior` → `model: "opus"`
-
-Mixed-tier waves are fine — CC supports different `model:` values per Agent() call in the same message block. Each worker runs independently on its assigned model.
-
-### Wave Completion Barrier
-
-After launching all agents for a wave:
-
-**CRITICAL BARRIER — DO NOT PROCEED TO NEXT WAVE OR PHASE 4**
-1. Count: N agents launched for this wave
-2. Wait for ALL N completion notifications to arrive — each arrives as a separate system message
-3. DO NOT write text, call tools, or advance until notification_count == launched_count
-4. Only after ALL notifications received → process results and proceed
-
-This barrier applies between waves too — Wave 2 MUST NOT launch until ALL Wave 1 agents have completed.
+**Model routing**: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`. Mixed-tier waves are fine — each Agent() call takes its own `model:` parameter.
 
 **Worker prompt template** — each agent must receive a fully self-contained prompt:
 
-**Quick tier template** (Haiku — lean format, no Atlas overhead):
+**Quick tier template** (Haiku — lean format):
 
 ```markdown
 ## Your Task
@@ -158,20 +96,20 @@ This barrier applies between waves too — Wave 2 MUST NOT launch until ALL Wave
 
 **Conventions**: [Inject PLAN_CONVENTIONS or "Read existing files and match patterns before modifying."]
 
-[If RUNTIME_CONTEXT is non-empty:]
-**Project Context**: [Inject RUNTIME_CONTEXT — supplementary project rules from CLAUDE.md not already in PLAN_CONVENTIONS]
+[If RUNTIME_CONTEXT non-empty:]
+**Project Context**: [Inject RUNTIME_CONTEXT]
 
-Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions — they may contain rules not captured above.
+Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions.
 
 Follow instructions literally. Do not abbreviate output, do not skip steps. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
 
-[If ACCUMULATED_WISDOM is non-empty:]
+[If ACCUMULATED_WISDOM non-empty:]
 **Wisdom from prior steps**: [Inject ACCUMULATED_WISDOM]
 
 After changes: run build, tests, lint. Summarize: files changed, verification results, issues.
 ```
 
-**Mid and Senior tier template** (Sonnet/Opus — structured Atlas format):
+**Mid and Senior tier template** (Sonnet/Opus — structured format):
 
 ```markdown
 ## Task
@@ -191,7 +129,7 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 
 ## Must Do
 
-- Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions — they may contain rules not captured in this prompt
+- Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions
 - Read existing files before modifying — match patterns and conventions
 - Implement ONLY your assigned step. Do not touch files outside your scope
 - Run verification after changes (build, tests, lint)
@@ -201,25 +139,25 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 ## Must NOT Do
 
 - Do not modify files outside your assigned scope
-- Do not refactor, clean up, or improve code beyond what the step requires
-- Do not add documentation, comments, or type annotations to unchanged code
+- Do not refactor or clean up code beyond what the step requires
+- Do not add documentation or annotations to unchanged code
 
 ## Context
 
 **Codebase Conventions**:
-[Inject PLAN_CONVENTIONS extracted from plan file in Phase 1. If no conventions section was found in the plan, use: "Read existing files and match patterns before modifying."]
+[Inject PLAN_CONVENTIONS. If absent: "Read existing files and match patterns before modifying."]
 
-[If RUNTIME_CONTEXT is non-empty:]
+[If RUNTIME_CONTEXT non-empty:]
 ## Project Context
 
-[Inject RUNTIME_CONTEXT — supplementary project rules from CLAUDE.md not already covered by Codebase Conventions above. Includes: build/test/lint commands, gotchas, naming conventions, architectural rules.]
+[Inject RUNTIME_CONTEXT — build/test/lint commands, gotchas, naming conventions, architectural rules not already in Codebase Conventions.]
 
-[If step has Tier: senior, append:]
-**Senior Tier**: This task was flagged for senior-level reasoning. Explore the codebase deeply before acting. Consider edge cases, cross-cutting concerns, and architectural impact. Quality over speed. Consider downstream effects on callers and dependents before modifying.
+[If Tier: senior, append:]
+**Senior Tier**: Explore the codebase deeply before acting. Check edge cases, cross-cutting concerns, and architectural impact. Trace downstream effects on callers and dependents.
 
-[If ACCUMULATED_WISDOM is non-empty, append:]
-**Wisdom from prior steps** (prefer this context over re-discovering — avoid redundant tool calls for information already captured here):
-[Inject ACCUMULATED_WISDOM content here]
+[If ACCUMULATED_WISDOM non-empty, append:]
+**Wisdom from prior steps** (prefer over re-discovering — avoid redundant tool calls):
+[Inject ACCUMULATED_WISDOM]
 
 ## Output Format
 
@@ -235,9 +173,13 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 - [description]
 ```
 
+### Wave Completion Barrier
+
+When all agents in the wave have reported, advance to the next wave. Wave 2 must not launch until all Wave 1 agents have completed.
+
 ### For Sequential Execution
 
-Launch agents one at a time. Wait for each to complete before launching the next. Use foreground agents (no `run_in_background`).
+Launch agents one at a time, foreground (no `run_in_background`). Wait for each to complete before launching the next.
 
 ### For Direct Execution (1 step)
 
@@ -245,38 +187,20 @@ Execute the step directly — read files, make changes, verify. No agent delegat
 
 ### After Each Work Unit Completes
 
-Before marking a work unit done:
+1. Check `<new-diagnostics>`: ERROR-level on modified files → fix before marking done. WARNING-level → log and continue. LSP unavailable → proceed.
+2. If LSP available and code changed, delegate to ac:linter (advisory): `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit]")`. BLOCKED → log warning, continue. CLEAN or LSP UNAVAILABLE → mark done.
+3. **Extract wisdom** from completed worker's "Changes Made" and "Issues": naming patterns, DI style, file organization, gotchas, discovered conventions. Append to ACCUMULATED_WISDOM as bullet points (max 5 per unit, max 15 total). Skip generic statements — only actionable conventions.
+4. **Persist wisdom**: Write ACCUMULATED_WISDOM to `.ac/plans/{plan-name}.wisdom.md` (bullet list with wave/step annotations). Overwrite on each update.
 
-1. Check `<new-diagnostics>` context:
-   - If ERROR-level diagnostics appear for modified files → fix in this turn before marking done
-   - If WARNING-level only → log to final report, continue
-   - If LSP not available → proceed to Phase 5 verification wave
-
-2. If LSP tool is available and work unit involved code changes, delegate to ac:linter (advisory — early feedback only):
-   - `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit description]")`
-   - BLOCKED verdict → log warning with details, continue to next unit. Phase 5 linter agent is the authoritative final check
-   - CLEAN or LSP UNAVAILABLE verdict → mark unit done
-
-3. **Extract wisdom** from the completed worker's output. Scan the worker's "Changes Made" and "Issues" sections for:
-   - Naming patterns discovered (e.g., "services use `handle` prefix, not `process`")
-   - Dependency injection style (e.g., "constructor injection, not facades")
-   - File organization conventions (e.g., "one class per file, matching directory to namespace")
-   - Gotchas encountered (e.g., "migration requires `--seed` flag after running")
-   - Any convention the worker had to discover by reading existing code
-
-   Append extracted patterns to ACCUMULATED_WISDOM as bullet points (max 5 per unit, max 15 total). Skip if the worker's output contains no discoverable patterns. Do not accumulate verification results or generic statements — only actionable conventions that help the next worker avoid re-discovery.
-
-4. **Persist wisdom to file**: After updating ACCUMULATED_WISDOM, write it to `.ac/plans/{plan-name}.wisdom.md` (same directory as the plan file). Format: bullet list with wave/step source annotations. This file survives the session — subsequent ac:execute runs or manual inspection can reuse discovered patterns. Overwrite on each update (latest wisdom replaces previous).
-
-Do NOT mark a work unit complete with unresolved ERROR diagnostics.
+Do not mark a work unit complete with unresolved ERROR diagnostics.
 
 ---
 
 ## Phase 4: Track Progress
 
-**Goal**: Monitor agent completion and report status. Phase 4 begins ONLY after ALL agents in the current wave have completed (barrier from Phase 3 satisfied).
+Phase 4 begins only after all agents in the current wave have completed.
 
-After launching a wave, render the status table:
+Render the status table after launching a wave:
 
 ```
 | # | Step | Wave | Status | Result |
@@ -286,65 +210,54 @@ After launching a wave, render the status table:
 | 2 | [title] | 2 | ⏸ waiting | depends on Step 1 |
 ```
 
-As background agent notifications arrive:
+As notifications arrive:
 
-1. Update status to ✅ done or ❌ failed
-2. If a wave completes, launch the next wave
-3. If an agent fails, attempt **tier escalation** before logging failure:
-   - `quick` (Haiku) failed → retry once with `model: "sonnet"` (mid)
-   - `mid` (Sonnet) failed → retry once with `model: "opus"` (senior)
-   - `senior` (Opus) failed → no escalation possible, log failure
-   - Maximum 1 escalation per step. If escalated retry also fails → log failure and continue
-4. For background task result retrieval, use TaskOutput once notified. Do not poll in loops while waiting.
+1. Update status to ✅ done or ❌ failed.
+2. When a wave completes, launch the next wave.
+3. On failure, attempt tier escalation: `quick` → retry with `sonnet`; `mid` → retry with `opus`; `senior` → no escalation. Max 1 escalation per step. If escalated retry fails → log and continue.
+4. Use TaskOutput once notified. Do not poll.
 
-When all agents complete, render the final table and summary.
+When all agents have reported, render the final table and summary.
 
 ---
 
 ## Phase 5: Verification Wave
 
-**Goal**: Verify the full plan was executed correctly. Verification depth scales with PLAN_COMPLEXITY.
-
-CRITICAL: DO NOT SKIP PHASE 5 — MANDATORY FINAL GATE. Complete verification before rendering any summary or suggesting commit.
+CRITICAL: DO NOT SKIP — mandatory final gate. Complete before rendering any summary or suggesting commit.
 
 ### Verification Depth by Complexity
 
-Route based on PLAN_COMPLEXITY (extracted in Phase 1):
+Route based on PLAN_COMPLEXITY (Phase 1):
 
-**Simple** (1-2 steps, quick tier): Skip verification wave agents entirely. Only run build + test + lint as the final check. If all pass → invoke `/ac:commit --skip-preflight`. If any fail → fix and re-run.
+**Simple** (1-2 steps, quick tier): Skip verification agents. Run build + test + lint only. All pass → invoke `/ac:commit --skip-preflight`. Any fail → fix and re-run.
 
-**Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents concurrently (skip verifier — Opus is expensive for standard work):
-
-```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
-Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.")
-```
-
-**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents concurrently (full wave). Optionally add security-reviewer if plan touches auth, user input, file I/O, or external APIs:
+**Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents in a single message block (foreground — CC waits for all automatically):
 
 ```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
-Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity. Also verify convention compliance: check that implementation follows project conventions from [PLAN_CONVENTIONS].")
-Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.")
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Conventions: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
+Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check modified files plus direct importers if LSP available.")
+```
+
+**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents in a single message block (foreground — CC waits for all automatically). Add security-reviewer when plan touches auth, user input, file I/O, or external APIs:
+
+```
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Conventions: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
+Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity. Convention compliance: [PLAN_CONVENTIONS].")
+Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check modified files plus direct importers if LSP available.")
 # Optional — include when plan involves security-sensitive code:
-Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified files: [list]. Check OWASP Top 10 categories, secrets in code, path traversal, and cryptographic issues.")
+Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified files: [list]. Check OWASP Top 10, secrets in code, path traversal, cryptographic issues.")
 ```
 
 ### Execution (Standard and Complex only)
 
-**Step 1** — Launch build+test AND verification agents concurrently (single message block):
+**Step 1** — Launch build+test AND verification agents in a single message block (foreground — CC waits for all automatically):
 
-CRITICAL: All verification Agent calls MUST be in a SINGLE assistant message (multiple tool_use blocks, foreground only — omit the background flag). CC waits for ALL automatically.
+1. Start full build + full test suite.
+2. Simultaneously launch verification agents per complexity level above.
+3. Build/test failures do not prevent agent launch — agents run to completion. Build or test failure blocks the final verdict.
+4. **LSP Navigation Check** (if LSP available, run alongside): `LSP(operation="documentSymbol")` per modified file → confirms parseable + exports intact. For refactor/rename: `LSP(operation="findReferences")` → confirms no broken callers. If LSP unavailable → rely on linter agent output.
 
-1. Start full build + full test suite execution
-2. Simultaneously launch verification agents per complexity level above
-3. Build/test failures do NOT prevent agent launch — agents run to completion regardless. Build or test failure blocks the final verdict.
-4. **LSP Navigation Check** (if LSP tool available, run alongside above):
-   - For each modified file: `LSP(operation="documentSymbol", filePath=<file>, line=1, character=1)` → confirms parseable + exports intact
-   - For refactor/rename work: `LSP(operation="findReferences", ...)` → confirms no broken callers
-   - If LSP not available → skip, rely on linter agent output only
-
-**Step 2** — All verification results are now available. Evaluate combined verdict:
+**Step 2** — When all agents have reported, evaluate combined verdict:
 
 | Check | Pass | Fail |
 |-------|------|------|
@@ -355,7 +268,7 @@ CRITICAL: All verification Agent calls MUST be in a SINGLE assistant message (mu
 
 **Step 3** — Route based on combined verdict:
 
-→ **ALL pass** → Render execution summary and continuation format, then invoke `/ac:commit --skip-preflight` to commit and push all changes.
+→ **ALL pass** → Render execution summary, then invoke `/ac:commit --skip-preflight`.
 
 ```
 ## Execution Complete
@@ -373,13 +286,13 @@ CRITICAL: All verification Agent calls MUST be in a SINGLE assistant message (mu
 - Verifier: ✅ APPROVE (Complex only)
 
 ### Next Up
-[If part of --loop orchestration: "Proceeding to next phase automatically."]
-[If standalone execution: "Run `/ac:commit --skip-preflight` to commit all changes."]
+[If --loop orchestration: "Proceeding to next phase automatically."]
+[If standalone: "Run `/ac:commit --skip-preflight` to commit all changes."]
 ```
 
-→ **ANY fail** → Increment VERIFY_RETRY_COUNT (initialized to 0 at start of Phase 5). Present all failures with evidence from agent outputs, then:
+→ **ANY fail** → Increment VERIFY_RETRY_COUNT (initialized to 0). Present all failures, then:
 
-If VERIFY_RETRY_COUNT >= 3 → **3-strike rule**: Do not offer Fix and Re-verify. Present:
+If VERIFY_RETRY_COUNT >= 3 → **3-strike rule**:
 
 ```
 AskUserQuestion(
@@ -393,7 +306,7 @@ AskUserQuestion(
 )
 ```
 
-If VERIFY_RETRY_COUNT < 3 → Present:
+If VERIFY_RETRY_COUNT < 3:
 
 ```
 AskUserQuestion(
@@ -401,21 +314,20 @@ AskUserQuestion(
   header: "Verification Failed"
   options:
     - label: "Fix and Re-verify"
-      description: "Address the failed criteria, then re-run verification at current complexity level."
+      description: "Address failures, re-run verification at current complexity level."
     - label: "Accept and Commit"
       description: "Acknowledge failures, invoke /ac:commit for current state."
 )
 ```
 
-If user selects "Fix and Re-verify" → fix issues, then loop back to Step 1 (re-run build+test and re-launch verification agents concurrently).
-
+"Fix and Re-verify" → fix issues, loop back to Step 1.
 
 ---
 
 ## Error Handling
 
-- **Agent fails**: Attempt tier escalation first (Phase 4). If still fails, log failure and continue other agents. Report in final summary
-- **Plan file not found**: Inform user, suggest running `/ac:plan` first
-- **No independent steps found**: Fall back to sequential execution
-- **Not a git repo**: Fall back to sequential execution
-- **Plugin newly installed/updated but behavior missing**: Ask user to restart Claude Code before retrying execution
+- **Agent fails**: Attempt tier escalation (Phase 4). If still fails, log and continue. Report in final summary.
+- **Plan file not found**: Inform user, suggest running `/ac:plan` first.
+- **No independent steps found**: Fall back to sequential execution.
+- **Not a git repo**: Fall back to sequential execution.
+- **Plugin newly installed/updated but behavior missing**: Ask user to restart Claude Code before retrying.
