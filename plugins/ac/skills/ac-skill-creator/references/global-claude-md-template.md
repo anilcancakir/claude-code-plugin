@@ -62,16 +62,18 @@ Before copying patterns, classify: **Disciplined** (consistent, tested → follo
 Prefer delegating research to specialized agents — use them proactively before tools directly:
 - **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, relationships)
 - **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API refs (context7 → WebSearch)
-CRITICAL: Always use `ac:` prefixed subagent_type. Always `run_in_background: true`. Fire 2-3 agents in parallel for non-trivial questions. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one message. Once delegated, do NOT manually re-search.
+CRITICAL: Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-trivial questions — ALL Agent calls in a SINGLE message block. Use foreground (default) — CC waits for ALL automatically via Promise.all. Use `run_in_background: true` ONLY when you have genuinely independent work to continue with. DO NOT proceed to the next phase until ALL agent results are collected. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one message. Once delegated, do NOT manually re-search.
 
 ### Execution
 - Plans with 3+ steps → `ac:execute` for parallel execution. Use TodoWrite for 2+ steps
-- Ad-hoc parallel: Agent with `run_in_background: true`. All in one message
+- Ad-hoc parallel: Agent with `run_in_background: true` ONLY when you have independent work to do while waiting. ALL in a SINGLE message block
+- Background barrier: After launching background agents, DO NOT advance to the next phase until ALL completion notifications have arrived. Count notifications vs launched agents.
 - reliability-first routing: default Sonnet, Opus for planning/investigation/architecture, Haiku for search/trivial
 - Delegation format: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT
 
 ### Verification
 - Run project's test suite after every logical unit. Per-unit linter advisory, Phase 5 authoritative. Complexity-driven: Simple (build+test), Standard (+code-reviewer+linter), Complex (+verifier)
+- Verification agents (code-reviewer, linter, verifier) MUST be foreground in a SINGLE message block — ALL must complete before verdict.
 - 3-strike rule: 3 failures → stop, revert, ask user
 - Evidence required: tests pass + lint clean. No evidence = not complete
 - Auto commit+push after task completion via /ac:commit --skip-preflight
@@ -118,3 +120,4 @@ If `my-coding` has detailed rules, keep minimal (3-5 rules): "Detailed coding ru
 1. **Target ≤120 lines** generated output. Deduplication: no rule in both Rules and Workflow
 2. **Intent Gate must survive compression**: 6-type table + verbalization format verbatim — primary routing
 3. **Research delegation must survive compression**: proactively pattern verbatim — primary agent trigger
+4. **Parallel agent barrier must survive compression**: foreground-first rule + DO NOT proceed barrier verbatim — prevents race conditions

@@ -108,6 +108,7 @@ Research depth is profile-conditional (see Pipeline Profiles table for agent cou
       Research WITH these constraints in mind — flag any codebase patterns that conflict with them.
       ```
    7. Carry **PROJECT_CONTEXT** forward to Phase 3 — inject into the plan's `### Conventions` section alongside explore agent findings
+CRITICAL: All Agent calls below MUST be emitted in a SINGLE assistant message (multiple tool_use content blocks). DO NOT split across messages. CC waits for ALL foreground agents automatically.
 3. **Launch research agents**: Launch ac:explore and ac:librarian agents in parallel (single message, multiple Agent tool calls with `subagent_type: "ac:explore"` and `subagent_type: "ac:librarian"`). Each agent should target a different aspect of the research. Use the intent routing below to determine which agents to launch. [If **PROJECT_CONTEXT** is non-empty:] Inject the **STYLE CONSTRAINTS** block (from step 2) into each agent's prompt so they align with project conventions.
 
 ### Agent Routing by Intent
@@ -157,7 +158,7 @@ Each agent should:
 - ac:librarian 1: "CONTEXT: Implementing [library]. GOAL: Make correct API choices. DOWNSTREAM: Follow intended patterns. REQUEST: Find API reference, config options, migration guides, common mistakes."
 - ac:librarian 2: "CONTEXT: Looking for battle-tested implementations. GOAL: Identify consensus approach. DOWNSTREAM: Avoid reinventing the wheel. REQUEST: Find OSS projects solving this — architecture, edge cases, test strategy. Skip tutorials."
 
-1. Once agents return, read all key files identified by agents to build deep understanding
+1. Once ALL agents have returned (foreground agents block until all complete), read all key files identified by agents to build deep understanding
 2. Summarize findings: patterns found, files to modify, dependencies, external best practices discovered
 3. Populate the plan draft's `### Research Summary` and `### Conventions` sections with findings. Four subsections: **Key Files** (file:line references with one-line descriptions), **Patterns Found** (architecture, naming, code organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming patterns, file organization, coding style). Format must be structured — maximum ~30 lines total. Merge **PROJECT_CONTEXT** (extracted from CLAUDE.md, CLAUDE.local.md, .claude/rules/, and my-coding skill in Phase 2) into the **Conventions** subsection alongside explore agent findings. **PROJECT_CONTEXT** rules take priority over agent-discovered patterns where they conflict.
 4. **Codebase state assessment**: After reading key files from agent findings, classify the target area's codebase state and code quality:
@@ -260,6 +261,8 @@ Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan fil
 Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: [plan-file-path]. Run gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit.")
 Agent(subagent_type: "ac:plan-review", prompt: "Review plan at [plan-file-path]. Adversarial mode — hunt for flaws, stress-test references, tiers, and executability.")
 ```
+
+Wait for BOTH agents to complete before merging results. Foreground agents in a SINGLE assistant message guarantee this — DO NOT split these Agent calls across messages.
 
 Once all launched agents return, merge results and apply all fixes:
 - CRITICAL gaps (from plan-analysis): add as questions for the user

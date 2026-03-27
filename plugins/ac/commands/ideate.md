@@ -31,6 +31,7 @@ Initial request: $ARGUMENTS
    - **Greenfield**: New project, empty or near-empty repo. Heuristic: if ac:explore returns < 5 relevant files, treat as greenfield
    - **Brownfield**: Existing project with codebase to respect
 3. If **brownfield**: Launch 2 ac:explore agents in parallel (single message, 2 Agent tool calls):
+CRITICAL: Both Agent calls MUST be in a SINGLE assistant message (multiple tool_use content blocks). DO NOT split across messages.
    - ac:explore agent 1: "CONTEXT: Evaluating idea: [idea]. GOAL: Map existing codebase state in target area. DOWNSTREAM: Feasibility assessment. REQUEST: Find existing implementations, patterns, and architecture in the area this idea would affect. Return file:line references."
    - ac:explore agent 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns already in the codebase. How has the team solved related problems?"
 4. If **greenfield**: Skip codebase research. Note: "Greenfield project — no existing constraints to discover."
@@ -133,6 +134,7 @@ Brownfield: ambiguity = 1 - (goal × 0.35 + constraints × 0.25 + success × 0.2
 1. Compile idea summary from Phase 1 research + Phase 3 interview answers
 2. Read project conventions: check for CLAUDE.md in the working directory. If present, extract the coding conventions, stack, and workflow rules as **PROJECT_CONVENTIONS**. If not present, set **PROJECT_CONVENTIONS** to "No explicit project conventions found — infer from codebase patterns."
 3. Launch 2 agents in parallel (single message, 2 Agent tool calls):
+CRITICAL: Both Agent calls MUST be in a SINGLE assistant message (multiple tool_use content blocks). DO NOT proceed to synthesis until BOTH agents have returned.
    - Agent with `subagent_type: "ac:challenger"`: "CONTEXT: Ideating on: [idea summary with all decisions from interview]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Surface gaps and blind spots in the idea. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, and blind spots. Are there missing user flows? Overlooked edge cases? Scope that's too ambitious for v1? Propose alternatives. Steelman the strongest alternative."
    - Agent with `subagent_type: "ac:feasibility"`: "CONTEXT: Evaluating idea: [idea summary]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Assess implementation viability. DOWNSTREAM: Effort estimates feed into task sizing and phase decomposition. REQUEST: Assess codebase fit, estimate effort, identify prerequisites and dependencies. Flag features that may be harder than they appear."
 4. Synthesize findings: merge gap reports (deduplicate, keep highest severity), combine feasibility with alternatives

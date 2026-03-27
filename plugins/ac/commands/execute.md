@@ -130,6 +130,18 @@ Agent(
 
 Mixed-tier waves are fine — CC supports different `model:` values per Agent() call in the same message block. Each worker runs independently on its assigned model.
 
+### Wave Completion Barrier
+
+After launching all agents for a wave:
+
+**CRITICAL BARRIER — DO NOT PROCEED TO NEXT WAVE OR PHASE 4**
+1. Count: N agents launched for this wave
+2. Wait for ALL N completion notifications to arrive — each arrives as a separate system message
+3. DO NOT write text, call tools, or advance until notification_count == launched_count
+4. Only after ALL notifications received → process results and proceed
+
+This barrier applies between waves too — Wave 2 MUST NOT launch until ALL Wave 1 agents have completed.
+
 **Worker prompt template** — each agent must receive a fully self-contained prompt:
 
 **Quick tier template** (Haiku — lean format, no Atlas overhead):
@@ -262,7 +274,7 @@ Do NOT mark a work unit complete with unresolved ERROR diagnostics.
 
 ## Phase 4: Track Progress
 
-**Goal**: Monitor agent completion and report status.
+**Goal**: Monitor agent completion and report status. Phase 4 begins ONLY after ALL agents in the current wave have completed (barrier from Phase 3 satisfied).
 
 After launching a wave, render the status table:
 
@@ -304,23 +316,25 @@ Route based on PLAN_COMPLEXITY (extracted in Phase 1):
 **Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents concurrently (skip verifier — Opus is expensive for standard work):
 
 ```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].", run_in_background: true)
-Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
+Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.")
 ```
 
 **Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents concurrently (full wave). Optionally add security-reviewer if plan touches auth, user input, file I/O, or external APIs:
 
 ```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].", run_in_background: true)
-Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity. Also verify convention compliance: check that implementation follows project conventions from [PLAN_CONVENTIONS].", run_in_background: true)
-Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.", run_in_background: true)
+Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Project conventions to check against: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
+Agent(subagent_type="ac:verifier", prompt="Verify plan compliance for: [plan-file-path]. Check every Done-when criterion against actual file state, verify Must NOT Have exclusions, and audit scope fidelity. Also verify convention compliance: check that implementation follows project conventions from [PLAN_CONVENTIONS].")
+Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check all modified files plus their direct importers if LSP available.")
 # Optional — include when plan involves security-sensitive code:
-Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified files: [list]. Check OWASP Top 10 categories, secrets in code, path traversal, and cryptographic issues.", run_in_background: true)
+Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified files: [list]. Check OWASP Top 10 categories, secrets in code, path traversal, and cryptographic issues.")
 ```
 
 ### Execution (Standard and Complex only)
 
 **Step 1** — Launch build+test AND verification agents concurrently (single message block):
+
+CRITICAL: All verification Agent calls MUST be in a SINGLE assistant message (multiple tool_use blocks, foreground only — omit the background flag). CC waits for ALL automatically.
 
 1. Start full build + full test suite execution
 2. Simultaneously launch verification agents per complexity level above
@@ -330,7 +344,7 @@ Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified fi
    - For refactor/rename work: `LSP(operation="findReferences", ...)` → confirms no broken callers
    - If LSP not available → skip, rely on linter agent output only
 
-**Step 2** — Collect ALL results — ALL must pass:
+**Step 2** — All verification results are now available. Evaluate combined verdict:
 
 | Check | Pass | Fail |
 |-------|------|------|
