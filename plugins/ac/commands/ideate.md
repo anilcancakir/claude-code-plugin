@@ -35,7 +35,7 @@ Initial request: $ARGUMENTS
    - ac:explore agent 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns already in the codebase. How has the team solved related problems?"
 4. If **greenfield**: Skip codebase research. Note: "Greenfield project — no existing constraints to discover."
 5. Set initial ambiguity scores (0.0-1.0) for all dimensions based on how much $ARGUMENTS already specifies.
-6. Detect `--loop` flag in $ARGUMENTS. If present: announce "Loop mode active — all phases will be automatically planned and executed sequentially after task generation." Strip `--loop` from arguments before further processing.
+6. Detect `--loop` flag in $ARGUMENTS. If present: announce "Loop mode active — after task generation, each task will be processed through ac:plan --loop (convergence interview → Deep Review → auto-execute → verification → commit). No quality gates skipped." Strip `--loop` from arguments before further processing.
 7. Detect `--bulk` flag in $ARGUMENTS. If present: announce "Bulk mode active — reading items for rapid triage." Strip `--bulk` from arguments. If remaining $ARGUMENTS is a file path → read the file contents. Otherwise treat $ARGUMENTS as inline bulk text. Set $bulkMode = true. Skip Phase 3 Interview and Phase 4 Challenge — proceed to Phase 2 Triage, then Phase 5 Generate.
 8. If both `--bulk` and `--loop` present: bulk mode generates flat task files (no overview.md). Phase 6 Orchestrate will collect tasks by globbing files with `project: $ideateName` frontmatter instead of reading an overview checklist.
 
@@ -198,7 +198,7 @@ AskUserQuestion:
     - label: "Plan Phase 1 (Recommended)"
       description: "Hand off Phase 1 tasks to ac:plan for technical planning with fresh codebase research."
     - label: "Plan All Phases"
-      description: "Plan and execute all phases sequentially via Phase 6 Orchestrate."
+      description: "Process all phases sequentially — each task runs through full ac:plan --loop pipeline (interview → review → execute → verify)."
     - label: "Save & Exit"
       description: "Documents saved. Return later with /ac:plan pointing to a task file."
 ```
@@ -210,7 +210,7 @@ If user selects "Plan Phase 1" → invoke ac:plan with: "Plan implementation bas
 
 ## Phase 6: Orchestrate (--loop or Plan All Phases)
 
-**Goal**: Plan and execute all generated tasks phase-by-phase with retry logic.
+**Goal**: Process all generated tasks phase-by-phase via ac:plan --loop — full pipeline per task (convergence interview, mandatory review for Complex, verification wave), with retry on failure.
 
 **Actions**:
 
@@ -221,12 +221,16 @@ If user selects "Plan Phase 1" → invoke ac:plan with: "Plan implementation bas
    a. Update overview.md: `[~]` in progress.
    b. Collect task files with matching `phase: N` and `project: $ideateName`.
    c. For each task file:
-      1. Invoke ac:plan: "Plan implementation based on PRD task at: [task-file-path]. This is a product requirements document task — run full codebase research."
-      2. Invoke ac:execute with the generated plan.
+      1. Invoke `/ac:plan --loop [task-file-path]` — this triggers the full pipeline autonomously:
+         - Task file detection → Research → Convergence interview (≤20% ambiguity)
+         - Plan generation → Analysis gate → Deep Review (mandatory for Complex, auto for Standard --loop)
+         - Auto-execute → Verification wave (complexity-driven, non-bypassable for Complex)
+         - Auto-commit via `/ac:commit --skip-preflight`
+      2. Note: ac:plan's convergence interview covers *implementation* decisions (approach, integration, scope). This is distinct from ideate's Phase 3 *idea* interview (goal, constraints, success criteria). Both serve different purposes — no duplication.
       3. Succeeded → update task frontmatter `status: done`.
-      4. Failed → increment retry counter. Retries < 3 → re-invoke ac:plan with failure context ("Previous attempt failed: [reason]. Adjust plan to address: [failures]"), return to step (1). Retries ≥ 3 → update `status: failed`, ask user: "Task [name] failed after 3 retries. Continue to next task or stop?"
+      4. Failed → increment retry counter. Retries < 2 → re-invoke `/ac:plan --loop [task-file-path]` with failure context appended: "Previous attempt failed: [reason]. Adjust approach to address: [failures]". Retries ≥ 2 → update `status: failed`, ask user via AskUserQuestion: "Task [name] failed after 3 attempts. How to proceed?" Options: "Skip and continue" / "Stop orchestration".
    d. Update overview.md: `[x]` done (all tasks) or `[!]` partial (some failed).
-3. Present final summary: phases completed, tasks completed/failed per phase. Invoke `/ac:commit` to commit and push all changes.
+3. Present final summary: phases completed, tasks completed/failed per phase.
 
 Status markers: `[ ]` pending · `[~]` in progress · `[x]` done · `[!]` partial/failed
 

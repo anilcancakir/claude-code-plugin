@@ -229,6 +229,8 @@ CRITICAL: DO NOT SKIP — mandatory final gate. Complete before rendering any su
 
 Route based on PLAN_COMPLEXITY (Phase 1):
 
+**MANDATORY**: Complex verification (full 3-agent wave) cannot be bypassed — not by --loop mode, not by --skip-preflight, not by any flag. All three agents (code-reviewer + verifier + linter) must complete and pass before any commit proceeds.
+
 **Simple** (1-2 steps, quick tier): Skip verification agents. Run build + test + lint only. All pass → invoke `/ac:commit --skip-preflight`. Any fail → fix and re-run.
 
 **Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents in a single message block (foreground — CC waits for all automatically):
@@ -268,7 +270,7 @@ Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified fi
 
 **Step 3** — Route based on combined verdict:
 
-→ **ALL pass** → Render execution summary, then invoke `/ac:commit --skip-preflight`.
+→ **ALL pass** → Render execution summary, then invoke `/ac:commit --skip-preflight`. This gate applies regardless of execution mode (--loop, direct, or manual).
 
 ```
 ## Execution Complete

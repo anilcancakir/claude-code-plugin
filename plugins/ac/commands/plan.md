@@ -53,11 +53,12 @@ Pipeline depth scales with complexity from Phase 1:
 | Stage | Simple | Standard | Complex |
 |-------|--------|----------|---------|
 | **Research** | Direct Read, 0 explore agents | 1 explore agent | 2-3 explore + librarian |
+| **Interview** | Dynamic (research typically resolves — 0 rounds) | Dynamic convergence (≤20% ambiguity) | Dynamic convergence (≤20% ambiguity) |
 | **Pre-gen Metis** | Skip | Skip | Yes |
 | **Post-gen Analysis** | Skip | Yes (plan-analysis only) | Yes (plan-analysis) |
-| **Deep Review** | Skip | Opt-in (user selects) | Offered (recommended) |
+| **Deep Review** | Skip | Opt-in (user selects) | Mandatory |
 | **Verification** | Build+test only | Code-reviewer + linter | Full 3-agent wave |
-| **Expected agents** | ~2-3 total | ~4-6 total | ~7-10 total |
+| **Expected agents** | ~2-3 total | ~4-6 total | ~8-12 total |
 
 This table is the single source of truth — Phase 2, Phase 3, and Complexity Shortcuts reference it. Verification depth is handled by execute.md.
 
@@ -166,10 +167,49 @@ Research depth is profile-conditional:
    - Read directives from output. Inject MUST DO / MUST NOT DO as plan generation constraints.
    - If agent returns QUESTIONS → merge into interview queue (step 2).
    - Skip for Simple and Standard — pre-gen Metis adds overhead without proportional value for bounded scope.
-2. Identify underspecified aspects. Use AskUserQuestion with 2-4 clickable options per question (include any Metis QUESTIONS from step 1c):
-   - **Simple**: 1 question max (or skip if clear)
-   - **Standard**: 1-2 questions
-   - **Complex**: 2-3 questions
+2. **Dynamic convergence interview** — reduce ambiguity through targeted mathematical scoring. Applies to ALL complexity levels. Include any Metis QUESTIONS from step 1c as initial dimension inputs.
+
+   Clarity dimensions (weights differ by scope type):
+   - **Goal** (greenfield 0.40 / brownfield 0.35): What exactly should this achieve?
+   - **Constraints** (greenfield 0.30 / brownfield 0.25): Technical/business limitations? Boundaries and non-goals?
+   - **Success** (greenfield 0.30 / brownfield 0.25): How do we know it works? Executable verification?
+   - **Context** (brownfield only, weight 0.15): Do we understand the existing system well enough to modify it safely?
+
+   Ambiguity scoring formula:
+
+   ```
+   Greenfield: ambiguity = 1 - (goal × 0.40 + constraints × 0.30 + success × 0.30)
+   Brownfield: ambiguity = 1 - (goal × 0.35 + constraints × 0.25 + success × 0.25 + context × 0.15)
+   ```
+
+   **Research pre-scoring**: Set initial dimension scores (0.0-1.0) from Phase 2 findings using this heuristic: explore agent returned no relevant matches → 0.0-0.2; partial/ambiguous findings → 0.3-0.5; explicit patterns or clear answers found → 0.6-0.8; fully resolved with concrete file references → 0.9-1.0. Calculate initial ambiguity. If initial ambiguity ≤ 20% → skip interview entirely, announce "Research resolved all ambiguity — skipping interview."
+
+   Each round:
+   a. Identify dimension with LOWEST weighted contribution (score × weight).
+   b. Round ≥ 4 and CONTRARIAN mode not yet used → inject Contrarian challenge: "What if the opposite were true? Challenge the core assumption."
+   c. Round ≥ 6 and SIMPLIFIER mode not yet used → inject Simplifier framing: "What's the simplest version that's still valuable?"
+   d. Round ≥ 8, ambiguity > 30%, and ONTOLOGIST mode not yet used → inject Ontologist reframe: "What IS this, really? Describe in one sentence."
+   e. Craft a single targeted question via AskUserQuestion (2-4 concrete options). Always include a final option: "Done — proceed to plan generation"
+   f. After answer, update ALL affected dimension scores.
+   g. Recalculate ambiguity using the formula above.
+   h. Re-emit the full score table (MANDATORY every round — this is the state mechanism):
+
+      | Dimension | Score | Weight | Weighted | Gap |
+      |-----------|-------|--------|----------|-----|
+      | Goal      | [0.0-1.0] | [w] | [score × w] | [what's unclear, or "Clear"] |
+      | Constraints | [0.0-1.0] | [w] | [score × w] | [gap or "Clear"] |
+      | Success   | [0.0-1.0] | [w] | [score × w] | [gap or "Clear"] |
+      | Context   | [0.0-1.0] | [w] | [score × w] | [brownfield only] |
+      | **Ambiguity** | | | **[X]%** | |
+
+      Then: "Next: targeting [dimension with lowest weighted score]"
+
+   Exit conditions (any triggers exit):
+   - Ambiguity ≤ 20% → proceed
+   - 10 rounds completed (hard cap)
+   - User signals "enough" / "move on" / "proceed" or selects "Done — proceed to plan generation"
+   - Stall: ambiguity unchanged (±5%) for 3 consecutive rounds → activate Ontologist immediately. If Ontologist was already used and stall persists for 2 more rounds → force exit and proceed.
+
 3. Ask test strategy if project has test infrastructure and rules require it: TDD (tests first) / Tests after / No tests
 4. Flag AI-Slop risks if detected: scope inflation, premature abstraction, over-validation
 5. Derive `$planName` from request topic (slugified, e.g., `auth-system`)
@@ -213,7 +253,7 @@ If LSP not available: skip. Note "symbol existence unverified — confirm file s
 - **Simple**: Skip. 1-2 step plans don't need gap analysis. Proceed to Save and present.
 - **Standard and Complex**: Run as described below.
 
-Two flows depending on whether Deep Review was requested ($deepReview flag from Phase 1 or user selection below):
+Two flows depending on whether Deep Review was requested ($deepReview flag from Phase 1 or user selection below). **Complex plans ALWAYS run the Deep Review flow** regardless of $deepReview flag — mandatory per Pipeline Profiles.
 
 **Standard flow** (no Deep Review): Launch `plan-analysis` alone, wait for results, apply fixes.
 
@@ -250,9 +290,11 @@ Rewrite the plan file with all fixes applied.
 3. Use AskUserQuestion for next step (profile-conditional):
    - **Simple**: Skip — auto-execute.
    - **Standard**: options: `Execute (Recommended)` / `Deep Review` (adversarial plan-reviewer + plan-analysis) / `Adjust`
-   - **Complex**: options: `Deep Review (Recommended)` (cross-module plans benefit from adversarial scrutiny) / `Execute` / `Adjust`
+   - **Complex**: Deep Review already completed (mandatory). Options: `Execute (Recommended)` / `Adjust`
 
 If user selects **Execute** (or $loopMode = true), invoke `ac:execute` with the plan file path.
+
+**--loop + Complex**: Deep Review runs automatically (mandatory). On OKAY verdict → auto-execute. On REJECT → halt pipeline, surface blocking issues, offer "Adjust / Execute Anyway". --loop does not bypass mandatory quality gates.
 
 If user selects **Deep Review**: set $deepReview = true and return to the **Analysis gate**. If plan-analysis already ran in Standard flow, launch ONLY `plan-review` on re-entry. If this is the first analysis pass (e.g., `--deep-review` set in Phase 1), run both in parallel per the Deep Review flow. Merge combined output, apply fixes, present the updated plan.
 
@@ -271,16 +313,16 @@ Each complexity level maps to a Pipeline Profile. See Pipeline Profiles table fo
 
 **Pipeline Profile: Simple** (~2-3 total agents)
 - Phase 2: Direct Read/Glob/Grep on known files — no explore agents
-- Phase 3: Skip pre-gen Metis. 0-1 questions. Skip analysis gate. Auto-execute.
+- Phase 3: Skip pre-gen Metis. Dynamic convergence interview (research pre-scoring typically resolves — 0 rounds). Skip analysis gate. Auto-execute.
 - Verification: Build+test only
 
 **Pipeline Profile: Standard** (~4-6 total agents)
 - Phase 2: 1 ac:explore agent (+ ac:librarian if external docs relevant)
-- Phase 3: Skip pre-gen Metis. 1-2 questions. Post-gen analysis gate (plan-analysis only). Deep Review opt-in.
+- Phase 3: Skip pre-gen Metis. Dynamic convergence interview (≤20% ambiguity, 10 round cap). Post-gen analysis gate (plan-analysis only). Deep Review opt-in.
 - Verification: Code-reviewer + linter (skip verifier)
 
 **Pipeline Profile: Complex** (~7-10 total agents)
 - Phase 2: 2-3 ac:explore + 1 ac:librarian (full research)
-- Phase 3: Pre-gen Metis. 2-3 questions. Post-gen analysis gate. Deep Review recommended. Add Risks section.
+- Phase 3: Pre-gen Metis. Dynamic convergence interview (≤20% ambiguity, 10 round cap). Post-gen analysis + Deep Review (mandatory). Add Risks section.
 - Verification: Full 3-agent wave (code-reviewer + linter + verifier)
 - Suggest phased execution if steps have dependencies
