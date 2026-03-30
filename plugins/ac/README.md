@@ -31,7 +31,7 @@ When you run `/ac:setup-global-claude-md`, `ac` generates a `~/.claude/CLAUDE.md
 
 | You Say | Intent | What Happens |
 |---------|--------|-------------|
-| "add X", "create Y", "implement Z" | Build | Triggers `/ac:plan` → `/ac:execute` automatically |
+| "add X", "create Y", "implement Z" | Build | Multi-file ad-hoc → `/ac:work`. Structured/dependent → `/ac:plan` → `/ac:execute` |
 | "restructure X", "clean up Y" | Refactor | Same plan-first pipeline |
 | "why does X fail", "debug Y" | Investigation | Spawns `ac:investigate` (Opus, hypothesis-driven) |
 | "fix X" (known cause) | Fix | Direct fix → verify with tests |
@@ -100,6 +100,9 @@ Once setup is complete, just describe what you want:
 add user avatar upload with S3 storage
 refactor the notification service to use events
 add rate limiting to public API endpoints
+
+# Ad-hoc parallel execution for independent multi-file changes:
+/ac:work add validation to all form controllers
 
 # Or use commands directly for explicit control:
 /ac:plan add avatar upload
@@ -202,6 +205,7 @@ The `--loop` flag chains ideation → planning → execution automatically. `ac`
 | `/ac:execute <plan>` | Execute plan — parallel agents for independent steps, sequential for dependent ones |
 | `/ac:commit` | Preflight checks (lint + tests) → convention detection → atomic commits → push |
 | `/ac:ideate <idea>` | Socratic refinement → adversarial challenge → Jira-ready tasks. Flags: `--bulk`, `--loop` |
+| `/ac:work <request>` | Ad-hoc parallel execution — decompose into independent tasks, route to model tiers, fire simultaneously, verify. Flag: `--dry-run` |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flag: `--no-evidence` |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
@@ -462,7 +466,7 @@ Restart Claude Code after updating the plugin. Some changes (new commands, agent
 
 ```
 plugins/ac/
-├── commands/          # 11 user-invocable /ac:* commands (incl. browser-qa)
+├── commands/          # 12 user-invocable /ac:* commands (incl. browser-qa, work, progress)
 ├── agents/            # 14 read-only agent definitions (incl. browser-qa)
 ├── skills/
 │   ├── ac-skill-creator/

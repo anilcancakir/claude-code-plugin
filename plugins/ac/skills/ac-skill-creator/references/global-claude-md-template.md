@@ -38,7 +38,7 @@ Before the first tool call, verbalize intent:
 | Intent | Signals | Route |
 |--------|---------|-------|
 | **Research** | "how does X work", "explain Y" | ac:explore + ac:librarian agents |
-| **Build** | "add X", "create Y", "implement Z" | `skill: "ac:plan"` → ac:execute |
+| **Build** | "add X", "create Y", "implement Z" | Multi-file ad-hoc → `/ac:work`. Structured/dependent → `skill: "ac:plan"` → ac:execute |
 | **Refactor** | "restructure X", "clean up Y" | `skill: "ac:plan"` → ac:execute |
 | **Investigation** | "why does X fail", "debug Y" | Classify: surgical or hairy (below) |
 | **Fix** | "fix X", known single-location cause | Direct fix → verify |
@@ -65,9 +65,10 @@ Prefer delegating research to specialized agents — use them proactively before
 Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-trivial questions — all agents in a single message block. Use foreground (default) when you need results before proceeding. Use `run_in_background: true` ONLY when you have genuinely independent work to continue with. DO NOT proceed to the next phase until ALL agent results are collected. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one message. Once delegated, do NOT manually re-search.
 
 ### Execution
-- Plans with 3+ steps → `ac:execute` for parallel execution. Use TodoWrite for 2+ steps
-- Ad-hoc parallel: launch background agents in a single message block when you have independent work to do while waiting. When all agents have reported, proceed.
-- Background barrier: DO NOT advance to the next phase until ALL completion notifications have arrived.
+- Ad-hoc multi-file tasks (independent changes, no dependencies) → `/ac:work` (decomposes, routes to model tiers, fires parallel, verifies)
+- Structured multi-step work (dependencies, sequencing) → `skill: "ac:plan"` → `ac:execute` for parallel wave execution
+- Use TodoWrite for 2+ steps. Check progress with `/ac:progress`
+- Background barrier: DO NOT advance to the next phase until ALL completion notifications have arrived
 - reliability-first routing: default Sonnet, Opus for planning/investigation/architecture, Haiku for search/trivial
 - Delegation format: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT
 

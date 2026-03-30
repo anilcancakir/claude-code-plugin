@@ -46,7 +46,7 @@ After updating, sync your global config with new plugin features:
 │   ├── ac/                      # Main plugin — structured development partner
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
-│   │   ├── commands/            # 10 /ac:* commands (incl. browser-qa)
+│   │   ├── commands/            # 12 /ac:* commands (incl. browser-qa, work, progress)
 │   │   ├── agents/              # 14 read-only agents (incl. browser-qa)
 │   │   ├── skills/              # ac-skill-creator + browser-qa workflow
 │   │   └── README.md
