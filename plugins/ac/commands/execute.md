@@ -107,6 +107,12 @@ Follow instructions literally. Do not abbreviate output, do not skip steps. Stay
 **Wisdom from prior steps**: [Inject ACCUMULATED_WISDOM]
 
 After changes: run build, tests, lint. Summarize: files changed, verification results, issues.
+
+**Test Feedback Protocol**: After running tests, classify results and act:
+- ALL PASSING → continue normally
+- MINOR (<20% fail) → log warnings in Issues, continue with caution
+- CONCERNING (20-50% fail) → STOP. Review approach. Fix if in scope, note if pre-existing
+- CRITICAL (>50% fail) → STOP immediately. Make no more changes. Report failure
 ```
 
 **Mid and Senior tier template** (Sonnet/Opus — structured format):
@@ -141,6 +147,19 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 - Do not modify files outside your assigned scope
 - Do not refactor or clean up code beyond what the step requires
 - Do not add documentation or annotations to unchanged code
+
+## Test Feedback
+
+After running tests, classify the result and respond accordingly:
+
+| Result | Threshold | Action |
+|--------|-----------|--------|
+| All passing | 0% fail | Continue normally |
+| Minor failures | <20% fail | Log in Issues section, continue with caution. Note which tests failed and whether they're in your scope |
+| Concerning | 20-50% fail | STOP. Review your approach. If failing tests are in your assigned scope, fix them before proceeding. If pre-existing failures, note and continue |
+| Critical | >50% fail | STOP immediately. Do not make further changes. Report the full failure summary in your output. The orchestrator will handle retry or escalation |
+
+Apply after EVERY significant code change (new file, modified function, config change). Do not batch — test incrementally.
 
 ## Context
 
@@ -177,6 +196,8 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 
 When all agents in the wave have reported, advance to the next wave. Wave 2 must not launch until all Wave 1 agents have completed.
 
+**Enhanced barrier**: All steps in the wave must reach a terminal verification state (✅ verified or ❌ failed-after-retry) before the next wave launches. This extends the agent-completion barrier with per-step verification — agents may have completed but verification/retry may still be in progress.
+
 ### For Sequential Execution
 
 Launch agents one at a time, foreground (no `run_in_background`). Wait for each to complete before launching the next.
@@ -187,6 +208,18 @@ Execute the step directly — read files, make changes, verify. No agent delegat
 
 ### After Each Work Unit Completes
 
+0. **Per-Step Verification**: Verify the completed step's acceptance criteria immediately:
+   - Parse the step's `Done when:` field from the plan
+   - For file-content checks: Read the target file, grep/search for expected patterns
+   - For count-based checks: Run the described check (e.g., count occurrences) and compare against threshold
+   - Record result: **MET** (with file:line evidence) or **UNMET** (what was expected vs what was found)
+   - If **MET** → mark step as ✅ verified, proceed to step 1 (diagnostics check)
+   - If **UNMET** → attempt retry:
+     - Apply tier escalation: quick→sonnet, mid→opus, senior→no escalation
+     - Re-launch agent with failure context appended to original prompt: "Previous attempt UNMET: [criterion] — expected [X], found [Y]. Fix this specific issue." (Direct execution mode: no agent to re-launch — re-attempt the fix inline instead.)
+     - Max 1 retry per step within the current execution cycle
+     - Retry MET → mark ✅ verified, proceed to step 1
+     - Retry still UNMET → mark ❌ failed, log failure for Phase 5 summary, proceed to step 1
 1. Check `<new-diagnostics>`: ERROR-level on modified files → fix before marking done. WARNING-level → log and continue. LSP unavailable → proceed.
 2. If LSP available and code changed, delegate to ac:linter (advisory): `Agent(subagent_type="ac:linter", prompt="Verify [files] after [work unit]")`. BLOCKED → log warning, continue. CLEAN or LSP UNAVAILABLE → mark done.
 3. **Extract wisdom** from completed worker's "Changes Made" and "Issues": naming patterns, DI style, file organization, gotchas, discovered conventions. Append to ACCUMULATED_WISDOM as bullet points (max 5 per unit, max 15 total). Skip generic statements — only actionable conventions.
@@ -203,19 +236,20 @@ Phase 4 begins only after all agents in the current wave have completed.
 Render the status table after launching a wave:
 
 ```
-| # | Step | Wave | Status | Result |
-|---|------|------|--------|--------|
-| 1 | [title] | 1 | ⏳ running | — |
-| 3 | [title] | 1 | ⏳ running | — |
-| 2 | [title] | 2 | ⏸ waiting | depends on Step 1 |
+| # | Step | Wave | Agent | Verify | Result |
+|---|------|------|-------|--------|--------|
+| 1 | [title] | 1 | ⏳ running | — | — |
+| 3 | [title] | 1 | ⏳ running | — | — |
+| 2 | [title] | 2 | ⏸ waiting | — | depends on Step 1 |
 ```
 
 As notifications arrive:
 
-1. Update status to ✅ done or ❌ failed.
-2. When a wave completes, launch the next wave.
-3. On failure, attempt tier escalation: `quick` → retry with `sonnet`; `mid` → retry with `opus`; `senior` → no escalation. Max 1 escalation per step. If escalated retry fails → log and continue.
-4. Use TaskOutput once notified. Do not poll.
+1. Update Agent status to ✅ done or ❌ failed.
+2. Update Verify column after per-step verification (step 0 in "After Each Work Unit Completes"): ✅ MET, ❌ UNMET, or retry → ✅ MET / retry → ❌ failed.
+3. When a wave completes (all steps reach terminal verification state), launch the next wave.
+4. On failure, attempt tier escalation: `quick` → retry with `sonnet`; `mid` → retry with `opus`; `senior` → no escalation. Max 1 escalation per step. If escalated retry fails → log and continue.
+5. Use TaskOutput once notified. Do not poll.
 
 When all agents have reported, render the final table and summary.
 
@@ -224,6 +258,8 @@ When all agents have reported, render the final table and summary.
 ## Phase 5: Verification Wave
 
 CRITICAL: DO NOT SKIP — mandatory final gate. Complete before rendering any summary or suggesting commit.
+
+**Note**: Per-step done-when verification already completed in Phase 3 ("After Each Work Unit Completes"). Phase 5 focuses on cross-cutting quality that individual step verification cannot catch: code review (convention compliance, quality), linting (syntax, imports), and (Complex only) full plan compliance audit. Steps that failed per-step verification are included in the Phase 5 summary for reviewer context.
 
 ### Verification Depth by Complexity
 

@@ -16,7 +16,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
-│   │   ├── commands/             # 10 user-invocable /ac:* commands
+│   │   ├── commands/             # 11 user-invocable /ac:* commands
 │   │   ├── agents/               # 14 read-only agent definitions
 │   │   ├── skills/
 │   │   │   ├── ac-skill-creator/ # Skill + references/ for component creation
@@ -92,6 +92,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available |
 | `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports `--bulk` and `--loop` |
 | `/ac:browser-qa` | Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Auto-detects Playwright CLI |
+| `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ## Agents (ac plugin)
 

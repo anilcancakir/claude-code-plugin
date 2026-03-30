@@ -139,6 +139,22 @@ Research depth is profile-conditional:
 
 4. Once all agents return, read key files identified by agents to build deep understanding
 5. Summarize findings: patterns found, files to modify, dependencies, external best practices
+5b. **Research Gate** (Standard and Complex only — skip for Simple per Pipeline Profiles):
+
+   Evaluate research sufficiency using a heuristic checklist before proceeding to plan generation:
+
+   | Dimension | Criterion | Pass | Fail Action |
+   |-----------|-----------|------|-------------|
+   | **Depth** | ≥3 file:line references across all agent results | Count file:line refs in findings | Launch targeted explore: "Find more file references for [area]" |
+   | **Patterns** | ≥1 naming/architecture pattern identified per target area | Check patterns in findings | Launch targeted explore: "Identify naming conventions and architecture patterns in [area]" |
+   | **Specificity** | Findings reference actual file names and project conventions, not generic advice | Check for generic statements without file refs | Launch targeted explore: "Find concrete project-specific patterns, not general best practices" |
+   | **Risk Coverage** | ≥1 edge case, dependency risk, or breaking change identified | Check risk mentions in findings | Launch targeted explore: "Identify edge cases, dependency risks, and potential breaking changes for [feature]" |
+
+   Gate logic:
+   - ALL 4 pass → proceed to step 6
+   - ANY fail → launch ONE targeted ac:explore agent per failing dimension (max 1 re-research cycle to prevent infinite loops). After re-research completes, re-evaluate the checklist. If still failing → proceed anyway with gaps noted in plan's Risks section
+   - Announce gate result: "Research gate: [N/4] passed. [Proceeding / Re-researching: [failing dimensions]...]"
+
 6. Populate plan draft's `### Research Summary` and `### Conventions` sections. Four subsections: **Key Files** (file:line with one-line descriptions), **Patterns Found** (architecture, naming, organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming, file organization, coding style). Max ~30 lines total. Merge **PROJECT_CONTEXT** into **Conventions** — PROJECT_CONTEXT rules take priority over agent-discovered patterns.
 7. **Codebase state assessment**: Classify the target area after reading key files:
    - **Disciplined**: Consistent patterns, good test coverage, strong typing → follow existing patterns exactly

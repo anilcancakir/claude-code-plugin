@@ -45,6 +45,20 @@ Compare the plan's declared file list against actual state:
 - For each file the plan says to modify → verify it exists and contains expected changes
 - Flag files the plan did NOT mention but that may have been changed
 
+### 4. Verification Depth
+
+For each done-when criterion that involves file creation or modification, verify at three levels:
+
+**Level 1 — Exists**: File exists, is non-empty, and expected identifiers/structures are present. Check via Glob (file exists) + Read (non-empty, contains key identifiers).
+
+**Level 2 — Substantive**: Real implementation, not stubs or placeholders. Grep each verified file for stub indicators: `TODO`, `FIXME`, `throw new Error('not implemented')`, empty function bodies, `console.log`-only implementations, `pass` (Python), `raise NotImplementedError`. Any match → flag as "stub detected" with file:line evidence.
+
+**Level 3 — Wired**: Properly connected to the system. Grep for import/require/use statements referencing the file or its exported symbols. At least one consumer must exist. No consumers found → flag as "dead code — implemented but not connected."
+
+Depth evaluation stops at first failure: L1 fail → UNMET. L2 fail → UNMET (stub). L3 fail → UNMET (unwired). All three pass → MET.
+
+Skip Level 3 for: configuration files, test files, standalone scripts, and entry points (they are consumers, not consumed).
+
 ## What You Do NOT Verify
 
 - Build/test/lint results (ac:execute handles these before calling you)
@@ -73,6 +87,8 @@ Issue **REJECT** when ANY:
 
 Each rejection includes: what was expected, what was found (or not found), and a suggested fix.
 
+Depth failures count as UNMET: stub (L2 fail) and unwired (L3 fail) are treated identically to missing criteria for verdict purposes.
+
 ---
 
 ## Output Format
@@ -84,9 +100,14 @@ Return your verdict in this exact format:
 
 ### Criteria Check
 
-| # | Step | Criterion | Status | Evidence |
-|---|------|-----------|--------|----------|
-| 1 | [step title] | [criterion summary] | MET/UNMET | [file:line or search result] |
+| # | Step | Criterion | L1 | L2 | L3 | Status | Evidence |
+|---|------|-----------|----|----|----|--------|----------|
+| 1 | [step] | [criterion] | ✅ | ✅ | ✅ | MET | [file:line] |
+| 2 | [step] | [criterion] | ✅ | ❌ | — | UNMET (stub) | [file:line — TODO found] |
+| 3 | [step] | [criterion] | ✅ | ✅ | ❌ | UNMET (unwired) | [no import found] |
+| 4 | [step] | [criterion] | ✅ | — | — | MET | [config file — L3 skipped] |
+
+L3 is skipped for config files, tests, scripts, and entry points (mark with `—` and note reason).
 
 **Criteria**: [M/N met]
 

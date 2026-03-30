@@ -203,6 +203,7 @@ The `--loop` flag chains ideation → planning → execution automatically. `ac`
 | `/ac:commit` | Preflight checks (lint + tests) → convention detection → atomic commits → push |
 | `/ac:ideate <idea>` | Socratic refinement → adversarial challenge → Jira-ready tasks. Flags: `--bulk`, `--loop` |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flag: `--no-evidence` |
+| `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ### Project Setup
 
@@ -461,7 +462,7 @@ Restart Claude Code after updating the plugin. Some changes (new commands, agent
 
 ```
 plugins/ac/
-├── commands/          # 10 user-invocable /ac:* commands (incl. browser-qa)
+├── commands/          # 11 user-invocable /ac:* commands (incl. browser-qa)
 ├── agents/            # 14 read-only agent definitions (incl. browser-qa)
 ├── skills/
 │   ├── ac-skill-creator/
