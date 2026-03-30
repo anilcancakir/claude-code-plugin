@@ -156,7 +156,7 @@ npm install -g @playwright/cli@latest
 The `/ac:browser-qa` command auto-detects the CLI at runtime. No MCP server needed — all browser interactions use shell commands via `playwright-cli`.
 
 - **Parallel execution**: When >3 test cases, automatically splits across up to 4 parallel agents with isolated Playwright CLI sessions. Disable with `--no-parallel`.
-- **Knowledge sharing**: Agents capture learned facts (stable selectors, navigation flows, timing gotchas) and persist them to `.ac/qa/knowledge/` for cross-run reuse. Wave 2 re-checks failures with aggregated knowledge from Wave 1.
+- **Knowledge sharing**: Agent-native knowledge system — agents read/write `.ac/qa/knowledge/project.jsonl` directly. Learned facts (selectors, flows, timing, gotchas) persist across all test runs project-wide. Parallel agents write to isolated temp files; parent merges after execution.
 - **Headed mode**: `--headed` flag runs Playwright in a visible browser window for debugging.
 
 ## Design Principles

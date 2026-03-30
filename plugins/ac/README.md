@@ -340,7 +340,7 @@ When >3 test cases are provided, `/ac:browser-qa` automatically splits them acro
 
 ### Knowledge Sharing
 
-Agents learn during execution — stable selectors from self-healing, navigation flows, timing requirements. Knowledge persists to `.ac/qa/knowledge/` for cross-run reuse. Wave 2 re-checks failures with aggregated knowledge from Wave 1.
+Agent-native knowledge system — agents read and write `.ac/qa/knowledge/project.jsonl` directly during execution. Learned facts (reliable selectors, navigation flows, timing requirements, gotchas) persist project-wide across all test runs. Parallel agents write to isolated temp files (`.bqa-{session}.jsonl`); the parent merges into `project.jsonl` after execution. A cookie banner selector learned during ad-hoc testing benefits all future runs automatically.
 
 ### Evidence Persistence
 
