@@ -207,6 +207,7 @@ The `--loop` flag chains ideation → planning → execution automatically. `ac`
 | `/ac:ideate <idea>` | Socratic refinement → adversarial challenge → Jira-ready tasks. Flags: `--bulk`, `--loop` |
 | `/ac:work <request>` | Ad-hoc parallel execution — decompose into independent tasks, route to model tiers, fire simultaneously, verify. Flag: `--dry-run` |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
+| `/ac:maestro-qa` | Mobile QA testing — 5 modes, MCP-driven, parallel execution, knowledge sharing | `--no-parallel`, `--no-evidence`, `--platform` |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ### Project Setup
@@ -320,6 +321,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | `ac:investigate` | Opus | Root cause analysis — hypothesis-driven, 3-cycle ceiling, structured evidence |
 | `ac:gemini-vision` | Sonnet | Multimodal analysis — video recordings, multi-image comparison via Gemini |
 | `ac:browser-qa` | Sonnet | Browser test executor — runs tests via Playwright CLI shell commands, captures screenshots + HTML + errors, returns structured verdicts |
+| `ac:maestro-qa` | Sonnet | Mobile test executor via Maestro MCP — runs tests on iOS/Android emulators |
 
 ## Browser QA Testing
 
@@ -363,6 +365,44 @@ Disable evidence capture with `--no-evidence`.
 ```bash
 npm install -g @playwright/cli@latest
 ```
+
+## Mobile QA Testing
+
+MCP-driven mobile testing for React Native and native apps via [Maestro CLI](https://maestro.mobile.dev/)'s built-in MCP server. The `/ac:maestro-qa` command orchestrates Maestro test execution on iOS/Android emulators. Unlike browser-qa which uses Playwright CLI shell commands, `maestro-qa` drives the device entirely through Maestro MCP tool calls (`mcp__maestro__*`). Invoke directly with `/ac:maestro-qa` or let the Intent Gate route mobile testing requests automatically.
+
+### Modes
+
+| Mode | Trigger | Description |
+|------|---------|-------------|
+| AD_HOC | App description | Free-form exploratory testing on target app |
+| BUG_REPRO | `--bug <path>` | Reproduce specific bugs from bug report document |
+| PLAN_VERIFY | `--plan <path>` | Verify plan acceptance criteria on device |
+| RECHECK | `--recheck` | Re-run previously failed test cases with updated knowledge |
+| FLOW_RUN | `--flows <path>` | Execute existing `.maestro/` YAML flow files |
+
+### Parallel Execution
+
+When >3 test cases, automatically splits across parallel agents with isolated device targeting. Device-constrained: number of agents ≤ available booted devices. Disable with `--no-parallel`.
+
+### Knowledge Sharing
+
+Shares the same `project.jsonl` knowledge base with browser-qa in `.ac/qa/knowledge/`. Agents write to temporary `.mqa-{session}.jsonl` files during execution; the parent command merges into `project.jsonl` after completion. Six knowledge types: selector, flow, timing, gotcha, permission, navigation.
+
+### Evidence Persistence
+
+Screenshots (`.png`), view hierarchy snapshots (`.csv`), and error logs (`.json`) saved to `.ac/qa/{testName}/`. Skip with `--no-evidence`.
+
+### Maestro Setup
+
+```bash
+# Install Maestro CLI
+brew install maestro
+
+# Add Maestro MCP server to .mcp.json
+{"maestro": {"command": "maestro", "args": ["mcp"]}}
+```
+
+The `/ac:maestro-qa` command auto-detects Maestro MCP tools at runtime and shows setup instructions if missing. Run `maestro mcp` to start the server manually and verify connectivity before launching `maestro-qa` tests.
 
 ## Model Customization
 
@@ -476,8 +516,8 @@ Restart Claude Code after updating the plugin. Some changes (new commands, agent
 
 ```
 plugins/ac/
-├── commands/          # 12 user-invocable /ac:* commands (incl. browser-qa, work, progress)
-├── agents/            # 14 read-only agent definitions (incl. browser-qa)
+├── commands/          # 13 user-invocable /ac:* commands (incl. browser-qa, maestro-qa, work, progress)
+├── agents/            # 15 read-only agent definitions (incl. browser-qa, maestro-qa)
 ├── skills/
 │   ├── ac-skill-creator/
 │   │   ├── SKILL.md
