@@ -206,7 +206,7 @@ The `--loop` flag chains ideation → planning → execution automatically. `ac`
 | `/ac:commit` | Preflight checks (lint + tests) → convention detection → atomic commits → push |
 | `/ac:ideate <idea>` | Socratic refinement → adversarial challenge → Jira-ready tasks. Flags: `--bulk`, `--loop` |
 | `/ac:work <request>` | Ad-hoc parallel execution — decompose into independent tasks, route to model tiers, fire simultaneously, verify. Flag: `--dry-run` |
-| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flag: `--no-evidence` |
+| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ### Project Setup
@@ -334,6 +334,14 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | **Plan verify** | `--plan <path>` | Verify plan acceptance criteria |
 | **Re-check** | `--recheck` | Re-run previously failed tests |
 
+### Parallel Execution
+
+When >3 test cases are provided, `/ac:browser-qa` automatically splits them across up to 4 parallel agents with isolated Playwright CLI sessions. Each agent captures knowledge (reliable selectors, flow patterns, timing gotchas) that enriches subsequent test waves. Disable with `--no-parallel`.
+
+### Knowledge Sharing
+
+Agents learn during execution — stable selectors from self-healing, navigation flows, timing requirements. Knowledge persists to `.ac/qa/knowledge/` for cross-run reuse. Wave 2 re-checks failures with aggregated knowledge from Wave 1.
+
 ### Evidence Persistence
 
 By default, test artifacts are saved to `.ac/qa/` for audit trail and debugging:
@@ -344,9 +352,11 @@ By default, test artifacts are saved to `.ac/qa/` for audit trail and debugging:
   {YYYYMMDD}-{HHmmss}-{pagePath}.html   # Page HTML snapshots
   {YYYYMMDD}-{HHmmss}-{pagePath}.json   # Console + network errors
   report.md                              # Latest report
+.ac/qa/knowledge/
+  {testName}.jsonl                       # Learned facts (cross-run)
 ```
 
-Disable with `--no-evidence`.
+Disable evidence capture with `--no-evidence`.
 
 ### Required: [Playwright CLI](https://github.com/microsoft/playwright-cli)
 

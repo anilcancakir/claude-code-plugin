@@ -92,7 +92,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available |
 | `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports `--bulk` and `--loop` |
 | `/ac:work` | Ad-hoc parallel execution — decompose request into independent tasks, route to model tiers, fire simultaneously, complexity-driven verification |
-| `/ac:browser-qa` | Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Auto-detects Playwright CLI |
+| `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck), parallel execution across up to 4 agents, knowledge sharing across waves. Auto-detects Playwright CLI. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ## Agents (ac plugin)
@@ -155,6 +155,10 @@ npm install -g @playwright/cli@latest
 
 The `/ac:browser-qa` command auto-detects the CLI at runtime. No MCP server needed — all browser interactions use shell commands via `playwright-cli`.
 
+- **Parallel execution**: When >3 test cases, automatically splits across up to 4 parallel agents with isolated Playwright CLI sessions. Disable with `--no-parallel`.
+- **Knowledge sharing**: Agents capture learned facts (stable selectors, navigation flows, timing gotchas) and persist them to `.ac/qa/knowledge/` for cross-run reuse. Wave 2 re-checks failures with aggregated knowledge from Wave 1.
+- **Headed mode**: `--headed` flag runs Playwright in a visible browser window for debugging.
+
 ## Design Principles
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
@@ -169,7 +173,7 @@ The `/ac:browser-qa` command auto-detects the CLI at runtime. No MCP server need
 - **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) — mandatory for Complex, opt-in for Standard.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
-- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/` in the working directory. Not gitignored by default — each project decides
+- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
 - **Ad-hoc parallel execution**: `/ac:work` provides plan-free parallel execution for multi-file tasks. Decomposes requests into independent tasks with file ownership validation, routes each to correct model tier (quick→Haiku, mid→Sonnet, senior→Opus), fires simultaneously, and runs complexity-driven verification. For structured multi-step work with dependencies, use `/ac:plan` + `/ac:execute` instead
 - **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:

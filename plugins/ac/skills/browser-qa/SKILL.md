@@ -26,6 +26,16 @@ Snapshots and screenshots write to disk (`.playwright-cli/`), never into context
 - Start named session: `playwright-cli open -s=<name> <url>`
 - Default session via env: `PLAYWRIGHT_CLI_SESSION=<name>`
 - Close session: `playwright-cli close -s=<name>`
+- **Parallel sessions** — each parallel agent uses its own `-s=bqa-{index}` (e.g., `bqa-0`, `bqa-1`). Sessions are fully isolated: independent cookies, storage, and cache — no cross-agent state bleed
+- Cleanup: `playwright-cli close -s=bqa-{index}` per agent when done; `playwright-cli close-all` as fallback if agents exit without closing
+- **Max concurrent sessions**: 4 — beyond this, resource contention degrades reliability and screenshot timing
+
+### Headed Mode
+
+- Add `--headed` to `playwright-cli open` to show the browser UI: `playwright-cli open --headed <url>`
+- Use for: debugging failures visually, demoing to stakeholders, recording screen captures
+- Default is headless (no flag) — preferred for CI and automated runs
+- Env var alternative: `PLAYWRIGHT_MCP_HEADLESS=false` (applies to all sessions in the process)
 
 ### Element Targeting
 
@@ -64,6 +74,8 @@ Snapshots and screenshots write to disk (`.playwright-cli/`), never into context
 6. **Report** — build test case results with evidence on failures
 7. **Close** — `playwright-cli close` when done
 
+When running in parallel mode, use the session name provided by the command (e.g., `-s=bqa-0`) on every `playwright-cli open` call.
+
 ### BUG_REPRO — Bug Reproduction
 
 1. **Parse** bug document — extract numbered bugs with steps, expected/actual results
@@ -74,6 +86,8 @@ Snapshots and screenshots write to disk (`.playwright-cli/`), never into context
 
 Key: Isolation is paramount. Each bug gets a fresh `playwright-cli open` / `playwright-cli close` cycle. If bug doc lacks structure, extract bugs by paragraph/section breaks.
 
+When running in parallel mode, use the session name provided by the command (e.g., `-s=bqa-1`) so each parallel agent's sessions remain isolated.
+
 ### PLAN_VERIFY — Acceptance Criteria Verification
 
 1. **Extract** `Done when:` blocks from plan file. Fall back to bulleted checklist items
@@ -83,14 +97,18 @@ Key: Isolation is paramount. Each bug gets a fresh `playwright-cli open` / `play
 
 Key: Use `playwright-cli eval` for programmatic assertions (e.g., `document.querySelector('.result').textContent`). Clean state per test case via fresh `open`/`close`.
 
+When running in parallel mode, use the session name provided by the command (e.g., `-s=bqa-2`) on every `playwright-cli open` call in this agent's scope.
+
 ### RECHECK — Re-run Previous Failures
 
-1. **Load** `.browser-qa/last-report.json` — stop if not found
+1. **Load** `.ac/browser-qa/{testName}.json` (testName derived from original target) — stop if not found
 2. **Filter** to FAIL and BLOCKED items only — preserve original test case IDs
 3. **Re-run** each item using playwright-cli (no backend field lookup needed)
 4. **Diff report** — compare current vs previous verdicts, show which items changed status
 
 Key: Output a diff table showing previous→current verdict changes.
+
+When running in parallel mode, use the session name provided by the command (e.g., `-s=bqa-3`) to keep re-run sessions isolated from any concurrently running agents.
 
 ---
 
@@ -118,11 +136,39 @@ Never fall back to generic CSS class selectors — they are brittle and break on
 
 ---
 
+## Knowledge Capture Patterns
+
+During a test run, capture non-obvious discoveries that would save the next agent time. Do not capture trivial facts (e.g., "page has a header" — the next agent can see that). Only capture what required effort to discover.
+
+**What to capture:**
+
+- **Reliable selectors** — recovered during self-healing (the winning ref or role selector after a retry cycle)
+- **Auth/nav flows** — redirect chains, multi-step login sequences, session setup paths
+- **Timing requirements** — waits or retries that were necessary before an element appeared or an assertion passed
+- **Unexpected behaviors** — error recoveries, edge-case states, undocumented side effects that affected the test
+
+**When to capture:**
+
+- After successful self-healing (selector) — record the working ref or role that survived after the stale one failed
+- After a redirect chain resolved (flow) — record the actual final URL and intermediate steps
+- After a wait-based retry succeeded (timing) — record the minimum wait or retry count required
+- After recovering from an unexpected error (gotcha) — record what happened and what resolved it
+
+**Capture format:**
+
+```json
+{ "type": "selector|flow|timing|gotcha", "key": "<human-readable identifier>", "value": "<what to remember>", "confidence": "high|medium|low" }
+```
+
+Anti-pattern: Do not log obvious/trivial facts. If the next agent would discover it in one snapshot, skip it. Only capture discoveries that required multiple attempts or non-obvious reasoning to reach.
+
+---
+
 ## Reference Files
 
 - **Report format specification**: `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/report-format.md`
 
-Load report-format.md for the structured JSON schema used in `.browser-qa/last-report.json` persistence.
+Load report-format.md for the structured JSON schema used in `.ac/browser-qa/{testName}.json` persistence.
 
 ---
 

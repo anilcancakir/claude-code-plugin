@@ -44,6 +44,8 @@ Global flags (combinable with any mode):
 | Flag | Effect |
 |------|--------|
 | `--no-evidence` | Skip saving evidence artifacts to `.ac/qa/`. Report still generated, just no file persistence |
+| `--headed` | Launch browser in headed (visible) mode. Default: headless |
+| `--no-parallel` | Force sequential single-agent execution even for >3 test cases. Default: parallel |
 
 2. If no arguments provided, ask the user: "What would you like to test?" with these options:
    - **Ad-hoc test** — "Give me a URL and instructions — I'll navigate and test"
@@ -63,7 +65,7 @@ Global flags (combinable with any mode):
      After installing, re-run this command.
      ```
 
-5. Store: `MODE`, `TARGET` (URL or file path)
+5. Store: `MODE`, `TARGET` (URL or file path), `HEADED_MODE` (boolean, default false), `PARALLEL_ENABLED` (boolean, default true)
 
 ---
 
@@ -98,43 +100,114 @@ Global flags (combinable with any mode):
 
 ### RECHECK mode
 
-1. Read `.browser-qa/last-report.json`.
-2. If file not found → inform user: "No previous QA session found. Run a test first." Stop.
+1. Derive `{testName}` from the original target (same naming convention as evidence persistence). Read `.ac/browser-qa/{testName}.json`. If `$ARGUMENTS` includes a specific report name, use that instead.
+2. If file not found → inform user: "No previous QA report found for '{testName}'. Run a test first." Stop.
 3. Filter to `FAIL` and `BLOCKED` items only.
 4. Rebuild test case list from failed items — preserve original IDs.
 5. Always uses Playwright CLI.
 6. Announce: "Re-checking {N} failed items from {timestamp}"
 
+### Cross-run Knowledge Injection (all modes)
+
+1. Derive `{testName}` from MODE + TARGET (same naming convention as evidence persistence in Phase 5b).
+2. Check for existing `.ac/qa/knowledge/{testName}.jsonl`.
+   - If found: read file, parse each line as JSON, store as `EXISTING_KNOWLEDGE` JSON array. Announce: "Loaded {N} knowledge facts from previous runs."
+   - If not found: set `EXISTING_KNOWLEDGE` to empty array `[]`.
+
 ---
 
 ## Phase 3: Agent Delegation
 
-**Goal**: Delegate browser test execution to the browser-qa agent
+**Goal**: Delegate browser test execution to browser-qa agents with parallel orchestration and two-wave knowledge sharing
 
 Serialize the `TEST_CASES` list from Phase 2 as a JSON array.
 
-Launch the browser-qa agent to execute all test cases:
+### 3a. Grouping Logic
 
+Determine execution strategy:
+- If test case count is **<= 3** OR `PARALLEL_ENABLED` is false (`--no-parallel`) → **single agent mode**
+- If test case count is **> 3** AND `PARALLEL_ENABLED` is true → **parallel mode**: chunk into groups of ~3, max 4 agents: `N = min(ceil(count/3), 4)`. Each group gets a unique `SESSION_NAME` (`bqa-1`, `bqa-2`, ...), `DISPLAY_MODE` derived from `HEADED_MODE` ("headed" if true, "headless" if false), and its subset of `TEST_CASES`.
+
+### 3b. Wave 1 — Test Execution
+
+**Single agent mode** (<=3 test cases or --no-parallel):
+
+```
 Agent(
   subagent_type: "ac:browser-qa",
   prompt: "Execute browser QA tests.
-
     **Mode**: [MODE]
-    **Test Cases**: [TEST_CASES JSON array from Phase 2]
-
-    Load workflow patterns:
-    ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
-
-    Execute each test case using playwright-cli commands via Bash. Follow the execution loop, self-healing, and token efficiency patterns from the skill.
-
-    Return results as a JSON array:
-    [{id, title, verdict, severity, page_url, evidence: {screenshot_path?, page_html?, console_errors?, network_errors?, failure_detail?}, steps_executed}]
-
-    On FAIL: playwright-cli screenshot --filename=<evidence-path> + playwright-cli console + playwright-cli network. Include page_url on every result.",
+    **Session Name**: bqa-0
+    **Display Mode**: [headless|headed]
+    **Test Cases**: [TEST_CASES JSON]
+    **Prior Knowledge**: [EXISTING_KNOWLEDGE]
+    Load: ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
+    Return results + learned_facts as JSON array.",
   model: "sonnet"
 )
+```
 
-Store the agent's returned results as `AGENT_RESULTS` — a JSON array of test case outcomes.
+**Parallel mode** (>3 test cases):
+
+Launch N browser-qa agents in a single message block (foreground — CC waits for all automatically):
+
+```
+Agent(
+  subagent_type: "ac:browser-qa",
+  prompt: "Execute browser QA tests.
+    **Mode**: [MODE]
+    **Session Name**: bqa-1
+    **Display Mode**: [headless|headed]
+    **Test Cases**: [GROUP_1 JSON]
+    **Prior Knowledge**: [EXISTING_KNOWLEDGE]
+    Load: ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
+    Return results + learned_facts as JSON array.",
+  model: "sonnet"
+)
+// Repeat for bqa-2, bqa-3, bqa-4 with their respective GROUP_N test case subsets
+```
+
+Note: `EXISTING_KNOWLEDGE` is loaded from `.ac/qa/knowledge/` in Phase 2. Do NOT hardcode `[]` — use the loaded value.
+
+### 3c. Knowledge Aggregation
+
+After all Wave 1 agents complete:
+
+1. Collect `learned_facts` from all Wave 1 agent results.
+2. Deduplicate by `key` — keep highest confidence version.
+3. Merge with `EXISTING_KNOWLEDGE` — new facts override same-key existing ones.
+4. Store as `AGGREGATED_KNOWLEDGE` JSON array.
+
+### 3d. Wave 2 — Knowledge-enriched Re-check (conditional)
+
+**Trigger condition**: Wave 1 has FAIL or BLOCKED results AND `AGGREGATED_KNOWLEDGE` is non-empty.
+
+If triggered:
+- Re-run only FAIL/BLOCKED test cases with `PRIOR_KNOWLEDGE` set to `AGGREGATED_KNOWLEDGE`.
+- Single agent, session name `bqa-rewave`, same `DISPLAY_MODE`.
+
+```
+Agent(
+  subagent_type: "ac:browser-qa",
+  prompt: "Execute browser QA tests — knowledge-enriched re-check.
+    **Mode**: [MODE]
+    **Session Name**: bqa-rewave
+    **Display Mode**: [headless|headed]
+    **Test Cases**: [FAIL/BLOCKED test cases from Wave 1 JSON]
+    **Prior Knowledge**: [AGGREGATED_KNOWLEDGE]
+    Load: ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
+    Return results + learned_facts as JSON array.",
+  model: "sonnet"
+)
+```
+
+If Wave 1 has no failures OR `AGGREGATED_KNOWLEDGE` is empty → skip Wave 2 silently.
+
+### 3e. Result Merge
+
+1. Combine all agent results (Wave 1 + Wave 2 if run) into single `AGENT_RESULTS` array.
+2. Wave 2 results override Wave 1 for same test case IDs (re-checked items).
+3. Merge all `learned_facts` into final `AGGREGATED_KNOWLEDGE`.
 
 ---
 
@@ -212,9 +285,10 @@ RECHECK diff section (RECHECK mode only — append after Recommendations):
 
 ### 5a. RECHECK State (always)
 
-1. Create `.browser-qa/` directory if it doesn't exist.
-2. Save human-readable report to `.browser-qa/last-report.md` — the full report from Phase 4.
-3. Save structured data to `.browser-qa/last-report.json`:
+1. Create `.ac/browser-qa/` directory if it doesn't exist.
+2. Derive `{testName}` from mode + target (same naming convention as evidence persistence: AD_HOC → URL path slug, BUG_REPRO → bug doc filename, PLAN_VERIFY → plan filename, RECHECK → `recheck-{original}`).
+3. Save human-readable report to `.ac/browser-qa/{testName}.md` — the full report from Phase 4.
+4. Save structured data to `.ac/browser-qa/{testName}.json`:
    ```json
    {
      "timestamp": "ISO8601", "mode": "AD_HOC", "backend": "playwright-cli",
@@ -261,7 +335,16 @@ Persist key test artifacts to `.ac/qa/` for audit trail, debugging, and historic
 2. For each FAIL: save `.png`, `.html`, `.json` using the naming convention above.
 3. For PASS at key milestones: optionally save `.html` only (lightweight audit trail).
 4. Copy Phase 4 report to `.ac/qa/{testName}/report.md`.
-5. Update evidence paths in `.browser-qa/last-report.json` to `.ac/qa/` files.
+5. Update evidence paths in `.ac/browser-qa/{testName}.json` to `.ac/qa/` files.
+
+### 5d. Knowledge Persistence (default ON, skip with `--no-evidence`)
+
+1. If `AGGREGATED_KNOWLEDGE` is non-empty AND `--no-evidence` not set:
+   - Derive `{testName}` from mode + target (same naming as evidence in 5b).
+   - Create `.ac/qa/knowledge/` directory if it doesn't exist.
+   - Read existing `.ac/qa/knowledge/{testName}.jsonl` if present — parse into existing facts.
+   - Deduplicate against existing lines by `key` — new facts override existing same-key entries.
+   - Write merged facts back to `.ac/qa/knowledge/{testName}.jsonl` (one JSON object per line).
 
 ### 5c. Present Report
 
@@ -281,6 +364,8 @@ Evidence saved to .ac/qa/{testName}/ — {N} screenshots, {M} HTML snapshots, {K
 | Target URL unreachable | Report `CONNECTION_FAILED` for that test case. Suggest: "Check that your dev server is running. Found these listening ports: [lsof results]" |
 | Bug document parse failure | Fall back to treating entire document as natural language instructions — extract test steps from prose |
 | Plan file not found | Inform user: "Plan file not found at [path]. Run `/ac:plan` to create one, or check the path." Stop |
-| `.browser-qa/last-report.json` not found (RECHECK) | Inform user: "No previous QA session found. Run a test first, then use --recheck." Stop |
+| `.ac/browser-qa/{testName}.json` not found (RECHECK) | Inform user: "No previous QA report found for '{testName}'. Run a test first, then use --recheck." Stop |
 | Element not found after 3 self-healing retries | Mark test case `BLOCKED`: "Element not found: [description]. Page structure may have changed." |
 | Browser session crash / timeout | Close session, re-navigate, retry test case once. If still fails → `BLOCKED` |
+| One parallel agent fails or times out | Collect results from successful agents. Mark timed-out group's test cases as BLOCKED with note: "Agent timeout — test case not executed" |
+| All parallel agents fail | Fall back to single-agent sequential mode. Announce: "Parallel execution failed — falling back to sequential." Re-run all test cases with single agent |

@@ -128,9 +128,9 @@ Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 
 ---
 
-## JSON Schema (last-report.json)
+## JSON Schema ({testName}.json)
 
-Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to diff against prior results. Evidence paths point to `.ac/qa/` directory.
+Saved to `.ac/browser-qa/{testName}.json` after every run, where `{testName}` is derived from mode + target (e.g., `register`, `auth-plan`, `checkout-flow`). Used by RECHECK mode to diff against prior results. Evidence paths point to `.ac/qa/` directory.
 
 ```json
 {
@@ -140,12 +140,22 @@ Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to
   "target": "http://localhost:3000/register",
   "verdict": "FAILURES_FOUND",
   "stats": { "pass": 3, "fail": 1, "blocked": 0, "total": 4 },
+  "knowledge": [
+    {"type": "selector", "key": "register-submit-btn", "value": "ref e42 — role=button[name=Create Account]", "confidence": "high", "source": "TC-001"},
+    {"type": "flow", "key": "register-success-redirect", "value": "Successful registration redirects to /dashboard after ~800ms", "confidence": "high", "source": "TC-001"},
+    {"type": "gotcha", "key": "form-submit-delay", "value": "2s spinner after form submit — snapshot too early gets stale DOM", "confidence": "medium", "source": "TC-002"},
+    {"type": "timing", "key": "validation-debounce", "value": "Email field validation fires on blur, not on input — wait for focus-out before asserting", "confidence": "medium", "source": "TC-002"}
+  ],
   "results": [
     {
       "id": "TC-001",
       "description": "Register form accepts valid input",
       "verdict": "PASS",
-      "evidence": {}
+      "evidence": {},
+      "learned_facts": [
+        {"type": "selector", "key": "register-submit-btn", "value": "ref e42 — role=button[name=Create Account]", "confidence": "high"},
+        {"type": "flow", "key": "register-success-redirect", "value": "Successful registration redirects to /dashboard after ~800ms", "confidence": "high"}
+      ]
     },
     {
       "id": "TC-002",
@@ -156,7 +166,11 @@ Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to
         "console": ["TypeError: Cannot read property 'validate' of undefined"],
         "expected": "Validation error shown for invalid email",
         "actual": "Form submitted without validation, JS error in console"
-      }
+      },
+      "learned_facts": [
+        {"type": "gotcha", "key": "form-submit-delay", "value": "2s spinner after form submit — snapshot too early gets stale DOM", "confidence": "medium"},
+        {"type": "timing", "key": "validation-debounce", "value": "Email field validation fires on blur, not on input — wait for focus-out before asserting", "confidence": "medium"}
+      ]
     }
   ],
   "diff": [
@@ -201,6 +215,29 @@ QA evidence is persisted by default to `.ac/qa/` for audit trail, debugging, and
 | HTML snapshot | FAIL verdict, key PASS milestones (optional) | HTML |
 | Error log | FAIL or BLOCKED with errors | JSON |
 | Report copy | Every run | Markdown |
+
+### Knowledge Persistence (`.ac/qa/knowledge/`)
+
+```
+.ac/qa/knowledge/
+  {testName}.jsonl    # One JSON object per line, append-only
+```
+
+Written by the command (not the agent) at the end of each run when `knowledge` is non-empty. Cross-run accumulation — same `testName` appends to the existing file, deduplicated by `key`. Each line is a self-contained JSON object:
+
+```json
+{"type": "selector", "key": "register-submit-btn", "value": "ref e42 — role=button[name=Create Account]", "confidence": "high", "source": "TC-001"}
+```
+
+| Field | Type | Values |
+|-------|------|--------|
+| `type` | string | `selector`, `flow`, `gotcha`, `timing` |
+| `key` | string | Short stable identifier, kebab-case |
+| `value` | string | Human-readable discovery — be specific |
+| `confidence` | string | `high`, `medium` |
+| `source` | string | Test case ID that discovered the fact (`TC-001`) |
+
+The accumulated `.jsonl` file serves as a cross-run knowledge base. Subsequent runs for the same `testName` load this file and inject the facts into agent context to avoid re-learning known behaviors.
 
 ---
 
