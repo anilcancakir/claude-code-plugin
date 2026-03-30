@@ -109,10 +109,12 @@ Global flags (combinable with any mode):
 
 ### Cross-run Knowledge Injection (all modes)
 
-1. Derive `{testName}` from MODE + TARGET (same naming convention as evidence persistence in Phase 5b).
-2. Check for existing `.ac/qa/knowledge/{testName}.jsonl`.
-   - If found: read file, parse each line as JSON, store as `EXISTING_KNOWLEDGE` JSON array. Announce: "Loaded {N} knowledge facts from previous runs."
+Agents read `.ac/qa/knowledge/project.jsonl` directly at execution start. The parent command also loads it as a supplementary prompt injection:
+
+1. Check for existing `.ac/qa/knowledge/project.jsonl`.
+   - If found: read file, parse each JSONL line as JSON, store as `EXISTING_KNOWLEDGE`. Announce: "Loaded {N} knowledge facts from previous runs."
    - If not found: set `EXISTING_KNOWLEDGE` to empty array `[]`.
+2. Create knowledge directory: `mkdir -p .ac/qa/knowledge/` (ensures agents can write temp files during execution).
 
 ---
 
@@ -147,6 +149,8 @@ Agent(
 )
 ```
 
+Agents also read `.ac/qa/knowledge/project.jsonl` directly at start. PRIOR_KNOWLEDGE is supplementary — agents merge both sources, file takes priority for same-key conflicts.
+
 **Parallel mode** (>3 test cases):
 
 Launch N browser-qa agents in a single message block (foreground — CC waits for all automatically):
@@ -167,16 +171,20 @@ Agent(
 // Repeat for bqa-2, bqa-3, bqa-4 with their respective GROUP_N test case subsets
 ```
 
+Agents also read `.ac/qa/knowledge/project.jsonl` directly at start. PRIOR_KNOWLEDGE is supplementary — agents merge both sources, file takes priority for same-key conflicts.
+
 Note: `EXISTING_KNOWLEDGE` is loaded from `.ac/qa/knowledge/` in Phase 2. Do NOT hardcode `[]` — use the loaded value.
 
-### 3c. Knowledge Aggregation
+### 3c. Knowledge Merge
 
 After all Wave 1 agents complete:
 
-1. Collect `learned_facts` from all Wave 1 agent results.
-2. Deduplicate by `key` — keep highest confidence version.
-3. Merge with `EXISTING_KNOWLEDGE` — new facts override same-key existing ones.
-4. Store as `AGGREGATED_KNOWLEDGE` JSON array.
+1. Read all agent temp files: `.ac/qa/knowledge/.bqa-*.jsonl` (glob pattern). Each file contains JSONL facts written by one agent during execution.
+2. Read existing `.ac/qa/knowledge/project.jsonl` if present — parse as JSONL.
+3. Merge all sources: temp files + existing project.jsonl. Deduplicate by `key` — latest occurrence wins (temp file facts override existing).
+4. Write merged result back to `.ac/qa/knowledge/project.jsonl` (overwrite — deduped merge is the new source of truth).
+5. Delete temp files: remove all `.ac/qa/knowledge/.bqa-*.jsonl` after successful merge.
+6. Store merged knowledge as `AGGREGATED_KNOWLEDGE` for Wave 2 prompt injection (if triggered).
 
 ### 3d. Wave 2 — Knowledge-enriched Re-check (conditional)
 
@@ -202,6 +210,8 @@ Agent(
 ```
 
 If Wave 1 has no failures OR `AGGREGATED_KNOWLEDGE` is empty → skip Wave 2 silently.
+
+`AGGREGATED_KNOWLEDGE` is the merged content of `project.jsonl` after Phase 3c. Wave 2 agent will also read `project.jsonl` directly — it was just updated in 3c.
 
 ### 3e. Result Merge
 
@@ -337,14 +347,15 @@ Persist key test artifacts to `.ac/qa/` for audit trail, debugging, and historic
 4. Copy Phase 4 report to `.ac/qa/{testName}/report.md`.
 5. Update evidence paths in `.ac/browser-qa/{testName}.json` to `.ac/qa/` files.
 
-### 5d. Knowledge Persistence (default ON, skip with `--no-evidence`)
+### 5d. Knowledge Persistence
 
-1. If `AGGREGATED_KNOWLEDGE` is non-empty AND `--no-evidence` not set:
-   - Derive `{testName}` from mode + target (same naming as evidence in 5b).
-   - Create `.ac/qa/knowledge/` directory if it doesn't exist.
-   - Read existing `.ac/qa/knowledge/{testName}.jsonl` if present — parse into existing facts.
-   - Deduplicate against existing lines by `key` — new facts override existing same-key entries.
-   - Write merged facts back to `.ac/qa/knowledge/{testName}.jsonl` (one JSON object per line).
+Knowledge merge is handled in Phase 3c after agent execution. For single-agent mode where Phase 3c may have been skipped:
+
+1. Check for remaining temp files: `.ac/qa/knowledge/.bqa-*.jsonl`.
+2. If found: read temp files + existing `project.jsonl` → dedup by key → write merged `project.jsonl` → delete temp files.
+3. If no temp files exist: Phase 3c already handled the merge — no action needed.
+
+Knowledge persistence is independent of `--no-evidence` flag — knowledge is always saved. `--no-evidence` only skips screenshots, HTML snapshots, and error logs.
 
 ### 5c. Present Report
 

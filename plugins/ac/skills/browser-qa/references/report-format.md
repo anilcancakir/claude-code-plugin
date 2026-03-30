@@ -220,10 +220,11 @@ QA evidence is persisted by default to `.ac/qa/` for audit trail, debugging, and
 
 ```
 .ac/qa/knowledge/
-  {testName}.jsonl    # One JSON object per line, append-only
+  project.jsonl                  # Project-wide knowledge base (merged, deduped)
+  .bqa-{SESSION_NAME}.jsonl      # Agent temp files (deleted after merge)
 ```
 
-Written by the command (not the agent) at the end of each run when `knowledge` is non-empty. Cross-run accumulation — same `testName` appends to the existing file, deduplicated by `key`. Each line is a self-contained JSON object:
+Agents write discoveries to temp files (`.bqa-{SESSION_NAME}.jsonl`) via Bash during execution. The parent command merges all temp files into `project.jsonl` after agents complete — deduplicated by `key`, latest wins. Temp files are deleted after merge. Knowledge is project-scoped: all test runs share one knowledge base, so a cookie banner selector learned during ad-hoc testing benefits all future runs. Each line is a self-contained JSON object:
 
 ```json
 {"type": "selector", "key": "register-submit-btn", "value": "ref e42 — role=button[name=Create Account]", "confidence": "high", "source": "TC-001"}
@@ -237,7 +238,9 @@ Written by the command (not the agent) at the end of each run when `knowledge` i
 | `confidence` | string | `high`, `medium` |
 | `source` | string | Test case ID that discovered the fact (`TC-001`) |
 
-The accumulated `.jsonl` file serves as a cross-run knowledge base. Subsequent runs for the same `testName` load this file and inject the facts into agent context to avoid re-learning known behaviors.
+The accumulated `project.jsonl` file serves as a cross-run knowledge base. All test runs load this file and inject the facts into agent context to avoid re-learning known behaviors.
+
+Knowledge persistence is independent of `--no-evidence` — knowledge is always saved. The `--no-evidence` flag only skips screenshots, HTML snapshots, and error logs.
 
 ---
 

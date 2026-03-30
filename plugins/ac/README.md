@@ -353,7 +353,7 @@ By default, test artifacts are saved to `.ac/qa/` for audit trail and debugging:
   {YYYYMMDD}-{HHmmss}-{pagePath}.json   # Console + network errors
   report.md                              # Latest report
 .ac/qa/knowledge/
-  {testName}.jsonl                       # Learned facts (cross-run)
+  project.jsonl                          # Project-wide knowledge base (cross-run)
 ```
 
 Disable evidence capture with `--no-evidence`.

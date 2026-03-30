@@ -140,27 +140,63 @@ Never fall back to generic CSS class selectors — they are brittle and break on
 
 During a test run, capture non-obvious discoveries that would save the next agent time. Do not capture trivial facts (e.g., "page has a header" — the next agent can see that). Only capture what required effort to discover.
 
-**What to capture:**
+### Reading Knowledge at Start
+
+Before executing any test cases, load existing project knowledge:
+
+1. Read `.ac/qa/knowledge/project.jsonl` via Read tool. If the file doesn't exist, proceed with empty knowledge.
+2. Parse each line as a JSON object — each represents a previously learned fact.
+3. Merge with `PRIOR_KNOWLEDGE` from the parent command (if provided). On same-key conflict, file-based knowledge wins.
+4. Store as `EFFECTIVE_KNOWLEDGE` — use throughout execution for selector hints, timing guidance, and flow awareness.
+
+Project knowledge is cumulative across all test runs. A fact learned during ad-hoc testing of `/register` benefits a later plan-verify run that touches the same pages.
+
+### What to capture
 
 - **Reliable selectors** — recovered during self-healing (the winning ref or role selector after a retry cycle)
 - **Auth/nav flows** — redirect chains, multi-step login sequences, session setup paths
 - **Timing requirements** — waits or retries that were necessary before an element appeared or an assertion passed
 - **Unexpected behaviors** — error recoveries, edge-case states, undocumented side effects that affected the test
 
-**When to capture:**
+### When to capture
 
 - After successful self-healing (selector) — record the working ref or role that survived after the stale one failed
 - After a redirect chain resolved (flow) — record the actual final URL and intermediate steps
 - After a wait-based retry succeeded (timing) — record the minimum wait or retry count required
 - After recovering from an unexpected error (gotcha) — record what happened and what resolved it
 
-**Capture format:**
+### Capture format
 
 ```json
 { "type": "selector|flow|timing|gotcha", "key": "<human-readable identifier>", "value": "<what to remember>", "confidence": "high|medium|low" }
 ```
 
 Anti-pattern: Do not log obvious/trivial facts. If the next agent would discover it in one snapshot, skip it. Only capture discoveries that required multiple attempts or non-obvious reasoning to reach.
+
+### Writing Knowledge to Disk
+
+Write facts to disk immediately after each test case — do not wait until the end of the run.
+
+**Write pattern** (via Bash — agent has no Write tool):
+
+```bash
+mkdir -p .ac/qa/knowledge/
+echo '{"type":"selector","key":"cookie-dismiss-btn","value":"role=button[name=Accept All]","confidence":"high"}' >> .ac/qa/knowledge/.bqa-{SESSION_NAME}.jsonl
+```
+
+**File naming**: `.bqa-{SESSION_NAME}.jsonl` — each agent writes to its own temp file. Parent merges all temp files into `project.jsonl` after execution.
+
+**When to write**:
+
+- After each test case completes (step 8 in Execution Loop), not at end of run
+- Only write facts with `high` or `medium` confidence
+- Skip if no new discoveries for this test case
+
+**Why immediate writes matter**:
+
+- Parallel agents: agent B can read what agent A wrote mid-run (if reading project.jsonl between test cases)
+- Crash recovery: facts survive even if the agent terminates unexpectedly
+- Cross-wave: Wave 2 agents get Wave 1 knowledge via the merged project.jsonl
 
 ---
 
@@ -182,3 +218,4 @@ Load report-format.md for the structured JSON schema used in `.ac/browser-qa/{te
 | Hardcoding CSS selectors | Brittle — break on class rename | Use `ref` from snapshot YAML, or role selectors |
 | Skipping evidence on FAIL | Unverifiable failures waste debugging time | `playwright-cli screenshot --filename=<path>` + `playwright-cli console` + `playwright-cli network` |
 | One command per form field | N Bash calls wastes round trips | Batch with `playwright-cli run-code "async page => { ... }"` |
+| Waiting until all tests finish to write knowledge | Facts lost on crash, parallel agents can't benefit mid-run | Write to `.bqa-{SESSION_NAME}.jsonl` after each test case via Bash echo |

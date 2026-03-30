@@ -16,7 +16,7 @@ The following parameters may be provided in your prompt:
 
 - **`SESSION_NAME`** — Named CLI daemon channel (e.g., `bqa-1`). When provided, append `-s={SESSION_NAME}` to every `playwright-cli` command (`open`, `goto`, `snapshot`, `click`, `fill`, `close`, and all others). If omitted, run without `-s=` flag (backward-compatible single-agent mode).
 - **`DISPLAY_MODE`** — `headless` (default) or `headed`. When `headed`, add `--headed` to `playwright-cli open` commands. When `headless` or omitted, no flag needed — the CLI default is headless.
-- **`PRIOR_KNOWLEDGE`** — Optional JSON array of learned facts from earlier wave agents. Use as hints (known selectors, timing workarounds, auth flows) to guide execution, but always verify independently — do not blindly trust prior facts without confirming against the live page.
+- **`PRIOR_KNOWLEDGE`** — Optional JSON array of learned facts from earlier wave agents. Supplements file-based knowledge — both sources are merged at execution start. File-based knowledge takes priority for same-key conflicts (it reflects the most recent writes from parallel or prior agents). Agent reads `.ac/qa/knowledge/project.jsonl` directly — `PRIOR_KNOWLEDGE` is a supplementary channel from the parent command.
 
 ## Playwright CLI Command Reference
 
@@ -83,6 +83,16 @@ Use `ref` values from the most recent snapshot YAML.
 |---------|---------|
 | `playwright-cli run-code "async page => { ... }"` | Execute arbitrary Playwright code in page context |
 
+## Knowledge Bootstrap
+
+Before executing test cases, load existing project knowledge:
+
+1. Read `.ac/qa/knowledge/project.jsonl` via Read tool. If file doesn't exist, proceed with empty knowledge.
+2. Parse each line as a JSON object — each is a learned fact `{type, key, value, confidence}`.
+3. Merge with `PRIOR_KNOWLEDGE` (if provided in prompt). On same-key conflict, file-based knowledge wins (it's more recent — written by prior agents in this or previous runs).
+4. Store merged result as `EFFECTIVE_KNOWLEDGE`. Use these facts as hints during execution — known selectors, timing patterns, auth flows, gotchas.
+5. Create knowledge output directory: `mkdir -p .ac/qa/knowledge/` via Bash (idempotent — safe to run even if directory exists).
+
 ## Execution Loop
 
 For each test case in the received list:
@@ -94,14 +104,17 @@ For each test case in the received list:
 5. **Console check** — `playwright-cli console error [-s={SESSION_NAME}]` after interactions likely to trigger errors (form submits, navigations, API calls)
 6. **Network check** — `playwright-cli network [-s={SESSION_NAME}]` after API calls to verify request/response status
 7. **Evidence on failure** — `playwright-cli screenshot --filename=<path> [-s={SESSION_NAME}]` + `playwright-cli eval "document.documentElement.outerHTML" [-s={SESSION_NAME}]` for FAIL verdicts
-8. **Close** — `playwright-cli close [-s={SESSION_NAME}]` after each test case
+8. **Write learned_facts** — If this test case produced new discoveries (from self-healing, timing observations, unexpected redirects, error recoveries), append each fact to `.ac/qa/knowledge/.bqa-{SESSION_NAME}.jsonl` via Bash:
+   `echo '{"type":"selector","key":"submit-btn","value":"role=button[name=Submit]","confidence":"high"}' >> .ac/qa/knowledge/.bqa-{SESSION_NAME}.jsonl`
+   Write immediately after each test case — do not batch writes until the end. This ensures parallel agents and crash recovery benefit from discoveries as they happen.
+9. **Close** — `playwright-cli close [-s={SESSION_NAME}]` after each test case
 
 ## Self-Healing Pattern
 
 When an element interaction fails (ref not found, stale element):
 
 1. **Re-snapshot** — `playwright-cli snapshot [-s={SESSION_NAME}]` → fresh YAML saved to `.playwright-cli/`
-2. **Read snapshot YAML** — search by semantic role/label (accessible role, accessible name, nearby landmark context). Never fall back to CSS class selectors. Check `PRIOR_KNOWLEDGE` for known selectors as a hint, then verify against the fresh snapshot
+2. **Read snapshot YAML** — search by semantic role/label (accessible role, accessible name, nearby landmark context). Never fall back to CSS class selectors. Check `EFFECTIVE_KNOWLEDGE` for known selectors as a hint, then verify against the fresh snapshot
 3. **Retry** with updated ref from the fresh snapshot
 4. **Max 3 retries** — if all fail, mark test case `BLOCKED` with note: "Element not found after 3 retries: [description]"
 
@@ -190,7 +203,7 @@ After the JSON array, provide a one-line summary: `X/Y passed, Z failed, W block
 
 ## Knowledge Capture
 
-During execution, actively note observations that would benefit subsequent agents or retries. Capture facts in the `learned_facts` array of the relevant result object.
+During execution, actively note observations that would benefit subsequent agents or retries.
 
 Capture when observed:
 
@@ -198,6 +211,11 @@ Capture when observed:
 - **Flows** — unexpected redirects, multi-step auth sequences, navigation patterns that deviate from the test spec
 - **Gotchas** — spinner/loading states that produce stale DOM snapshots, overlays that block interactions, dialog dismissals required before proceeding
 - **Timing** — async renders, network-gated UI (charts, data tables), delays between action and visible state change
+
+Persistence:
+
+- **Primary** — Write facts to `.ac/qa/knowledge/.bqa-{SESSION_NAME}.jsonl` via Bash immediately after each test case (step 8 of the Execution Loop). Do not batch writes until the end — write after each case so parallel agents and crash recovery benefit immediately. The Bash write pattern: `echo '${JSON_LINE}' >> .ac/qa/knowledge/.bqa-{SESSION_NAME}.jsonl`. The `mkdir -p` happens in Knowledge Bootstrap before any test runs.
+- **Secondary** — Include the same facts in the `learned_facts` array of the JSON output object for that test case. The parent command reads this for its report and aggregation.
 
 Rules:
 - Only record what was directly observed during this test run — do not infer or speculate
@@ -211,4 +229,4 @@ Rules:
 - Fresh state per test case. Open a fresh browser for each case — never carry cookies, local storage, or DOM state between cases.
 - Evidence mandatory on FAIL. Every FAIL verdict must include at least a screenshot or console error excerpt. Unverifiable failures waste debugging time.
 - 3-retry ceiling on self-healing. After 3 failed retries for any element, mark BLOCKED and move on. Do not loop indefinitely.
-- `SESSION_NAME` is a CLI daemon channel identifier for parallelism — it does NOT mean shared browser state. Each test case still gets a fresh `open`/`close` cycle within the named session. Never reuse an open browser across test cases regardless of `SESSION_NAME`.
+- `SESSION_NAME` is a CLI daemon channel identifier for parallelism — it does NOT mean shared browser state. Each test case still gets a fresh `open`/`close` cycle within the named session. Never reuse an open browser across test cases regardless of `SESSION_NAME`. Knowledge temp files also use `SESSION_NAME` for isolation — `.bqa-{SESSION_NAME}.jsonl` prevents parallel write conflicts between agents running concurrently.
