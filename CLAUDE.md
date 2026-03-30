@@ -16,12 +16,14 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
-│   │   ├── commands/             # 12 user-invocable /ac:* commands
-│   │   ├── agents/               # 14 read-only agent definitions
+│   │   ├── commands/             # 14 user-invocable /ac:* commands
+│   │   ├── agents/               # 16 read-only agent definitions
 │   │   ├── skills/
 │   │   │   ├── ac-skill-creator/ # Skill + references/ for component creation
 │   │   │   ├── browser-qa/       # Skill + references/ for browser QA workflows
-│   │   │   └── maestro-qa/       # Skill + references/ for mobile QA workflows
+│   │   │   ├── maestro-qa/       # Skill + references/ for mobile QA workflows
+│   │   │   └── flutter-qa/       # Skill + references/ for Flutter QA workflows
+│   │   ├── references/          # Shared QA patterns reference
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── github-cli/               # GitHub CLI skill plugin
@@ -95,6 +97,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:work` | Ad-hoc parallel execution — decompose request into independent tasks, route to model tiers, fire simultaneously, complexity-driven verification |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck), parallel execution across up to 4 agents, knowledge sharing across waves. Auto-detects Playwright CLI. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
 | `/ac:maestro-qa` | Mobile QA testing — 5 modes (ad-hoc, bug-repro, plan-verify, recheck, flow-run), MCP-driven via Maestro CLI, parallel execution across devices, knowledge sharing. Auto-detects Maestro MCP. Flags: `--no-parallel`, `--no-evidence`, `--platform` |
+| `/ac:flutter-qa` | Flutter QA testing — 6 modes (ad-hoc, bug-repro, plan-verify, recheck, test-run, visual-regression), MCP-driven via flutter-skill, parallel execution across sessions, knowledge sharing. Auto-detects flutter-skill MCP. Flags: `--no-parallel`, `--no-evidence`, `--platform`, `--uri` |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ## Agents (ac plugin)
@@ -116,6 +119,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Simplification advisor — preserves behavior, read-only, opt-in | Glob, Grep, LS, Read |
 | `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser test executor — runs test cases via `playwright-cli` shell commands, captures evidence, returns structured verdicts. Spawned by /ac:browser-qa. | Read, Glob, LS, Bash |
 | `maestro-qa` | `"ac:maestro-qa"` | `"maestro-qa"` | Sonnet | medium | blue | Mobile test executor — runs tests via Maestro MCP tools on iOS/Android emulators, captures evidence, returns structured verdicts. Spawned by /ac:maestro-qa. | Read, Glob, LS, Bash, mcp__maestro__* |
+| `flutter-qa` | `"ac:flutter-qa"` | `"flutter-qa"` | Sonnet | medium | green | Flutter test executor — runs tests via flutter-skill MCP tools on iOS/Android/Web/Desktop, captures evidence, returns structured verdicts. Spawned by /ac:flutter-qa. | Read, Glob, LS, Bash, mcp__flutter_skill__* |
 
 All agents are read-only. No write tools on advisory roles. All agents enforce `disallowedTools: Write, Edit` as defense-in-depth. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
@@ -125,6 +129,8 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `ac-skill-creator` (Opus) — Create or improve Claude Code extension components. Has `references/` with templates
 - `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns and `playwright-cli` command routing. Has references/ for report format and evidence schema. Requires [Playwright CLI](https://github.com/microsoft/playwright-cli) (`npm install -g @playwright/cli@latest`)
 - `ac:maestro-qa` skill (Sonnet, not user-invocable) — Mobile QA workflow patterns and Maestro MCP tool routing. Has references/ for report format and evidence schema. Requires [Maestro CLI](https://maestro.mobile.dev/) (`brew install maestro`) + user-installed MCP server
+- `ac:flutter-qa` skill (Sonnet, not user-invocable) — Flutter QA workflow patterns and flutter-skill MCP tool routing. Has references/ for report format and evidence schema. Requires [flutter-skill](https://github.com/flutter-skill/flutter-skill) (`npm install -g flutter-skill`) + user-installed MCP server + `FlutterSkillBinding` in app
+- `qa-patterns` reference (`plugins/ac/references/qa-patterns.md`) — Shared QA patterns across browser-qa, maestro-qa, flutter-qa (knowledge system, report format, parallel execution, evidence persistence)
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
 - MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
 
@@ -181,6 +187,27 @@ The `/ac:maestro-qa` command auto-detects MCP tools at runtime. No additional se
 - **Parallel execution**: When >3 test cases, automatically splits across up to 4 parallel agents with isolated device targeting. Disable with `--no-parallel`. Device-constrained: agents ≤ available devices.
 - **Knowledge sharing**: Same agent-native knowledge system as browser-qa — shared `.ac/qa/knowledge/project.jsonl`. Parallel agents write to isolated `.mqa-*` temp files; parent merges after execution.
 
+### Flutter Testing ([flutter-skill](https://github.com/flutter-skill/flutter-skill))
+
+flutter-skill is required for Flutter QA testing. MCP-driven — agent uses flutter-skill's MCP server tools directly for step-by-step app interaction across iOS, Android, Web, and Desktop targets.
+
+```bash
+npm install -g flutter-skill
+```
+
+Users must add flutter-skill MCP to their `.mcp.json`:
+```json
+{"flutter-skill": {"command": "flutter-skill", "args": ["server"]}}
+```
+
+Apps must initialize `FlutterSkillBinding` in test mode to expose the interaction surface to the MCP tools.
+
+The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional setup needed beyond the MCP config and app integration.
+
+- **Parallel execution**: When >3 test cases, automatically splits across up to 4 parallel agents with isolated session targeting. Disable with `--no-parallel`. Platform-constrained: agents target specific platforms via `--platform`.
+- **Knowledge sharing**: Same agent-native knowledge system as browser-qa and maestro-qa — shared `.ac/qa/knowledge/project.jsonl`. Parallel agents write to isolated `.fqa-*` temp files; parent merges after execution.
+- **Visual regression**: `visual-regression` mode captures baseline screenshots to `.ac/qa/baselines/` and diffs against them on subsequent runs.
+
 ## Design Principles
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
@@ -194,8 +221,8 @@ The `/ac:maestro-qa` command auto-detects MCP tools at runtime. No additional se
 - **Complexity-driven verification**: Verification depth scales with plan complexity — Simple (build+test only), Standard (code-reviewer + linter, skip Opus verifier), Complex (full 3-agent wave, mandatory — cannot be bypassed by --loop or any flag). Build+test and verification agents launch as foreground in a single message block. Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification.
 - **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) — mandatory for Complex, opt-in for Standard.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
-- **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled (e.g., maestro MCP for mobile QA)
-- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/` in the working directory. Not gitignored by default — each project decides
+- **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled (e.g., maestro MCP for mobile QA, flutter-skill MCP for Flutter QA)
+- **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/`, flutter-qa state to `.ac/flutter-qa/`, visual regression baselines to `.ac/qa/baselines/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
 - **Ad-hoc parallel execution**: `/ac:work` provides plan-free parallel execution for multi-file tasks. Decomposes requests into independent tasks with file ownership validation, routes each to correct model tier (quick→Haiku, mid→Sonnet, senior→Opus), fires simultaneously, and runs complexity-driven verification. For structured multi-step work with dependencies, use `/ac:plan` + `/ac:execute` instead
 - **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:

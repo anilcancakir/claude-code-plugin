@@ -208,6 +208,7 @@ The `--loop` flag chains ideation → planning → execution automatically. `ac`
 | `/ac:work <request>` | Ad-hoc parallel execution — decompose into independent tasks, route to model tiers, fire simultaneously, verify. Flag: `--dry-run` |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck). Evidence saved to `.ac/qa/`. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
 | `/ac:maestro-qa` | Mobile QA testing — 5 modes, MCP-driven, parallel execution, knowledge sharing | `--no-parallel`, `--no-evidence`, `--platform` |
+| `/ac:flutter-qa` | Flutter QA testing — 6 modes (ad-hoc, bug-repro, plan-verify, recheck, test-run, visual-regression). Evidence saved to `.ac/qa/`. Flags: `--no-parallel`, `--no-evidence`, `--platform`, `--uri` |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ### Project Setup
@@ -286,7 +287,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 
 ## Agents
 
-`ac` includes 14 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
+`ac` includes 16 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
 
 ### Search & Research
 
@@ -322,6 +323,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | `ac:gemini-vision` | Sonnet | Multimodal analysis — video recordings, multi-image comparison via Gemini |
 | `ac:browser-qa` | Sonnet | Browser test executor — runs tests via Playwright CLI shell commands, captures screenshots + HTML + errors, returns structured verdicts |
 | `ac:maestro-qa` | Sonnet | Mobile test executor via Maestro MCP — runs tests on iOS/Android emulators |
+| `ac:flutter-qa` | Sonnet | Flutter test executor — runs widget/integration tests via flutter-skill MCP, captures screenshots + widget trees + logs, returns structured verdicts |
 
 ## Browser QA Testing
 
@@ -403,6 +405,49 @@ brew install maestro
 ```
 
 The `/ac:maestro-qa` command auto-detects Maestro MCP tools at runtime and shows setup instructions if missing. Run `maestro mcp` to start the server manually and verify connectivity before launching `maestro-qa` tests.
+
+## Flutter QA Testing
+
+MCP-driven Flutter testing for Dart/Flutter apps via [flutter-skill](https://github.com/flutter-skill/flutter-skill)'s built-in MCP server. The `/ac:flutter-qa` command orchestrates widget and integration test execution on iOS/Android devices and simulators. Unlike browser-qa which uses Playwright CLI shell commands, `flutter-qa` drives the app entirely through flutter-skill MCP tool calls. Invoke directly with `/ac:flutter-qa` or let the Intent Gate route Flutter testing requests automatically.
+
+### Modes
+
+| Mode | Trigger | Description |
+|------|---------|-------------|
+| AD_HOC | App description or URI | Free-form exploratory testing on target Flutter app |
+| BUG_REPRO | `--bug <path>` | Reproduce specific bugs from a bug report document |
+| PLAN_VERIFY | `--plan <path>` | Verify plan acceptance criteria on device |
+| RECHECK | `--recheck` | Re-run previously failed test cases with updated knowledge |
+| TEST_RUN | `--tests <path>` | Execute existing Flutter test files (widget or integration) |
+| VISUAL_REGRESSION | `--baseline <path>` | Compare screenshots against stored baselines, flag pixel-level regressions |
+
+### Parallel Execution
+
+When >3 test cases, automatically splits across parallel agents with isolated flutter-skill MCP sessions. Session-constrained: number of agents ≤ available connected devices/simulators. Disable with `--no-parallel`.
+
+### Knowledge Sharing
+
+Shares the same `project.jsonl` knowledge base with browser-qa and maestro-qa in `.ac/qa/knowledge/`. Agents write to temporary `.fqa-{session}.jsonl` files during execution; the parent command merges into `project.jsonl` after completion. Eight knowledge types: selector, flow, timing, gotcha, permission, navigation, widget, visual.
+
+### Evidence Persistence
+
+Screenshots (`.png`), widget tree JSON (`.json`), and error logs (`.json`) saved to `.ac/qa/{testName}/`. Skip with `--no-evidence`.
+
+### Visual Regression
+
+Baseline screenshots are stored in `.ac/qa/baselines/{testName}/`. On each VISUAL_REGRESSION run, captured screenshots are compared against baselines pixel-by-pixel. Differences above threshold are flagged as regressions with diff images saved alongside evidence. Update baselines explicitly with `--update-baseline`.
+
+### Required: flutter-skill
+
+```bash
+# Install flutter-skill CLI
+npm install -g flutter-skill
+
+# Add flutter-skill MCP server to .mcp.json
+{"flutter-skill": {"command": "flutter-skill", "args": ["server"]}}
+```
+
+The `/ac:flutter-qa` command auto-detects flutter-skill MCP tools at runtime and shows setup instructions if missing. Run `flutter-skill server` to start the MCP server manually and verify connectivity before launching `flutter-qa` tests.
 
 ## Model Customization
 
@@ -509,15 +554,15 @@ Restart Claude Code after updating the plugin. Some changes (new commands, agent
 - **Plan-first** — All commands follow: classify → research → interview → generate → review. No code is written during planning
 - **Reliability-first** — Default to correctness, not cost savings. Opus handles planning and architecture, Haiku handles search. Failed agents escalate one tier before logging failure
 - **Progressive disclosure** — Plugin metadata is always in context. SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant
-- **Read-only advisory** — All 14 agents enforce `disallowedTools: Write, Edit`. Only execution workers spawned by `/ac:execute` get write access
+- **Read-only advisory** — All 16 agents enforce `disallowedTools: Write, Edit`. Only execution workers spawned by `/ac:execute` get write access
 - **Pure markdown** — Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies, no vendor lock-in
 
 ## Plugin Structure
 
 ```
 plugins/ac/
-├── commands/          # 13 user-invocable /ac:* commands (incl. browser-qa, maestro-qa, work, progress)
-├── agents/            # 15 read-only agent definitions (incl. browser-qa, maestro-qa)
+├── commands/          # 14 user-invocable /ac:* commands (incl. browser-qa, maestro-qa, flutter-qa, work, progress)
+├── agents/            # 16 read-only agent definitions (incl. browser-qa, maestro-qa, flutter-qa)
 ├── skills/
 │   ├── ac-skill-creator/
 │   │   ├── SKILL.md
