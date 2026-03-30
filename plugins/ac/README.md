@@ -420,7 +420,6 @@ claude mcp add skillsmp-mcp-server -- skillsmp-mcp-server
 | `github-cli` | Comprehensive `gh` CLI reference — issues, PRs, releases, actions, API |
 | `git-master` | Git expert — atomic commits, interactive rebase, history archaeology |
 | `frontend-design` | Production-grade UI — design systems, hierarchy, color, mobile patterns |
-| `ac-designer` | Stitch UI design orchestrator — layout, page generation, consistency audit |
 | `dart-lsp` | Dart/Flutter language server — go-to-definition, diagnostics |
 | `json-lsp` | JSON language server — schema validation, hover |
 | `yaml-lsp` | YAML language server — schema validation, diagnostics |

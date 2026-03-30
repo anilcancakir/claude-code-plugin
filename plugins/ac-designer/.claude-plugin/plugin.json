@@ -1,8 +1,0 @@
-{
-    "name": "ac-designer",
-    "description": "Stitch UI design orchestrator with commands for project init, layout generation, page design, and full orchestration. Uses Refactoring UI principles and Gemini-optimized prompts via Google Stitch MCP.",
-    "author": {
-        "name": "Anilcan Cakir",
-        "email": "anilcan.cakir@gmail.com"
-    }
-}

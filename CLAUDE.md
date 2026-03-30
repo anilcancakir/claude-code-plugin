@@ -48,16 +48,6 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │       └── references/   # Deep-dive: hierarchy, color, mobile
 │   │   ├── README.md
 │   │   └── LICENSE
-│   ├── ac-designer/              # Stitch UI design orchestrator plugin (command-based)
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── commands/             # init, layout, page, designer, audit
-│   │   ├── skills/
-│   │   │   └── prompt-engine/    # Shared prompt enhancement (not user-invocable)
-│   │   │       ├── SKILL.md      # 8-step pipeline, asset download, consistency check, drift detection, Web Bridge, stitch-skills reference
-│   │   │       └── references/   # Design mappings, prompt rules, Refactoring UI, baton schema, DESIGN.md v2, drift detection, stitch-skills
-│   │   ├── README.md
-│   │   └── LICENSE
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
@@ -141,11 +131,6 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 ### frontend-design plugin
 - `frontend-design` (Sonnet) — Production-grade UI for web and mobile with design systems and visual hierarchy. Has `references/`
 
-### ac-designer plugin
-- `prompt-engine` (Sonnet, not user-invocable) — Shared prompt enhancement pipeline for ac-designer commands. 8-step pipeline (DESIGN.md injection, Gemini optimization, codebase context, layout reference), asset download procedure, consistency check, drift detection, design token extraction, Stitch Web Bridge, stitch-skills reference. Has `references/` for design mappings, prompt keywords, Gemini rules, Refactoring UI tokens, baton schema, DESIGN.md v2 format, drift detection, and embedded Google stitch-skills
-- Commands: `/ac-designer:init`, `/ac-designer:layout`, `/ac-designer:page`, `/ac-designer:designer`, `/ac-designer:audit`
-- Requires [Google Stitch MCP](https://stitch.withgoogle.com/docs/mcp/setup) (official, 8 tools at `stitch.googleapis.com/mcp`)
-
 ### dart-lsp plugin
 - LSP plugin — Dart/Flutter language server via `dart language-server`. Configured via `lspServers` inline in `marketplace.json` (no skills, no commands). Activates go-to-definition, find references, hover, and `<new-diagnostics>` for `.dart` files.
 
@@ -222,5 +207,4 @@ The `/ac:browser-qa` command auto-detects the CLI at runtime. No MCP server need
 - Commands use `${CLAUDE_PLUGIN_ROOT}` for template paths — set by Claude Code at runtime to the plugin's actual directory
 - Commands delegate to `ac-skill-creator` for file generation — they don't write files directly
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
-- ac-designer has a soft dependency on ac plugin for `ac:explore` (codebase scanning) and `ac:gemini-vision` (file-based visual analysis — video, multi-image). Pasted images are analyzed inline by Claude or via direct `mcp__gemini-cli__ask-gemini` call — graceful fallback when absent
 - CC subagents receive `userContext: {}` (no CLAUDE.md) by design — ac's context propagation pipeline compensates by extracting and injecting project rules at plan/execute/verify time via prompt variables (PROJECT_CONTEXT, PLAN_CONVENTIONS, RUNTIME_CONTEXT)

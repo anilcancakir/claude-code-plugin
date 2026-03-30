@@ -84,26 +84,6 @@
             ]
         },
         {
-            "name": "ac-designer",
-            "description": "Stitch UI design orchestrator — 5 commands (init, layout, page, designer, audit) with DESIGN.md v2, drift detection, STYLE ANCHOR visual anchoring, and embedded Google stitch-skills reference.",
-            "version": "1.1.0",
-            "author": {
-                "name": "Anilcan Cakir",
-                "email": "anilcan.cakir@gmail.com"
-            },
-            "source": "./plugins/ac-designer",
-            "category": "productivity",
-            "homepage": "https://github.com/anilcancakir/claude-code-plugin",
-            "tags": [
-                "stitch",
-                "design",
-                "ui-ux",
-                "gemini",
-                "refactoring-ui",
-                "commands"
-            ]
-        },
-        {
             "name": "dart-lsp",
             "description": "Dart/Flutter language server — go-to-definition, find references, hover, and real-time diagnostics for Claude Code.",
             "version": "0.1.0",
