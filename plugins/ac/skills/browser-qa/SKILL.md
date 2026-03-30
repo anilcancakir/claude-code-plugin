@@ -14,7 +14,7 @@ Browser-based QA testing via Playwright CLI (`playwright-cli`). This skill provi
 
 ### Installation and Verification
 
-- Install: `npm install -g @playwright/cli@latest`
+- Install: `npm install -g @playwright/cli@latest` ([docs](https://github.com/microsoft/playwright-cli))
 - Verify: `playwright-cli --version`
 
 ### Architecture

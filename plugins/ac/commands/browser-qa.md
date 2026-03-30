@@ -58,7 +58,7 @@ Global flags (combinable with any mode):
    - If found → announce: "Playwright CLI [version] detected."
    - If not found → display setup guide and stop:
      ```
-     Playwright CLI not found. Install it:
+     Playwright CLI not found. Install it (https://github.com/microsoft/playwright-cli):
        npm install -g @playwright/cli@latest
      After installing, re-run this command.
      ```
@@ -276,7 +276,7 @@ Evidence saved to .ac/qa/{testName}/ — {N} screenshots, {M} HTML snapshots, {K
 
 | Condition | Action |
 |-----------|--------|
-| Playwright CLI not found | Display setup guide: `npm install -g @playwright/cli@latest`, stop |
+| Playwright CLI not found | Display setup guide: `npm install -g @playwright/cli@latest` ([docs](https://github.com/microsoft/playwright-cli)), stop |
 | CLI command fails (non-zero exit) | Retry once. If retry fails → mark test case `BLOCKED` with error message |
 | Target URL unreachable | Report `CONNECTION_FAILED` for that test case. Suggest: "Check that your dev server is running. Found these listening ports: [lsof results]" |
 | Bug document parse failure | Fall back to treating entire document as natural language instructions — extract test steps from prose |

@@ -120,7 +120,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 
 ### ac plugin
 - `ac-skill-creator` (Opus) — Create or improve Claude Code extension components. Has `references/` with templates
-- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns and `playwright-cli` command routing. Has references/ for report format and evidence schema. Requires Playwright CLI (`npm install -g @playwright/cli@latest`)
+- `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns and `playwright-cli` command routing. Has references/ for report format and evidence schema. Requires [Playwright CLI](https://github.com/microsoft/playwright-cli) (`npm install -g @playwright/cli@latest`)
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
 - MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
 
@@ -145,9 +145,9 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 ### markdown-lsp plugin
 - LSP plugin — Markdown language server via `marksman`. Link navigation, find references, and document symbols for `.md` and `.mdx` files. Binary: `brew install marksman`.
 
-### Browser Testing (Playwright CLI)
+### Browser Testing ([Playwright CLI](https://github.com/microsoft/playwright-cli))
 
-Playwright CLI is required for browser QA testing. Install globally:
+Playwright CLI is required for browser QA testing. Token-efficient CLI alternative to Playwright MCP — no large tool schemas or accessibility trees in context.
 
 ```bash
 npm install -g @playwright/cli@latest

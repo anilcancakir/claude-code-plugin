@@ -143,7 +143,7 @@ Test evidence is saved by default to `.ac/qa/` in the project directory:
 
 Disable with `--no-evidence` flag.
 
-### Required: Playwright CLI
+### Required: [Playwright CLI](https://github.com/microsoft/playwright-cli)
 
 ```bash
 npm install -g @playwright/cli@latest

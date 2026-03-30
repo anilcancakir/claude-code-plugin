@@ -348,7 +348,7 @@ By default, test artifacts are saved to `.ac/qa/` for audit trail and debugging:
 
 Disable with `--no-evidence`.
 
-### Required: Playwright CLI
+### Required: [Playwright CLI](https://github.com/microsoft/playwright-cli)
 
 ```bash
 npm install -g @playwright/cli@latest
