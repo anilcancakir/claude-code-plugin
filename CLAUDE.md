@@ -91,6 +91,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-global-claude-md` | Generate global CLAUDE.md — interviews developer, detects skills, produces orchestration config |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available |
 | `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports `--bulk` and `--loop` |
+| `/ac:work` | Ad-hoc parallel execution — decompose request into independent tasks, route to model tiers, fire simultaneously, complexity-driven verification |
 | `/ac:browser-qa` | Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Auto-detects Playwright CLI |
 | `/ac:progress` | Show execution progress — active plans, task status, next action |
 
@@ -170,6 +171,7 @@ The `/ac:browser-qa` command auto-detects the CLI at runtime. No MCP server need
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
+- **Ad-hoc parallel execution**: `/ac:work` provides plan-free parallel execution for multi-file tasks. Decomposes requests into independent tasks with file ownership validation, routes each to correct model tier (quick→Haiku, mid→Sonnet, senior→Opus), fires simultaneously, and runs complexity-driven verification. For structured multi-step work with dependencies, use `/ac:plan` + `/ac:execute` instead
 - **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:
   - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section (required)
   - **Execute-time** (`execute.md`): Reads CLAUDE.md fresh → extracts build/test/lint commands + gotchas as `RUNTIME_CONTEXT` (deduplicated against `PLAN_CONVENTIONS`) → injected into worker prompts (compact for quick tier, full for mid/senior)
