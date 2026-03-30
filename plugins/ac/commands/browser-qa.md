@@ -1,11 +1,11 @@
 ---
-description: "Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Auto-detects MCP backends."
+description: "Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Uses Playwright CLI."
 argument-hint: "URL, bug doc path, plan path, or --recheck (e.g., 'localhost:3000/register', '--bug repro.md', '--plan .ac/plans/auth.md', '--recheck')"
 ---
 
 # Browser QA Test
 
-You are orchestrating browser-based QA testing. Detect available MCP browser backends, classify user intent into one of 4 modes, gather test context, delegate browser execution to the browser-qa agent, and produce a structured QA report.
+You are orchestrating browser-based QA testing. Detect Playwright CLI availability, classify user intent into one of 4 modes, gather test context, delegate browser execution to the browser-qa agent, and produce a structured QA report.
 
 Load the browser-qa skill for workflow patterns:
 `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md`
@@ -16,16 +16,16 @@ Load report format reference:
 ## Core Principles
 
 - **Accessibility snapshots over screenshots** — Token-efficient, deterministic, no vision model needed. Use screenshots only as evidence on FAIL
-- **One tool call per action, re-snapshot after** — Observe-act-observe pattern mandatory for all backends
+- **One command per action, re-snapshot after** — Observe-act-observe pattern mandatory
 - **Clean state per test case** — Navigate fresh for each test case to avoid state pollution (except RECHECK, which preserves session)
-- **Semantic element targeting** — Use `ref` (Playwright), `uid` (DevTools), or semantic role/label — never brittle CSS classes
-- **Batch when possible** — Use `browser_run_code` / `execute` for multi-step flows (1 tool call vs N)
+- **Snapshots on disk** — CLI saves YAML snapshots to `.playwright-cli/`, read only when needed for element refs
+- **Batch when possible** — Use `playwright-cli run-code` for multi-step flows (1 Bash call vs N)
 
 ---
 
-## Phase 1: Mode Classification + Backend Detection
+## Phase 1: Mode Classification + CLI Detection
 
-**Goal**: Determine what the user wants and which MCP backends are available
+**Goal**: Determine what the user wants and verify Playwright CLI is available
 
 **Actions**:
 
@@ -53,38 +53,17 @@ Global flags (combinable with any mode):
 
 3. Announce: `"Mode: [MODE] — [description]"`
 
-4. Detect available MCP backends by probing for tool patterns:
+4. Detect Playwright CLI availability:
+   Run `playwright-cli --version` to check if CLI is installed.
+   - If found → announce: "Playwright CLI [version] detected."
+   - If not found → display setup guide and stop:
+     ```
+     Playwright CLI not found. Install it:
+       npm install -g @playwright/cli@latest
+     After installing, re-run this command.
+     ```
 
-| Backend | Probe Tool | Detection |
-|---------|-----------|-----------|
-| Playwright MCP | `mcp__playwright__browser_navigate` | Look for any `mcp__playwright__*` tool |
-| Chrome DevTools MCP | `mcp__chrome-devtools__navigate_page` | Look for any `mcp__chrome-devtools__*` tool |
-| mcp-chrome | `mcp__chrome__chrome_navigate` | Look for any `mcp__chrome__*` tool |
-| playwriter | `mcp__playwriter__execute` | Look for any `mcp__playwriter__*` tool |
-
-Probe in priority order: Playwright MCP first, then Chrome DevTools, mcp-chrome, playwriter.
-
-5. If NO backends detected — display setup guide and stop:
-
-```
-No browser MCP backends detected. Install at least one:
-
-**Playwright MCP** (recommended — lowest token cost, most tools):
-  claude mcp add playwright -- npx @playwright/mcp@latest
-
-**Chrome DevTools MCP** (best for debugging, performance):
-  claude mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect
-
-**mcp-chrome** (existing Chrome session via extension):
-  npm i -g mcp-chrome-bridge && claude mcp add chrome -- npx mcp-chrome-bridge
-
-**playwriter** (full Playwright API, stateful sessions):
-  claude mcp add playwriter -- playwriter mcp
-
-After installing, restart Claude Code and re-run this command.
-```
-
-6. Store: `AVAILABLE_BACKENDS` (list), `MODE`, `TARGET` (URL or file path)
+5. Store: `MODE`, `TARGET` (URL or file path)
 
 ---
 
@@ -98,11 +77,7 @@ After installing, restart Claude Code and re-run this command.
 2. If TARGET is natural language → extract intent, infer URL from context:
    - Check for running dev servers: `lsof -i -P | grep LISTEN` to find local ports
    - If a port is found (e.g., 3000, 5173, 8080), suggest: "Found dev server on port {port}. Test at localhost:{port}?"
-3. Determine task type from user instruction → route to best backend using the routing matrix from mcp-backends.md:
-   - Console/network inspection → Chrome DevTools MCP
-   - Multi-step stateful flow → playwriter
-   - Performance audit → Chrome DevTools MCP
-   - Default → Playwright MCP
+3. All tasks use Playwright CLI. For multi-step stateful flows, use named sessions (`-s=<name>`).
 4. Build test case list: `[{id: "TC-001", description: "<user instruction>", url: TEST_URL, steps: [<extracted steps>], expected: "<expected outcome>"}]`
 
 ### BUG_REPRO mode
@@ -111,7 +86,7 @@ After installing, restart Claude Code and re-run this command.
 2. Parse numbered bugs — extract: title/ID, preconditions, reproduction steps, expected result, actual result.
 3. Store as `BUG_LIST`: `[{id: "BUG-001", title, preconditions, steps[], expected, url}]`
 4. No structured format → treat entire doc as natural language, extract by paragraph/section.
-5. Route: Playwright MCP (default) or playwriter (if steps require state persistence across bugs).
+5. Use fresh `playwright-cli open`/`close` per bug for isolation. For cross-bug state, use named sessions.
 
 ### PLAN_VERIFY mode
 
@@ -119,7 +94,7 @@ After installing, restart Claude Code and re-run this command.
 2. Extract `Done when:` / acceptance criteria blocks.
 3. For each criterion: `{id: "AC-001", criterion_text, action_sequence[], expected_outcome, url_hint}`
 4. No `Done when:` blocks → extract bulleted checklist items as test cases.
-5. Route: Playwright MCP (default — clean state, `--caps=testing`).
+5. Verify via `playwright-cli snapshot` + `playwright-cli eval` for assertions.
 
 ### RECHECK mode
 
@@ -127,7 +102,7 @@ After installing, restart Claude Code and re-run this command.
 2. If file not found → inform user: "No previous QA session found. Run a test first." Stop.
 3. Filter to `FAIL` and `BLOCKED` items only.
 4. Rebuild test case list from failed items — preserve original IDs.
-5. Route: same backend as original run (read from `last-report.json` → `backend` field).
+5. Always uses Playwright CLI.
 6. Announce: "Re-checking {N} failed items from {timestamp}"
 
 ---
@@ -136,7 +111,7 @@ After installing, restart Claude Code and re-run this command.
 
 **Goal**: Delegate browser test execution to the browser-qa agent
 
-Determine the `SELECTED_BACKEND` for this session based on Phase 1 detection and Phase 2 routing decisions. Serialize the `TEST_CASES` list from Phase 2 as a JSON array.
+Serialize the `TEST_CASES` list from Phase 2 as a JSON array.
 
 Launch the browser-qa agent to execute all test cases:
 
@@ -145,20 +120,17 @@ Agent(
   prompt: "Execute browser QA tests.
 
     **Mode**: [MODE]
-    **Selected Backend**: [SELECTED_BACKEND from Phase 1]
-    **Available Backends**: [AVAILABLE_BACKENDS list]
     **Test Cases**: [TEST_CASES JSON array from Phase 2]
 
-    Load workflow patterns and tool routing:
+    Load workflow patterns:
     ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
-    ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/mcp-backends.md
 
-    Execute each test case using the selected backend's MCP tools. Follow the execution loop, self-healing, and token efficiency patterns from the skill.
+    Execute each test case using playwright-cli commands via Bash. Follow the execution loop, self-healing, and token efficiency patterns from the skill.
 
     Return results as a JSON array:
-    [{id, title, verdict, severity, page_url, evidence: {screenshot_taken?, page_html_captured?, console_errors?, network_errors?, failure_detail?}, steps_executed}]
+    [{id, title, verdict, severity, page_url, evidence: {screenshot_path?, page_html?, console_errors?, network_errors?, failure_detail?}, steps_executed}]
 
-    On FAIL: capture screenshot + page HTML (document.documentElement.outerHTML). On BLOCKED: attempt screenshot if page loaded. Include page_url on every result.",
+    On FAIL: playwright-cli screenshot --filename=<evidence-path> + playwright-cli console + playwright-cli network. Include page_url on every result.",
   model: "sonnet"
 )
 
@@ -179,7 +151,7 @@ Generate the report in this format:
 
 ## Summary
 **Mode**: [AD_HOC / BUG_REPRO / PLAN_VERIFY / RECHECK]
-**Backend**: [which MCP backend(s) used]
+**Backend**: playwright-cli
 **Target**: [URL or file path]
 **Verdict**: PASS_ALL / FAILURES_FOUND / BLOCKED
 **Stats**: [N passed] / [N failed] / [N blocked] out of [total]
@@ -245,7 +217,7 @@ RECHECK diff section (RECHECK mode only — append after Recommendations):
 3. Save structured data to `.browser-qa/last-report.json`:
    ```json
    {
-     "timestamp": "ISO8601", "mode": "AD_HOC", "backend": "playwright",
+     "timestamp": "ISO8601", "mode": "AD_HOC", "backend": "playwright-cli",
      "target": "http://localhost:3000/register", "verdict": "FAILURES_FOUND",
      "stats": {"pass": 3, "fail": 1, "blocked": 0, "total": 4},
      "results": [
@@ -280,8 +252,8 @@ Persist key test artifacts to `.ac/qa/` for audit trail, debugging, and historic
 - `{pagePath}` — short slug of the page URL path (e.g., `/app/settings/profile` → `settings-profile`). Max 40 chars, truncate with trailing hash if longer
 
 **What to save** (per test case with FAIL or key milestone steps):
-1. **Screenshots** (`.png`) — agent captures on FAIL. Save raw screenshot data from MCP tools.
-2. **HTML snapshots** (`.html`) — page HTML at failure/checkpoint via `document.documentElement.outerHTML`.
+1. **Screenshots** (`.png`) — agent captures on FAIL. Save raw screenshot data from playwright-cli.
+2. **HTML snapshots** (`.html`) — page HTML at failure/checkpoint via `playwright-cli eval "document.documentElement.outerHTML"`.
 3. **Error logs** (`.json`) — `{test_id, timestamp, console_errors[], network_errors[], page_url}`.
 4. **Report copy** (`report.md`) — overwrite with the latest Phase 4 report for this test name.
 
@@ -304,12 +276,11 @@ Evidence saved to .ac/qa/{testName}/ — {N} screenshots, {M} HTML snapshots, {K
 
 | Condition | Action |
 |-----------|--------|
-| No MCP backends detected | Display setup guide with install commands (Phase 1 step 5), stop |
-| MCP tool call fails | Retry once with same parameters. If retry fails → mark test case `BLOCKED` with error message |
+| Playwright CLI not found | Display setup guide: `npm install -g @playwright/cli@latest`, stop |
+| CLI command fails (non-zero exit) | Retry once. If retry fails → mark test case `BLOCKED` with error message |
 | Target URL unreachable | Report `CONNECTION_FAILED` for that test case. Suggest: "Check that your dev server is running. Found these listening ports: [lsof results]" |
 | Bug document parse failure | Fall back to treating entire document as natural language instructions — extract test steps from prose |
 | Plan file not found | Inform user: "Plan file not found at [path]. Run `/ac:plan` to create one, or check the path." Stop |
 | `.browser-qa/last-report.json` not found (RECHECK) | Inform user: "No previous QA session found. Run a test first, then use --recheck." Stop |
 | Element not found after 3 self-healing retries | Mark test case `BLOCKED`: "Element not found: [description]. Page structure may have changed." |
 | Browser session crash / timeout | Close session, re-navigate, retry test case once. If still fails → `BLOCKED` |
-| MCP server not responding | Inform user: "MCP server [name] is not responding. Try restarting it: [restart command]" |

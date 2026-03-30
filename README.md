@@ -151,25 +151,11 @@ Test evidence is saved by default to `.ac/qa/` in the project directory:
 
 Disable with `--no-evidence` flag.
 
-### Required: Browser MCP Backend
-
-At least one browser MCP backend must be installed. The command auto-detects available backends at runtime.
+### Required: Playwright CLI
 
 ```bash
-# Playwright MCP (recommended — lowest token cost, richest tools)
-claude mcp add playwright -- npx @playwright/mcp@latest
-
-# Chrome DevTools MCP (debugging, performance, console/network)
-claude mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect
-
-# mcp-chrome (existing Chrome session via extension)
-npm i -g mcp-chrome-bridge && claude mcp add chrome -- npx mcp-chrome-bridge
-
-# playwriter (full Playwright API, stateful flows)
-claude mcp add playwriter -- playwriter mcp
+npm install -g @playwright/cli@latest
 ```
-
-Multiple backends can coexist — the command routes to the best one per test case.
 
 ## Contributing
 

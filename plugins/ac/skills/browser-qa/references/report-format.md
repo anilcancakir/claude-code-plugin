@@ -40,20 +40,23 @@ Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 
 **Screenshot**
 - Capture on FAIL only (attempt on BLOCKED if page loaded)
+- Command: `playwright-cli screenshot --filename=<path>`
 - Format: PNG, persisted to `.ac/qa/{testName}/{timestamp}-{pagePath}.png`
 - Reference by path in the report
 
 **Page HTML Snapshot**
-- Capture on FAIL via `document.documentElement.outerHTML`
+- Capture on FAIL via `playwright-cli eval "document.documentElement.outerHTML"`
 - Format: HTML, persisted to `.ac/qa/{testName}/{timestamp}-{pagePath}.html`
 - Useful for post-mortem DOM inspection without re-running tests
 
 **Console Errors**
 - Capture JS exceptions, unhandled rejections, and `console.error` calls
+- Command: `playwright-cli console error`
 - Filter out: third-party analytics noise, favicon 404s, non-actionable warnings
 - Include the full error message and stack origin line
 
 **Network Failures**
+- Command: `playwright-cli network`
 - Record: HTTP status, full URL, response excerpt (max 200 chars)
 - Flag: 4xx/5xx responses, CORS failures, request timeouts
 
@@ -62,6 +65,7 @@ Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 - Schema: `{test_id, timestamp, console_errors[], network_errors[], page_url}`
 
 **Accessibility Snapshot**
+- Snapshots are YAML files persisted to `.playwright-cli/` on disk
 - Include only the relevant subtree (the component under test)
 - Omit full-page dumps — target the failing element's accessible name/role
 
@@ -74,7 +78,7 @@ Evidence is attached only to FAIL and BLOCKED verdicts. PASS verdicts use `{}`.
 
 ## Summary
 **Mode**: [AD_HOC / BUG_REPRO / PLAN_VERIFY / RECHECK]
-**Backend**: [which MCP backend(s) used]
+**Backend**: playwright-cli
 **Target**: [URL or file path]
 **Verdict**: PASS_ALL / FAILURES_FOUND / BLOCKED
 **Stats**: [N passed] / [N failed] / [N blocked] out of [total]
@@ -132,7 +136,7 @@ Saved to `.browser-qa/last-report.json` after every run. Used by RECHECK mode to
 {
   "timestamp": "2026-03-26T14:30:00Z",
   "mode": "AD_HOC",
-  "backend": "playwright",
+  "backend": "playwright-cli",
   "target": "http://localhost:3000/register",
   "verdict": "FAILURES_FOUND",
   "stats": { "pass": 3, "fail": 1, "blocked": 0, "total": 4 },

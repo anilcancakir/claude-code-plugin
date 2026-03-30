@@ -314,11 +314,11 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 |-------|-------|---------|
 | `ac:investigate` | Opus | Root cause analysis — hypothesis-driven, 3-cycle ceiling, structured evidence |
 | `ac:gemini-vision` | Sonnet | Multimodal analysis — video recordings, multi-image comparison via Gemini |
-| `ac:browser-qa` | Sonnet | Browser test executor — navigates pages via MCP backends, captures screenshots + HTML + errors, returns structured verdicts |
+| `ac:browser-qa` | Sonnet | Browser test executor — runs tests via Playwright CLI shell commands, captures screenshots + HTML + errors, returns structured verdicts |
 
 ## Browser QA Testing
 
-`/ac:browser-qa` runs browser-based tests through MCP browser backends. It orchestrates the full flow: detect backends → classify mode → gather context → delegate to `ac:browser-qa` agent → generate report → persist evidence.
+`/ac:browser-qa` runs browser-based tests via Playwright CLI. It orchestrates the full flow: detect CLI → classify mode → gather context → delegate to `ac:browser-qa` agent → generate report → persist evidence.
 
 ### Modes
 
@@ -343,25 +343,11 @@ By default, test artifacts are saved to `.ac/qa/` for audit trail and debugging:
 
 Disable with `--no-evidence`.
 
-### Required: Browser MCP Backend
-
-At least one browser MCP backend must be installed:
+### Required: Playwright CLI
 
 ```bash
-# Playwright MCP (recommended — lowest token cost, richest tools)
-claude mcp add playwright -- npx @playwright/mcp@latest
-
-# Chrome DevTools MCP (debugging, performance, console/network)
-claude mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect
-
-# mcp-chrome (existing Chrome session via extension)
-npm i -g mcp-chrome-bridge && claude mcp add chrome -- npx mcp-chrome-bridge
-
-# playwriter (full Playwright API, stateful flows)
-claude mcp add playwriter -- playwriter mcp
+npm install -g @playwright/cli@latest
 ```
-
-Multiple backends can coexist — the command auto-detects and routes to the best one per test case.
 
 ## Model Customization
 
@@ -483,8 +469,8 @@ plugins/ac/
 │   │   ├── SKILL.md
 │   │   └── references/    # Templates for coding style, language style, CLAUDE.md, PRDs
 │   └── browser-qa/
-│       ├── SKILL.md       # Browser QA workflow patterns, MCP routing, self-healing
-│       └── references/    # MCP backend tool schemas, report format, evidence schema
+│       ├── SKILL.md       # Browser QA workflow patterns, Playwright CLI routing, self-healing
+│       └── references/    # Report format and evidence schema
 ├── .claude-plugin/
 │   └── plugin.json
 └── README.md

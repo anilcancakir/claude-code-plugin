@@ -1,40 +1,54 @@
 ---
 name: browser-qa
-description: "Browser QA workflow patterns and MCP backend routing. Loaded by /ac:browser-qa command."
+description: "Browser QA workflow patterns and Playwright CLI integration. Loaded by /ac:browser-qa command."
 user-invocable: false
 ---
 
 # Browser QA — Testing Knowledge Base
 
-Browser-based QA testing via MCP backends. This skill provides the routing logic, workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:browser-qa` command. Tool schemas live in `references/mcp-backends.md` — this file distills decision patterns and orchestration knowledge.
+Browser-based QA testing via Playwright CLI (`playwright-cli`). This skill provides workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:browser-qa` command. Report format lives in `references/report-format.md` — this file distills orchestration knowledge and CLI-specific patterns.
 
 ---
 
-## Quick Routing Reference
+## Playwright CLI Essentials
 
-### Decision Tree
+### Installation and Verification
 
-```
-1. Existing Chrome session needed?
-   ├─ + DevTools/performance → Chrome DevTools MCP
-   ├─ + Semantic tab search  → mcp-chrome
-   └─ + Full Playwright API  → playwriter
-2. Performance profiling / Lighthouse? → Chrome DevTools MCP
-3. Headless CI / Docker?              → Playwright MCP
-4. Stateful multi-step flows?         → playwriter
-5. Default                            → Playwright MCP
-```
+- Install: `npm install -g @playwright/cli@latest`
+- Verify: `playwright-cli --version`
 
-### Capability Overview
+### Architecture
 
-| | Playwright MCP | Chrome DevTools MCP | mcp-chrome | playwriter |
-|-|---------------|-------------------|------------|------------|
-| Tool count | 21 + 38 optional | 29 | 22 | 2 |
-| Existing Chrome | No | Yes | Yes | Yes |
-| Headless | Yes | No | No | Yes |
-| Token cost | ~13.7K (lowest) | ~19K | Unknown | Low |
+Snapshots and screenshots write to disk (`.playwright-cli/`), never into context — ~4x token reduction vs tool-call-based approaches. Read only the relevant portion of snapshot YAML when targeting elements; never dump the entire tree into context.
 
-Full tool schemas and parameters → `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/mcp-backends.md`
+### Session Management
+
+- Start named session: `playwright-cli open -s=<name> <url>`
+- Default session via env: `PLAYWRIGHT_CLI_SESSION=<name>`
+- Close session: `playwright-cli close -s=<name>`
+
+### Element Targeting
+
+- `ref` values from snapshot YAML (e.g., `e15`) — preferred, most stable
+- CSS selectors (`#id`, `.class`) — acceptable for stable, semantic selectors
+- Role selectors (`role=button[name=Submit]`) — preferred for semantic recovery
+
+### Key Commands Quick Reference
+
+| Command | Purpose |
+|---------|---------|
+| `playwright-cli open <url>` | Open browser and navigate to URL |
+| `playwright-cli goto <url>` | Navigate current session to URL |
+| `playwright-cli snapshot` | Capture accessibility tree as YAML to disk |
+| `playwright-cli click <ref>` | Click element by ref or selector |
+| `playwright-cli fill <ref> <value>` | Fill input field |
+| `playwright-cli type <ref> <value>` | Type into focused element |
+| `playwright-cli screenshot --filename=<path>` | Capture screenshot to disk |
+| `playwright-cli console` | Read current console messages |
+| `playwright-cli network` | Read current network request log |
+| `playwright-cli eval <expression>` | Evaluate JavaScript in page context |
+| `playwright-cli close` | Close browser session |
+| `playwright-cli run-code "async page => { ... }"` | Execute multi-step code batch |
 
 ---
 
@@ -43,53 +57,51 @@ Full tool schemas and parameters → `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/re
 ### AD_HOC — Freeform Testing
 
 1. **Detect dev server** — `lsof -i -P | grep LISTEN` to find local ports. Suggest URL if found
-2. **Navigate** to target URL with selected backend's navigate tool
-3. **Snapshot** — take accessibility snapshot (NOT screenshot). Scope to relevant subtree with `selector` param when page is large
-4. **Interact** — execute user's instructions step-by-step. Re-snapshot after each action (observe-act-observe)
-5. **Check** — inspect console messages and network requests for errors after each interaction
+2. **Open** — `playwright-cli open <url>` to start session
+3. **Snapshot** — `playwright-cli snapshot` writes YAML to disk. Read only the relevant subtree — search for target element by ref or role, never read entire file into context
+4. **Interact** — execute instructions step-by-step using ref values from snapshot. Re-snapshot after each action (observe-act-observe)
+5. **Check** — `playwright-cli console` and `playwright-cli network` after error-likely interactions (form submits, navigations, API calls)
 6. **Report** — build test case results with evidence on failures
-
-Key: Scope snapshots to subtree (`{selector: "#main-content"}`) to reduce token usage. Default to Playwright MCP unless task signals suggest another backend.
+7. **Close** — `playwright-cli close` when done
 
 ### BUG_REPRO — Bug Reproduction
 
 1. **Parse** bug document — extract numbered bugs with steps, expected/actual results
-2. **Clean state per bug** — navigate fresh for each bug to avoid state pollution
-3. **Execute steps** — follow reproduction steps exactly as documented. Re-snapshot after each step
-4. **Evidence on fail** — screenshot + console errors + network failures. Evidence is mandatory for FAIL verdicts
-5. **Navigate fresh** between bugs — never carry session state from one bug to the next
+2. **Fresh session per bug** — `playwright-cli open` + `playwright-cli close` per bug to avoid state pollution
+3. **Execute steps** — follow reproduction steps exactly as documented using playwright-cli commands. Re-snapshot after each step
+4. **Evidence on fail** — `playwright-cli screenshot --filename=<path>` + `playwright-cli console` + `playwright-cli network`. Evidence is mandatory for FAIL verdicts
+5. **Fresh open between bugs** — never carry session state from one bug to the next
 
-Key: Isolation is paramount. Each bug gets a fresh navigation. If bug doc lacks structure, extract bugs by paragraph/section breaks.
+Key: Isolation is paramount. Each bug gets a fresh `playwright-cli open` / `playwright-cli close` cycle. If bug doc lacks structure, extract bugs by paragraph/section breaks.
 
 ### PLAN_VERIFY — Acceptance Criteria Verification
 
 1. **Extract** `Done when:` blocks from plan file. Fall back to bulleted checklist items
 2. **Generate test cases** — one per acceptance criterion with action sequence and expected outcome
-3. **Execute** with assertion tools — use `--caps=testing` for Playwright MCP to enable `browser_expect_*` tools
-4. **Verdict per criterion** — PASS only when expected state is reached with no errors
+3. **Execute** using playwright-cli — `playwright-cli open`, `playwright-cli snapshot`, interact by ref, `playwright-cli eval` for assertions
+4. **Verdict per criterion** — PASS only when expected state is reached with no console errors or network failures
 
-Key: Use `--caps=testing` to unlock Playwright's assertion tools. Clean state per test case.
+Key: Use `playwright-cli eval` for programmatic assertions (e.g., `document.querySelector('.result').textContent`). Clean state per test case via fresh `open`/`close`.
 
 ### RECHECK — Re-run Previous Failures
 
 1. **Load** `.browser-qa/last-report.json` — stop if not found
 2. **Filter** to FAIL and BLOCKED items only — preserve original test case IDs
-3. **Re-run** each item using the same backend as the original run (from `backend` field in JSON)
+3. **Re-run** each item using playwright-cli (no backend field lookup needed)
 4. **Diff report** — compare current vs previous verdicts, show which items changed status
 
-Key: Preserve original backend selection. Output a diff table showing previous→current verdict changes.
+Key: Output a diff table showing previous→current verdict changes.
 
 ---
 
 ## Token Efficiency Strategies
 
-1. **Batch multi-step flows** — use `browser_run_code` (Playwright MCP) or `execute` (playwriter) for sequences. 1 tool call replaces N individual calls
-2. **Snapshots over screenshots** — accessibility snapshots are text (cheap). Screenshots are images (expensive). Use screenshots only as FAIL evidence
-3. **Scope snapshots to subtree** — pass `selector` param to `browser_snapshot` (e.g., `{selector: "#registration-form"}`) to get only the relevant DOM subtree
-4. **Re-navigate after ~20 interactions** — close and re-navigate to prevent context window bloat from accumulated snapshot data
-5. **Auto-return snapshots** — for Chrome DevTools MCP, pass `includeSnapshot: true` on interaction tools to get snapshot in the same response (halves round trips)
-6. **Prefer evaluate for data extraction** — use `browser_evaluate` / `evaluate_script` / `chrome_inject_script` to extract structured data instead of parsing snapshot text
-7. **Minimize console/network polling** — check console and network only after interactions that could produce errors, not after every single step
+1. **Snapshots on disk (YAML)** — `playwright-cli snapshot` writes to `.playwright-cli/`. Files never enter context unless explicitly read. Search YAML for target element, read only relevant lines
+2. **Screenshots on disk (PNG)** — `playwright-cli screenshot` writes to disk. Only file paths enter context, never image data. Screenshots are FAIL evidence only
+3. **`run-code` for multi-step batching** — `playwright-cli run-code "async page => { ... }"` replaces N individual playwright-cli calls with 1 Bash call
+4. **Read only relevant snapshot portion** — search snapshot YAML for target ref or role, extract 5-20 lines around the element. Never dump entire YAML into context
+5. **Re-navigate after ~20 interactions** — `playwright-cli close` + `playwright-cli open` to prevent accumulated stdout bloating context
+6. **Console/network only after error-likely interactions** — check after form submits, navigations, and API calls — not after every step
 
 ---
 
@@ -97,32 +109,30 @@ Key: Preserve original backend selection. Output a diff table showing previous�
 
 When an element interaction fails (ref not found, selector mismatch, stale element):
 
-1. **Re-snapshot** — get fresh accessibility tree of current DOM state
-2. **Search by semantic role/label** — find element by accessible role (`button`, `link`, `textbox`), accessible name, or nearby landmark context. Never fall back to CSS class selectors
-3. **Retry** with updated ref/uid — use the new identifier from the fresh snapshot
+1. **Re-snapshot** — `playwright-cli snapshot` to get fresh YAML of current DOM state
+2. **Search by semantic role/label** — find element by accessible role (`button`, `link`, `textbox`), accessible name, or nearby landmark context
+3. **Retry** with updated ref — use the new `ref` value from the fresh snapshot YAML
 4. **Max 3 retries** — if all fail, mark test case `BLOCKED` with note: "Element not found after 3 retries: [description]"
 
-Never fall back to CSS selectors — they are brittle and break across deploys. Semantic targeting (role + label) is the only acceptable recovery strategy.
+Never fall back to generic CSS class selectors — they are brittle and break on class rename or build hash change. Role selectors (`role=button[name=Submit]`) are the only acceptable fallback after ref-based targeting fails.
 
 ---
 
 ## Reference Files
 
-- **MCP backend tool schemas and routing matrix**: `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/mcp-backends.md`
-- **Report format specification (JSON + Markdown)**: `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/report-format.md`
+- **Report format specification**: `${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/references/report-format.md`
 
-Load mcp-backends.md for complete tool parameter schemas when constructing tool calls. Load report-format.md for the structured JSON schema used in `.browser-qa/last-report.json` persistence.
+Load report-format.md for the structured JSON schema used in `.browser-qa/last-report.json` persistence.
 
 ---
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It's Wrong | Do Instead |
-|-------------|---------------|------------|
-| Screenshots when snapshot suffices | Image tokens 10-50x more expensive than text snapshots | Use `browser_snapshot` / `take_snapshot`; screenshots only as FAIL evidence |
-| 20+ interactions without re-navigating | Context window bloats with accumulated snapshot data | Close and re-navigate after ~20 interactions |
-| Hardcoding CSS selectors | Brittle — break on any class rename or build hash change | Use `ref` (Playwright), `uid` (DevTools), or semantic role/label |
-| Skipping evidence on FAIL | Unverifiable failures waste the user's debugging time | Always capture screenshot + console + network on FAIL |
-| Testing in existing Chrome when clean state needed | Session cookies, local storage, extensions pollute test environment | Use Playwright MCP (own browser) for tests requiring clean state |
-| One tool call per form field | N tool calls for N fields wastes tokens and round trips | Batch with `browser_fill_form` or `browser_run_code` / `execute` |
-| Polling console after every step | Unnecessary round trips when most steps produce no errors | Check console after interactions likely to trigger errors (form submits, navigations) |
+| Anti-Pattern | Why Wrong | Do Instead |
+|---|---|---|
+| Reading full snapshot YAML into context | Wastes tokens — YAML files can be large | Search for target ref/role, read only relevant lines |
+| Screenshots when snapshot suffices | PNG files large if read into context | Use `playwright-cli snapshot`; screenshots only as FAIL evidence (saved to disk) |
+| 20+ interactions without re-opening | Accumulated stdout bloats context | `playwright-cli close` + `playwright-cli open` after ~20 |
+| Hardcoding CSS selectors | Brittle — break on class rename | Use `ref` from snapshot YAML, or role selectors |
+| Skipping evidence on FAIL | Unverifiable failures waste debugging time | `playwright-cli screenshot --filename=<path>` + `playwright-cli console` + `playwright-cli network` |
+| One command per form field | N Bash calls wastes round trips | Batch with `playwright-cli run-code "async page => { ... }"` |
