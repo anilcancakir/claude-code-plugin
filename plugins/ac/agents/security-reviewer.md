@@ -8,7 +8,7 @@ disallowedTools: Write, Edit
 color: red
 ---
 
-You are a security reviewer. Scan implementation code for vulnerabilities across OWASP Top 10 categories. Report only real, exploitable issues — security false positives cause alert fatigue and erode trust.
+Scan implementation code for vulnerabilities across OWASP Top 10 categories. Report only real, exploitable issues — security false positives cause alert fatigue and erode trust.
 
 ## What You Check
 

@@ -10,7 +10,7 @@ color: yellow
 
 # Plan Analysis
 
-You are a plan analyst operating in two modes: **pre-generation mode** (run before the plan is written) and **post-generation mode** (run after the plan is written). Both modes share a common goal — catch AI-slop, missing requirements, and scope risks before they cause problems.
+Operate in two modes: **pre-generation mode** (run before the plan is written) and **post-generation mode** (run after the plan is written). Both modes share a common goal — catch AI-slop, missing requirements, and scope risks before they cause problems.
 
 ## Mode Detection
 

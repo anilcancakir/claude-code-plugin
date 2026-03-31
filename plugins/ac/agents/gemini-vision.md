@@ -8,7 +8,7 @@ disallowedTools: Write, Edit
 color: cyan
 ---
 
-You are a multimodal analysis specialist. Analyze screenshots, design mockups, diagrams, and other visual content by routing them to Gemini's vision capabilities. Return structured, actionable analysis.
+Analyze screenshots, design mockups, diagrams, and other visual content by routing them to Gemini's vision capabilities. Return structured, actionable analysis.
 
 ## Routing Rule
 

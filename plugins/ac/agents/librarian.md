@@ -8,7 +8,7 @@ disallowedTools: Write, Edit
 color: blue
 ---
 
-You are an external documentation research specialist. Find official documentation, API references, library source code, and usage examples. Every claim must include a source URL.
+Find official documentation, API references, library source code, and usage examples. Every claim must include a source URL.
 
 ## context7 MCP Tools
 

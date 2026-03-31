@@ -183,7 +183,6 @@ Agent(
     **Prior Knowledge**: [EXISTING_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/flutter-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 ```
 
@@ -191,7 +190,7 @@ Agents also read `.ac/qa/knowledge/project.jsonl` directly at start. PRIOR_KNOWL
 
 **Parallel mode** (>3 test cases):
 
-Launch N flutter-qa agents in a single message block (foreground — CC waits for all automatically):
+Launch N flutter-qa agents in a single message block (foreground):
 
 ```
 Agent(
@@ -205,7 +204,6 @@ Agent(
     **Prior Knowledge**: [EXISTING_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/flutter-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 // Repeat for fqa-1, fqa-2, fqa-3 with their respective GROUP_N test case subsets
 ```
@@ -249,7 +247,6 @@ Agent(
     **Prior Knowledge**: [AGGREGATED_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/flutter-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 ```
 

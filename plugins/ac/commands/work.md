@@ -12,7 +12,7 @@ This command handles work that doesn't need structured planning — multiple ind
 
 ## Agent Routing
 
-Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CLAUDE.md` for the full routing reference and NOT column. This command uses: `ac:explore`, `ac:code-reviewer`, `ac:linter`, `ac:verifier`.
+Agents: `ac:explore`, `ac:code-reviewer`, `ac:linter`, `ac:verifier`.
 
 ---
 
@@ -109,11 +109,7 @@ Work request: $ARGUMENTS
 
    After changes: run build, tests, lint. Summarize: files changed, verification results, issues.
 
-   **Test Feedback Protocol**: After running tests, classify results and act:
-   - ALL PASSING → continue normally
-   - MINOR (<20% fail) → log warnings in Issues, continue with caution
-   - CONCERNING (20-50% fail) → STOP. Review approach. Fix if in scope, note if pre-existing
-   - CRITICAL (>50% fail) → STOP immediately. Make no more changes. Report failure
+   **Test Feedback**: ALL PASS→continue. <20% fail→log+continue. 20-50%→STOP+review. >50%→STOP+report.
    ```
 
    **Mid and Senior tier** (Sonnet/Opus — structured format):
@@ -136,28 +132,17 @@ Work request: $ARGUMENTS
 
    ## Must Do
 
-   - Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions
-   - Read existing files before modifying — match patterns and conventions
-   - Implement ONLY your assigned task. Do not touch files outside your scope
-   - Run verification after changes (build, tests, lint)
-   - If tests fail, fix the root cause. Do not skip or modify tests to pass
+   - Read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and existing files before modifying — follow conventions and match patterns
+   - Implement ONLY your assigned task, then run verification (build, tests, lint)
+   - If tests fail, fix the root cause — do not skip or modify tests to pass
 
    ## Must NOT Do
 
-   - Do not modify files outside your assigned scope
-   - Do not refactor or clean up code beyond what the task requires
-   - Do not add documentation or annotations to unchanged code
+   Stay in scope — no out-of-scope files, no bonus refactors, no annotations on unchanged code.
 
    ## Test Feedback
 
-   After running tests, classify the result and respond accordingly:
-
-   | Result | Threshold | Action |
-   |--------|-----------|--------|
-   | All passing | 0% fail | Continue normally |
-   | Minor failures | <20% fail | Log in Issues section, continue with caution. Note which tests failed and whether they're in your scope |
-   | Concerning | 20-50% fail | STOP. Review your approach. If failing tests are in your assigned scope, fix them before proceeding. If pre-existing failures, note and continue |
-   | Critical | >50% fail | STOP immediately. Do not make further changes. Report the full failure summary in your output. The orchestrator will handle retry or escalation |
+   **Test Feedback**: ALL PASS→continue. <20% fail→log+continue. 20-50%→STOP+review. >50%→STOP+report.
 
    Apply after EVERY significant code change (new file, modified function, config change). Do not batch — test incrementally.
 
@@ -229,14 +214,14 @@ Route based on WORK_COMPLEXITY (Phase 1):
 
 **Simple** (1-2 tasks): Run build + test + lint only. All pass → Phase 5. Any fail → fix and re-run.
 
-**Standard** (3-5 tasks): Launch build+test AND 2 verification agents in a single message block (foreground — CC waits for all automatically):
+**Standard** (3-5 tasks): Launch build+test AND 2 verification agents in a single message block (foreground):
 
 ```
 Agent(subagent_type="ac:code-reviewer", prompt="Review implementation for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: convention compliance, code quality, no scope creep.")
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check modified files plus direct importers if LSP available.")
 ```
 
-**Complex** (6+ tasks): Launch build+test AND 3 verification agents in a single message block (foreground — CC waits for all automatically):
+**Complex** (6+ tasks): Launch build+test AND 3 verification agents in a single message block (foreground):
 
 ```
 Agent(subagent_type="ac:code-reviewer", prompt="Review implementation for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: convention compliance, code quality, no scope creep.")

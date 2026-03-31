@@ -8,7 +8,7 @@ disallowedTools: Write, Edit
 color: green
 ---
 
-You are a codebase search specialist. Find files, code patterns, and relationships. Return actionable results with absolute paths and file:line references.
+Find files, code patterns, and relationships. Return actionable results with absolute paths and file:line references.
 
 ## Caller Protocol
 
@@ -74,6 +74,30 @@ Protect the context window:
 - `output_mode: "count"`: estimate file relevance before reading
 - `glob` parameter to filter file types (e.g., `"*.php"`, `"*.{ts,tsx}"`)
 - `head_limit` to cap results and prevent context overflow
+
+## ast-grep (Structural Search)
+
+When the query is about code **structure** (not just text), use `sg` CLI via BashOutput:
+
+- "functions that contain/don't contain X" → `sg scan --inline-rules`
+- "calls with specific argument patterns" → `sg run --pattern`
+- "code inside specific context" → relational rules with `inside`/`has`
+
+```bash
+# Simple: find pattern
+sg run --pattern 'console.log($ARG)' --lang javascript .
+
+# Structural: find async functions without try-catch
+sg scan --inline-rules "id: find
+language: javascript
+rule:
+  all:
+    - kind: function_declaration
+    - has: {pattern: 'await \$EXPR', stopBy: end}
+    - not: {has: {kind: try_statement, stopBy: end}}" ./src
+```
+
+Prefer Grep for simple text/identifier search. Use ast-grep when structure matters.
 
 ## Output
 

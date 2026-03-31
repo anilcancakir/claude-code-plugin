@@ -68,7 +68,7 @@ Proceed? [Execute / Adjust Wave Grouping / Cancel]
 
 ### For Parallel Waves (2+ independent steps)
 
-Launch all agents in a single message block (parallel background — CC waits for wave completion):
+Launch all agents in a single message block (parallel background):
 
 ```
 Agent(
@@ -108,11 +108,7 @@ Follow instructions literally. Do not abbreviate output, do not skip steps. Stay
 
 After changes: run build, tests, lint. Summarize: files changed, verification results, issues.
 
-**Test Feedback Protocol**: After running tests, classify results and act:
-- ALL PASSING → continue normally
-- MINOR (<20% fail) → log warnings in Issues, continue with caution
-- CONCERNING (20-50% fail) → STOP. Review approach. Fix if in scope, note if pre-existing
-- CRITICAL (>50% fail) → STOP immediately. Make no more changes. Report failure
+**Test Feedback**: ALL PASS→continue. <20% fail→log+continue. 20-50%→STOP+review. >50%→STOP+report.
 ```
 
 **Mid and Senior tier template** (Sonnet/Opus — structured format):
@@ -135,29 +131,17 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 
 ## Must Do
 
-- Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions
-- Read existing files before modifying — match patterns and conventions
-- Implement ONLY your assigned step. Do not touch files outside your scope
-- Run verification after changes (build, tests, lint)
-- If tests fail, fix the root cause. Do not skip or modify tests to pass
-- [Inject PLAN_CONVENTIONS or "Match existing patterns in target files"]
+- Read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) + existing files before modifying — follow conventions. [Inject PLAN_CONVENTIONS or "Match existing patterns in target files"]
+- Implement ONLY your assigned step + run verification (build, tests, lint) after changes
+- If tests fail, fix the root cause — do not skip or modify tests to pass
 
 ## Must NOT Do
 
-- Do not modify files outside your assigned scope
-- Do not refactor or clean up code beyond what the step requires
-- Do not add documentation or annotations to unchanged code
+Stay in scope — no out-of-scope files, no bonus refactors, no annotations on unchanged code.
 
 ## Test Feedback
 
-After running tests, classify the result and respond accordingly:
-
-| Result | Threshold | Action |
-|--------|-----------|--------|
-| All passing | 0% fail | Continue normally |
-| Minor failures | <20% fail | Log in Issues section, continue with caution. Note which tests failed and whether they're in your scope |
-| Concerning | 20-50% fail | STOP. Review your approach. If failing tests are in your assigned scope, fix them before proceeding. If pre-existing failures, note and continue |
-| Critical | >50% fail | STOP immediately. Do not make further changes. Report the full failure summary in your output. The orchestrator will handle retry or escalation |
+**Test Feedback**: ALL PASS→continue. <20% fail→log+continue. 20-50%→STOP+review. >50%→STOP+report.
 
 Apply after EVERY significant code change (new file, modified function, config change). Do not batch — test incrementally.
 
@@ -269,14 +253,14 @@ Route based on PLAN_COMPLEXITY (Phase 1):
 
 **Simple** (1-2 steps, quick tier): Skip verification agents. Run build + test + lint only. All pass → invoke `/ac:commit --skip-preflight`. Any fail → fix and re-run.
 
-**Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents in a single message block (foreground — CC waits for all automatically):
+**Standard** (3-6 steps, mixed tiers): Launch build+test AND 2 verification agents in a single message block (foreground):
 
 ```
 Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Conventions: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
 Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check modified files plus direct importers if LSP available.")
 ```
 
-**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents in a single message block (foreground — CC waits for all automatically). Add security-reviewer when plan touches auth, user input, file I/O, or external APIs:
+**Complex** (7+ steps, senior tier, or architecture): Launch build+test AND 3 verification agents in a single message block (foreground). Add security-reviewer when plan touches auth, user input, file I/O, or external APIs:
 
 ```
 Agent(subagent_type="ac:code-reviewer", prompt="Review implementation against plan at [plan-file-path]. Modified files: [list]. Conventions: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT if non-empty].")
@@ -288,7 +272,7 @@ Agent(subagent_type="ac:security-reviewer", prompt="Security scan of modified fi
 
 ### Execution (Standard and Complex only)
 
-**Step 1** — Launch build+test AND verification agents in a single message block (foreground — CC waits for all automatically):
+**Step 1** — Launch build+test AND verification agents in a single message block (foreground):
 
 1. Start full build + full test suite.
 2. Simultaneously launch verification agents per complexity level above.
@@ -340,7 +324,7 @@ AskUserQuestion(
     - label: "Accept and Commit"
       description: "Acknowledge failures, invoke /ac:commit for current state."
     - label: "Stop and Investigate"
-      description: "Halt execution. Launch ac:investigate on the failing area."
+      description: "Halt execution. Investigate the failing area manually."
 )
 ```
 

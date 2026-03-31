@@ -6,8 +6,6 @@ effort: high
 
 # Structured Planning
 
-You are orchestrating a planning workflow. Classify intent, research the codebase, interview the user, and produce an actionable plan.
-
 **Plan storage**: Plans are stored in `.ac/plans/` relative to the working directory. Save plans as `.ac/plans/$planName.md` where `$planName` is slugified from the request topic. Create the directory if it doesn't exist.
 
 ## Core Principles
@@ -44,7 +42,7 @@ Initial request: $ARGUMENTS
 
 ## Agent Routing
 
-Always use `ac:` prefixed `subagent_type` values — see **Agents** table in `CLAUDE.md`. This command uses: `ac:explore`, `ac:librarian`, `ac:plan-analysis`, `ac:plan-review`.
+Agents: `ac:explore`, `ac:librarian`, `ac:plan-analysis`, `ac:plan-review`.
 
 ### Pipeline Profiles
 
@@ -82,12 +80,6 @@ Research depth is profile-conditional:
    - If task has `### Codebase Context` (but no Research Summary): extract file:line references as pre-seeded targets, reduce explore agent count per profile.
    - If task has neither: proceed to step 1 with full research per profile.
 0b. **Skip-research gate**: If $ARGUMENTS points to a document with a populated `### Research Summary` (heading present with at least one non-empty line), skip Phase 2 entirely. Announce: "Research already completed — using findings from [source document]." Proceed to Phase 3. Applies to both task files and regular documents.
-0c. **Investigation intake**: If the input document contains `### Root Cause` AND `### Evidence` AND `### Affected Files` (ac:investigate output format), enter **investigation mode**:
-   - Extract: Root Cause (with confidence), Evidence (file:line refs), Affected Files (role tags), Recommended Fix Approach, Remaining Leads.
-   - Map to Research Summary format: Evidence → **Key Files**, Affected Files → **Patterns Found**, Recommended Fix → guiding constraint.
-   - High confidence → skip Phase 2, proceed to Phase 3. Medium/Low → run Phase 2 scoped to validate investigation findings.
-   - Announce: "Investigation findings detected (confidence: [level]) — using root cause analysis as pre-research."
-   - Add `### Investigation Context` to final plan: source investigation, root cause, confidence, key evidence.
 1. **Extract my-coding conventions**: Read `~/.claude/skills/my-coding/SKILL.md` if present. Extract: naming conventions, type hints, trailing commas, TDD rules, coding patterns, project-specific style. Store as **MY_CODING_RULES**. If absent → set **MY_CODING_RULES** = empty string, note: "Consider running `/ac:setup-coding`."
 2. **Project context extraction**: Read project config files and merge my-coding conventions. Store as **PROJECT_CONTEXT** (max ~3000 tokens — prioritize: conventions > gotchas > build commands > architecture):
    1. Read `./CLAUDE.md` if present — extract: Stack, Rules, Gotchas, Architecture notes, Build/test/lint commands
@@ -102,7 +94,7 @@ Research depth is profile-conditional:
       Research WITH these constraints in mind — flag any codebase patterns that conflict with them.
       ```
    7. Carry **PROJECT_CONTEXT** forward to Phase 3 — inject into the plan's `### Conventions` section
-3. **Launch research agents** — launch all agents in a single message block (parallel foreground — CC waits for all automatically). Launch ac:explore and ac:librarian in parallel with `subagent_type: "ac:explore"` / `"ac:librarian"`. Each agent targets a different research aspect. Inject **STYLE CONSTRAINTS** block (from step 2) into each prompt if **PROJECT_CONTEXT** is non-empty.
+3. **Launch research agents** — launch all agents in a single message block (parallel foreground). Launch ac:explore and ac:librarian in parallel with `subagent_type: "ac:explore"` / `"ac:librarian"`. Each agent targets a different research aspect. Inject **STYLE CONSTRAINTS** block (from step 2) into each prompt if **PROJECT_CONTEXT** is non-empty.
 
 ### Agent Routing by Intent
 
@@ -112,34 +104,33 @@ Research depth is profile-conditional:
 
 **Build intent** (Standard: 1 explore; Complex: 2 explore + 1 librarian):
 
-- ac:explore 1: "CONTEXT: Adding [feature] to [project]. GOAL: Match existing conventions. DOWNSTREAM: Plan file structure and code patterns. REQUEST: Find similar implementations — directory structure, naming, config, shared utilities. Include project structure overview. Skip vendor/."
-- ac:explore 2: "CONTEXT: Adding [feature] to [project]. GOAL: Understand organizational patterns. DOWNSTREAM: Decide where to place new files. REQUEST: Find how features are organized — controllers, views, routes. Compare 2-3 feature directories."
-- ac:librarian: "CONTEXT: Implementing [technology] in production. GOAL: Follow best practices. DOWNSTREAM: Setup and configuration decisions. REQUEST: Official docs for setup, configuration, and common pitfalls. Skip beginner tutorials."
+- ac:explore 1: "GOAL: Match existing conventions. REQUEST: Find similar implementations — directory structure, naming, config, shared utilities. Include project structure overview. Skip vendor/."
+- ac:explore 2: "GOAL: Understand organizational patterns. REQUEST: Find how features are organized — controllers, views, routes. Compare 2-3 feature directories."
+- ac:librarian: "GOAL: Follow best practices. REQUEST: Official docs for setup, configuration, and common pitfalls. Skip beginner tutorials."
 
 **Refactor intent** (Standard: 1 explore; Complex: 2 explore):
 
-- ac:explore 1: "CONTEXT: Refactoring [target]. GOAL: Map impact scope. DOWNSTREAM: Build safe refactoring plan. REQUEST: Find all usages — call sites, type flow, dynamic access. Return file path, usage pattern, risk level."
-- ac:explore 2: "CONTEXT: Modifying [target]. GOAL: Understand test coverage. DOWNSTREAM: Decide whether to add tests first. REQUEST: Find all test files exercising this code, what each asserts, coverage gaps."
+- ac:explore 1: "GOAL: Map impact scope. REQUEST: Find all usages — call sites, type flow, dynamic access. Return file path, usage pattern, risk level."
+- ac:explore 2: "GOAL: Understand test coverage. REQUEST: Find all test files exercising this code, what each asserts, coverage gaps."
 
 **Mid-sized intent** (Standard: 1 explore; Complex: 1 explore + 1 librarian):
 
-- ac:explore: "CONTEXT: Updating [target area] in [project]. GOAL: Understand current implementation and touch points. DOWNSTREAM: Plan scoped changes with minimal blast radius. REQUEST: Find the target implementation, its callers, configuration, and related tests."
-- ac:librarian: "CONTEXT: Extending [existing feature] with [capability]. GOAL: Follow established patterns. DOWNSTREAM: Implementation decisions. REQUEST: Official docs for relevant APIs. Focus on migration guides and breaking change notes."
+- ac:explore: "GOAL: Understand current implementation and touch points. REQUEST: Find the target implementation, its callers, configuration, and related tests."
+- ac:librarian: "GOAL: Follow established patterns. REQUEST: Official docs for relevant APIs. Focus on migration guides and breaking change notes."
 
 **Architecture intent** (Standard: 1 explore; Complex: 1 explore + 1-2 librarian):
 
-- ac:explore: "CONTEXT: Planning architectural changes. GOAL: Understand current system design. DOWNSTREAM: Identify safe-to-change vs load-bearing boundaries. REQUEST: Find module boundaries, dependency direction, key abstractions, circular deps."
-- ac:librarian: "CONTEXT: Designing architecture for [domain]. GOAL: Evaluate trade-offs. DOWNSTREAM: Present concrete options. REQUEST: Best practices, real-world case studies, and common failure modes. Skip generic pattern catalogs."
+- ac:explore: "GOAL: Understand current system design. REQUEST: Find module boundaries, dependency direction, key abstractions, circular deps."
+- ac:librarian: "GOAL: Evaluate trade-offs. REQUEST: Best practices, real-world case studies, and common failure modes. Skip generic pattern catalogs."
 
 **Research intent** (Standard: 1 explore; Complex: 1 explore + 1-2 librarian):
 
-- ac:explore: "CONTEXT: Researching [feature]. GOAL: Decide whether to extend or replace. DOWNSTREAM: Recommend a strategy. REQUEST: Find current implementation — edge cases, limitations, TODOs/FIXMEs, whether area is actively evolving."
-- ac:librarian 1: "CONTEXT: Implementing [library]. GOAL: Make correct API choices. DOWNSTREAM: Follow intended patterns. REQUEST: API reference, config options, migration guides, common mistakes."
-- ac:librarian 2: "CONTEXT: Looking for battle-tested implementations. GOAL: Identify consensus approach. DOWNSTREAM: Avoid reinventing the wheel. REQUEST: OSS projects solving this — architecture, edge cases, test strategy. Skip tutorials."
+- ac:explore: "GOAL: Decide whether to extend or replace. REQUEST: Find current implementation — edge cases, limitations, TODOs/FIXMEs, whether area is actively evolving."
+- ac:librarian 1: "GOAL: Make correct API choices. REQUEST: API reference, config options, migration guides, common mistakes."
+- ac:librarian 2: "GOAL: Identify consensus approach. REQUEST: OSS projects solving this — architecture, edge cases, test strategy. Skip tutorials."
 
-4. Once all agents return, read key files identified by agents to build deep understanding
-5. Summarize findings: patterns found, files to modify, dependencies, external best practices
-5b. **Research Gate** (Standard and Complex only — skip for Simple per Pipeline Profiles):
+4. Once all agents return, read key files and summarize: patterns, files to modify, dependencies, best practices.
+4b. **Research Gate** (Standard and Complex only — skip for Simple per Pipeline Profiles):
 
    Evaluate research sufficiency using a heuristic checklist before proceeding to plan generation:
 
@@ -151,12 +142,12 @@ Research depth is profile-conditional:
    | **Risk Coverage** | ≥1 edge case, dependency risk, or breaking change identified | Check risk mentions in findings | Launch targeted explore: "Identify edge cases, dependency risks, and potential breaking changes for [feature]" |
 
    Gate logic:
-   - ALL 4 pass → proceed to step 6
+   - ALL 4 pass → proceed to step 5
    - ANY fail → launch ONE targeted ac:explore agent per failing dimension (max 1 re-research cycle to prevent infinite loops). After re-research completes, re-evaluate the checklist. If still failing → proceed anyway with gaps noted in plan's Risks section
    - Announce gate result: "Research gate: [N/4] passed. [Proceeding / Re-researching: [failing dimensions]...]"
 
-6. Populate plan draft's `### Research Summary` and `### Conventions` sections. Four subsections: **Key Files** (file:line with one-line descriptions), **Patterns Found** (architecture, naming, organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming, file organization, coding style). Max ~30 lines total. Merge **PROJECT_CONTEXT** into **Conventions** — PROJECT_CONTEXT rules take priority over agent-discovered patterns.
-7. **Codebase state assessment**: Classify the target area after reading key files:
+5. Populate plan draft's `### Research Summary` and `### Conventions` sections. Four subsections: **Key Files** (file:line with one-line descriptions), **Patterns Found** (architecture, naming, organization), **Dependencies** (external libraries/frameworks/services), **Conventions** (naming, file organization, coding style). Max ~30 lines total. Merge **PROJECT_CONTEXT** into **Conventions** — PROJECT_CONTEXT rules take priority over agent-discovered patterns.
+6. **Codebase state assessment**: Classify the target area after reading key files:
    - **Disciplined**: Consistent patterns, good test coverage, strong typing → follow existing patterns exactly
    - **Transitional**: Mixed old/new patterns → follow the NEW direction, don't copy legacy
    - **Legacy**: Outdated patterns, weak tests → improve incrementally alongside changes
@@ -277,7 +268,7 @@ Two flows depending on whether Deep Review was requested ($deepReview flag from 
 Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: [plan-file-path]. Run gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit.")
 ```
 
-**Deep Review flow**: Launch `plan-analysis` AND `plan-review` in a single message block (parallel foreground — CC waits for all automatically), then merge results before applying fixes.
+**Deep Review flow**: Launch `plan-analysis` AND `plan-review` in a single message block (parallel foreground), then merge results before applying fixes.
 
 ```
 Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: [plan-file-path]. Run gap classification, AI-slop detection, tier sanity audit, and acceptance criteria audit.")
@@ -326,19 +317,3 @@ Do not write code or modify source files. Only produce the plan.
 ## Complexity Shortcuts
 
 Each complexity level maps to a Pipeline Profile. See Pipeline Profiles table for the authoritative reference.
-
-**Pipeline Profile: Simple** (~2-3 total agents)
-- Phase 2: Direct Read/Glob/Grep on known files — no explore agents
-- Phase 3: Skip pre-gen Metis. Dynamic convergence interview (research pre-scoring typically resolves — 0 rounds). Skip analysis gate. Auto-execute.
-- Verification: Build+test only
-
-**Pipeline Profile: Standard** (~4-6 total agents)
-- Phase 2: 1 ac:explore agent (+ ac:librarian if external docs relevant)
-- Phase 3: Skip pre-gen Metis. Dynamic convergence interview (≤20% ambiguity, 10 round cap). Post-gen analysis gate (plan-analysis only). Deep Review opt-in.
-- Verification: Code-reviewer + linter (skip verifier)
-
-**Pipeline Profile: Complex** (~7-10 total agents)
-- Phase 2: 2-3 ac:explore + 1 ac:librarian (full research)
-- Phase 3: Pre-gen Metis. Dynamic convergence interview (≤20% ambiguity, 10 round cap). Post-gen analysis + Deep Review (mandatory). Add Risks section.
-- Verification: Full 3-agent wave (code-reviewer + linter + verifier)
-- Suggest phased execution if steps have dependencies

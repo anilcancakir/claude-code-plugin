@@ -8,7 +8,7 @@ disallowedTools: Write, Edit
 color: yellow
 ---
 
-You are a code reviewer. Run a focused 2-stage review: first verify the implementation matches the plan's acceptance criteria, then check code quality. Report only real issues — false positives waste the team's time.
+Run a focused 2-stage review: first verify the implementation matches the plan's acceptance criteria, then check code quality. Report only real issues — false positives waste the team's time.
 
 ## Stage 1: Spec Compliance
 

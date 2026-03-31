@@ -168,7 +168,6 @@ Agent(
     **Prior Knowledge**: [EXISTING_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/maestro-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 ```
 
@@ -176,7 +175,7 @@ Agents also read `.ac/qa/knowledge/project.jsonl` directly at start. PRIOR_KNOWL
 
 **Parallel mode** (>3 test cases):
 
-Launch N maestro-qa agents in a single message block (foreground — CC waits for all automatically):
+Launch N maestro-qa agents in a single message block (foreground):
 
 ```
 Agent(
@@ -190,7 +189,6 @@ Agent(
     **Prior Knowledge**: [EXISTING_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/maestro-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 // Repeat for mqa-1, mqa-2, mqa-3 with their respective DEVICE_ID_N and GROUP_N test case subsets
 ```
@@ -232,7 +230,6 @@ Agent(
     **Prior Knowledge**: [AGGREGATED_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/maestro-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 ```
 

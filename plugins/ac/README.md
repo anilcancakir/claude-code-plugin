@@ -33,7 +33,7 @@ When you run `/ac:setup-global-claude-md`, `ac` generates a `~/.claude/CLAUDE.md
 |---------|--------|-------------|
 | "add X", "create Y", "implement Z" | Build | Multi-file ad-hoc → `/ac:work`. Structured/dependent → `/ac:plan` → `/ac:execute` |
 | "restructure X", "clean up Y" | Refactor | Same plan-first pipeline |
-| "why does X fail", "debug Y" | Investigation | Spawns `ac:investigate` (Opus, hypothesis-driven) |
+| "why does X fail", "debug Y" | Investigation | Read/Grep/BashOutput hypothesis-driven investigation → `/ac:plan` |
 | "fix X" (known cause) | Fix | Direct fix → verify with tests |
 | "how does X work", "explain Y" | Research | Spawns `ac:explore` + `ac:librarian` agents |
 | "review X", "audit Y" | Evaluation | Explore agents + inline analysis |
@@ -43,7 +43,7 @@ When you run `/ac:setup-global-claude-md`, `ac` generates a `~/.claude/CLAUDE.md
 2. Matching skill covers this? → Invoke it
 3. Super simple (single file, <10 lines)? → Execute directly
 
-This means `ac` works in the background even when you're just chatting with Claude Code. Say "add dark mode support" and the plan-execute pipeline kicks in. Say "why is this test flaky" and an Opus investigator starts tracing hypotheses. No ceremony required.
+This means `ac` works in the background even when you're just chatting with Claude Code. Say "add dark mode support" and the plan-execute pipeline kicks in. Say "why is this test flaky" and a hypothesis-driven investigation begins with Read/Grep/BashOutput. No ceremony required.
 
 > You can still use slash commands directly (`/ac:plan`, `/ac:execute`) when you want explicit control. The auto-routing is a convenience layer, not a replacement.
 
@@ -148,11 +148,11 @@ You say:
 why did order emails stop sending after the queue refactor?
 ```
 
-The Intent Gate classifies this as **Investigation** (hairy — unknown cause, multi-file). `ac` spawns an `ac:investigate` agent on Opus with a 3-cycle ceiling. The investigator:
+The Intent Gate classifies this as **Investigation** (hairy — unknown cause, multi-file). `ac` begins a hypothesis-driven investigation using Read/Grep/BashOutput with a 3-cycle ceiling:
 
 1. Forms hypotheses ("queue connection name changed", "event listener not registered")
 2. Traces code paths across files to confirm or eliminate each hypothesis
-3. Returns structured findings with root cause, evidence, and affected files
+3. Surfaces root cause, evidence, and affected files
 
 Then `ac` automatically builds a fix plan from the investigation results. No guessing, no premature fixes.
 
@@ -287,7 +287,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 
 ## Agents
 
-`ac` includes 16 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
+`ac` includes 15 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
 
 ### Search & Research
 
@@ -315,11 +315,10 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | `ac:security-reviewer` | Sonnet | OWASP Top 10 scanner — severity x exploitability scoring. Optional |
 | `ac:code-simplifier` | Sonnet | Clarity pass — suggests simplifications preserving behavior. Opt-in |
 
-### Investigation & Testing
+### Testing & Vision
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `ac:investigate` | Opus | Root cause analysis — hypothesis-driven, 3-cycle ceiling, structured evidence |
 | `ac:gemini-vision` | Sonnet | Multimodal analysis — video recordings, multi-image comparison via Gemini |
 | `ac:browser-qa` | Sonnet | Browser test executor — runs tests via Playwright CLI shell commands, captures screenshots + HTML + errors, returns structured verdicts |
 | `ac:maestro-qa` | Sonnet | Mobile test executor via Maestro MCP — runs tests on iOS/Android emulators |
@@ -554,15 +553,16 @@ Restart Claude Code after updating the plugin. Some changes (new commands, agent
 - **Plan-first** — All commands follow: classify → research → interview → generate → review. No code is written during planning
 - **Reliability-first** — Default to correctness, not cost savings. Opus handles planning and architecture, Haiku handles search. Failed agents escalate one tier before logging failure
 - **Progressive disclosure** — Plugin metadata is always in context. SKILL.md body loads on trigger. Reference files load on demand. Tokens are injected only when relevant
-- **Read-only advisory** — All 16 agents enforce `disallowedTools: Write, Edit`. Only execution workers spawned by `/ac:execute` get write access
+- **Read-only advisory** — All 15 agents enforce `disallowedTools: Write, Edit`. Only execution workers spawned by `/ac:execute` get write access
 - **Pure markdown** — Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies, no vendor lock-in
+- **Global CLAUDE.md dedup boundary** — Command prompts don't duplicate directives from the global CLAUDE.md template (loaded every message). Commands specify WHAT (which agents, prompts), not HOW CC behaves (barriers, AskUserQuestion enforcement). Worker templates exempt — subagents don't receive global CLAUDE.md
 
 ## Plugin Structure
 
 ```
 plugins/ac/
 ├── commands/          # 14 user-invocable /ac:* commands (incl. browser-qa, maestro-qa, flutter-qa, work, progress)
-├── agents/            # 16 read-only agent definitions (incl. browser-qa, maestro-qa, flutter-qa)
+├── agents/            # 15 read-only agent definitions (incl. browser-qa, maestro-qa, flutter-qa)
 ├── skills/
 │   ├── ac-skill-creator/
 │   │   ├── SKILL.md

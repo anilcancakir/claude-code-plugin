@@ -10,7 +10,7 @@ You are a [communication_style] development partner. [expertise_assumption].
 - [language_rule — e.g., "ALL code, naming, comments, docblocks, commits — English only."]
 - Direct and technical. Code first, prose second.
 - Flawed approach? Raise concern with alternative, ask if proceed.
-- Ambiguous requirement? Use AskUserQuestion instead of guessing.
+- Decision points and ambiguity → always AskUserQuestion tool call, never prose questions.
 ```
 
 ## Section: Tech Stack (if detected from my-coding or interview)
@@ -46,14 +46,14 @@ Before the first tool call, verbalize intent:
 
 ### Delegation Check
 Default Bias: DELEGATE. Before acting on any non-trivial task:
-1. **Specialized agent?** ac:explore, ac:librarian, ac:investigate handles this? → Spawn it
+1. **Specialized agent?** ac:explore, ac:librarian handles this? → Spawn it
 2. **Matching skill?** A loaded skill (my-coding, ac:plan, etc.) covers this? → Invoke it
 3. **SUPER SIMPLE?** Single file, <10 lines, zero ambiguity? → Execute directly
 If steps 1-2 match → delegate. Only reach step 3 for genuinely trivial work.
 
 ### Investigation Protocol
 - **Surgical fix**: Known cause, single location, <20 lines → Fix directly, verify with tests
-- **Hairy investigation**: Unknown cause, multi-file, or systemic → Spawn ac:investigate agent (Opus, read-only, hypothesis-driven, 3-cycle ceiling). Findings → `skill: "ac:plan"`. Never fix without understanding.
+- **Hairy investigation**: Unknown cause, multi-file, or systemic → Use Read/Grep/BashOutput for hypothesis-driven investigation (read-only, max 3 cycles). Findings → `skill: "ac:plan"`. Never fix without understanding.
 
 ### Codebase State Awareness
 Before copying patterns, classify: **Disciplined** (consistent, tested → follow patterns) · **Transitional** (mixed old/new → follow NEW direction) · **Legacy** (outdated, weak tests → improve, don't copy) · **Chaotic** (no patterns → establish from scratch).
@@ -108,6 +108,41 @@ Include only detected + user-approved skills. Never include `ac-skill-creator`. 
 ```
 
 Aggregate from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Only enabled. Omit if none.
+
+## Section: ast-grep (if `sg` CLI detected — `which sg`)
+
+```markdown
+## ast-grep (Structural Code Search)
+
+Use `sg` CLI for **structural** code queries — when Grep would over-match or miss AST-level nuance.
+
+| Need | Tool |
+|------|------|
+| Text/string/identifier | Grep |
+| References/definitions | LSP |
+| Code **patterns** (structural) | ast-grep (`sg`) |
+
+**When to reach for ast-grep**: "functions containing/missing X", "calls with N+ args", "pattern A inside context B", any query about code **structure**.
+
+```bash
+# Simple pattern search
+sg run --pattern 'console.log($ARG)' --lang javascript .
+
+# Complex structural query (inline rule)
+sg scan --inline-rules "id: find-it
+language: javascript
+rule:
+  kind: function_declaration
+  has:
+    pattern: await \$EXPR
+    stopBy: end" ./src
+```
+
+Key: `$VAR` = single node, `$$$VAR` = zero-or-more, always `stopBy: end` for relational rules. Escape `$` as `\$` in shell.
+```
+
+Include only if `sg` is installed. Keep compact — the `ast-grep` skill has full reference.
+
 ## Section: Rules (if interview produced rules)
 
 ```markdown

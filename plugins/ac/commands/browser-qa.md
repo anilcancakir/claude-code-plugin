@@ -145,7 +145,6 @@ Agent(
     **Prior Knowledge**: [EXISTING_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 ```
 
@@ -153,7 +152,7 @@ Agents also read `.ac/qa/knowledge/project.jsonl` directly at start. PRIOR_KNOWL
 
 **Parallel mode** (>3 test cases):
 
-Launch N browser-qa agents in a single message block (foreground — CC waits for all automatically):
+Launch N browser-qa agents in a single message block (foreground):
 
 ```
 Agent(
@@ -166,7 +165,6 @@ Agent(
     **Prior Knowledge**: [EXISTING_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 // Repeat for bqa-2, bqa-3, bqa-4 with their respective GROUP_N test case subsets
 ```
@@ -205,7 +203,6 @@ Agent(
     **Prior Knowledge**: [AGGREGATED_KNOWLEDGE]
     Load: ${CLAUDE_PLUGIN_ROOT}/skills/browser-qa/SKILL.md
     Return results + learned_facts as JSON array.",
-  model: "sonnet"
 )
 ```
 

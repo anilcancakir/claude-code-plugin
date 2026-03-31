@@ -17,12 +17,13 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
 │   │   ├── commands/             # 14 user-invocable /ac:* commands
-│   │   ├── agents/               # 16 read-only agent definitions
+│   │   ├── agents/               # 15 read-only agent definitions
 │   │   ├── skills/
 │   │   │   ├── ac-skill-creator/ # Skill + references/ for component creation
 │   │   │   ├── browser-qa/       # Skill + references/ for browser QA workflows
 │   │   │   ├── maestro-qa/       # Skill + references/ for mobile QA workflows
-│   │   │   └── flutter-qa/       # Skill + references/ for Flutter QA workflows
+│   │   │   ├── flutter-qa/       # Skill + references/ for Flutter QA workflows
+│   │   │   └── ast-grep/         # Skill + references/ for structural code search via sg CLI
 │   │   ├── references/          # Shared QA patterns reference
 │   │   ├── README.md
 │   │   └── LICENSE
@@ -114,7 +115,6 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `feasibility` | `"ac:feasibility"` | `"feasibility"` | Sonnet | medium | cyan | Feasibility evaluator — codebase fit, effort, dependencies | Glob, Grep, LS, Read, BashOutput |
 | `code-reviewer` | `"ac:code-reviewer"` | `"code-reviewer"` | Sonnet | medium | yellow | 2-stage code reviewer — spec compliance, then quality (APPROVED/BLOCKED) | Glob, Grep, LS, Read |
 | `gemini-vision` | `"ac:gemini-vision"` | `"gemini-vision"` | Sonnet | medium | cyan | File-path visual analysis via Gemini — video, multi-image, large directories | Read, Glob, LS, gemini-cli |
-| `investigate` | `"ac:investigate"` | `"investigate"` | Opus | high | red | Root cause investigator — hypothesis-driven debugging for multi-file bugs | Glob, Grep, Read, LS, BashOutput |
 | `security-reviewer` | `"ac:security-reviewer"` | `"security-reviewer"` | Sonnet | medium | red | OWASP-aware security scanner with severity×exploitability scoring | Glob, Grep, LS, Read |
 | `code-simplifier` | `"ac:code-simplifier"` | `"code-simplifier"` | Sonnet | medium | cyan | Simplification advisor — preserves behavior, read-only, opt-in | Glob, Grep, LS, Read |
 | `browser-qa` | `"ac:browser-qa"` | `"browser-qa"` | Sonnet | medium | blue | Browser test executor — runs test cases via `playwright-cli` shell commands, captures evidence, returns structured verdicts. Spawned by /ac:browser-qa. | Read, Glob, LS, Bash |
@@ -130,6 +130,7 @@ All agents are read-only. No write tools on advisory roles. All agents enforce `
 - `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns and `playwright-cli` command routing. Has references/ for report format and evidence schema. Requires [Playwright CLI](https://github.com/microsoft/playwright-cli) (`npm install -g @playwright/cli@latest`)
 - `ac:maestro-qa` skill (Sonnet, not user-invocable) — Mobile QA workflow patterns and Maestro MCP tool routing. Has references/ for report format and evidence schema. Requires [Maestro CLI](https://maestro.mobile.dev/) (`brew install maestro`) + user-installed MCP server
 - `ac:flutter-qa` skill (Sonnet, not user-invocable) — Flutter QA workflow patterns and flutter-skill MCP tool routing. Has references/ for report format and evidence schema. Requires [flutter-skill](https://github.com/flutter-skill/flutter-skill) (`npm install -g flutter-skill`) + user-installed MCP server + `FlutterSkillBinding` in app
+- `ast-grep` skill (not user-invocable) — Structural code search via `sg` CLI (tree-sitter based). AST pattern matching, metavariables, relational/composite rules. Has `references/rule_reference.md` for full syntax. Requires `sg` CLI (`brew install ast-grep`)
 - `qa-patterns` reference (`plugins/ac/references/qa-patterns.md`) — Shared QA patterns across browser-qa, maestro-qa, flutter-qa (knowledge system, report format, parallel execution, evidence persistence)
 - MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
 - MCP: `gemini-cli` (optional, user-installed, npm: gemini-mcp-tool) — Gemini CLI bridge for multimodal, large context, brainstorm. **Usage rule**: Always pass content inline to `ask-gemini` — never use `@filepath` for files outside the project workspace (Gemini cannot read them). Gemini is a supplementary "second eye", not the primary analyzer — Opus agents do the main analysis
@@ -222,9 +223,11 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) — mandatory for Complex, opt-in for Standard.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled (e.g., maestro MCP for mobile QA, flutter-skill MCP for Flutter QA)
+- **Tiered code search**: Grep (text) → ast-grep/`sg` (structural/AST) → LSP (semantic). Agents use `sg` CLI via BashOutput for structural queries — pattern matching, relational rules, composite logic. Skill loaded on demand, `references/` for deep syntax
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/`, flutter-qa state to `.ac/flutter-qa/`, visual regression baselines to `.ac/qa/baselines/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
 - **Ad-hoc parallel execution**: `/ac:work` provides plan-free parallel execution for multi-file tasks. Decomposes requests into independent tasks with file ownership validation, routes each to correct model tier (quick→Haiku, mid→Sonnet, senior→Opus), fires simultaneously, and runs complexity-driven verification. For structured multi-step work with dependencies, use `/ac:plan` + `/ac:execute` instead
+- **Global CLAUDE.md dedup boundary**: Command prompts must not duplicate directives already in the global CLAUDE.md template (Intent Gate, Delegation Check, Research delegation, Verification, AskUserQuestion enforcement, barrier semantics). These load every message. Commands specify WHAT to do (which agents, which prompts), not HOW CC should behave. Worker templates for subagents are exempt — subagents don't receive global CLAUDE.md.
 - **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:
   - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section (required)
   - **Execute-time** (`execute.md`): Reads CLAUDE.md fresh → extracts build/test/lint commands + gotchas as `RUNTIME_CONTEXT` (deduplicated against `PLAN_CONVENTIONS`) → injected into worker prompts (compact for quick tier, full for mid/senior)
@@ -264,3 +267,4 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - Commands delegate to `ac-skill-creator` for file generation — they don't write files directly
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
 - CC subagents receive `userContext: {}` (no CLAUDE.md) by design — ac's context propagation pipeline compensates by extracting and injecting project rules at plan/execute/verify time via prompt variables (PROJECT_CONTEXT, PLAN_CONVENTIONS, RUNTIME_CONTEXT)
+- Global CLAUDE.md template directives (Intent Gate, Delegation Check, barriers, AskUserQuestion enforcement) load every message — don't repeat them in command prompts. Worker templates for subagents are the exception (they don't receive CLAUDE.md).

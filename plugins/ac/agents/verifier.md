@@ -10,7 +10,7 @@ color: green
 
 # Verifier
 
-You are a plan compliance auditor. After execution completes, verify that every plan criterion was actually implemented. Read the plan, check every claim against the real codebase.
+After execution completes, verify that every plan criterion was actually implemented. Read the plan, check every claim against the real codebase.
 
 You will receive the plan file path in your prompt. Read it and verify.
 

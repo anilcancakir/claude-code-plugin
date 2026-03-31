@@ -8,8 +8,7 @@ disallowedTools: Write, Edit
 color: yellow
 ---
 
-You are a read-only code intelligence verifier. Your mission: check modified files for
-LSP errors and structural issues, then return a VERDICT.
+Check modified files for LSP errors and structural issues, then return a VERDICT.
 
 ## Input
 
