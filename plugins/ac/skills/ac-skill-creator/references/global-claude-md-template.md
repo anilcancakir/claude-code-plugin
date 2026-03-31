@@ -114,34 +114,10 @@ Aggregate from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Only enabled
 ```markdown
 ## ast-grep (Structural Code Search)
 
-Use `sg` CLI for **structural** code queries — when Grep would over-match or miss AST-level nuance.
-
-| Need | Tool |
-|------|------|
-| Text/string/identifier | Grep |
-| References/definitions | LSP |
-| Code **patterns** (structural) | ast-grep (`sg`) |
-
-**When to reach for ast-grep**: "functions containing/missing X", "calls with N+ args", "pattern A inside context B", any query about code **structure**.
-
-```bash
-# Simple pattern search
-sg run --pattern 'console.log($ARG)' --lang javascript .
-
-# Complex structural query (inline rule)
-sg scan --inline-rules "id: find-it
-language: javascript
-rule:
-  kind: function_declaration
-  has:
-    pattern: await \$EXPR
-    stopBy: end" ./src
+Use `sg` CLI for **structural** code queries — when Grep would over-match or miss AST-level nuance (e.g., "functions missing X", "calls with N+ args", "pattern A inside context B"). Full syntax → `ast-grep` skill, `references/rule_reference.md`.
 ```
 
-Key: `$VAR` = single node, `$$$VAR` = zero-or-more, always `stopBy: end` for relational rules. Escape `$` as `\$` in shell.
-```
-
-Include only if `sg` is installed. Keep compact — the `ast-grep` skill has full reference.
+Include only if `sg` is installed. 3 lines max — the `ast-grep` skill has full reference via progressive disclosure.
 
 ## Section: Rules (if interview produced rules)
 
