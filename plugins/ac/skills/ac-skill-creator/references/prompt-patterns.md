@@ -1,23 +1,128 @@
 # Prompt Patterns Reference
 
-Detailed patterns extracted from Claude Code v2.1.68 system prompt and Anthropic official plugins. Read this file when drafting any Claude Code component.
+Patterns from Anthropic's official plugins and Claude Code documentation. Read this file when drafting any Claude Code component.
+
+## Contents
+
+- [How Skills Appear to the Model](#how-skills-appear-to-the-model)
+- [Skill Description Patterns](#skill-description-patterns-proven)
+- [Agent Patterns](#agent-patterns)
+- [Command Patterns](#command-patterns-phase-based)
+- [Rule Patterns](#rule-patterns)
+- [Skill Directory Structure](#skill-directory-structure)
+- [Common Mistakes](#common-mistakes)
 
 ---
 
-## Agent Patterns (from official plugins)
+## How Skills Appear to the Model
+
+Understanding how CC presents skills is essential for writing effective descriptions and bodies.
+
+### Skill Listing (system-reminder injection)
+
+At session start, CC injects skill metadata into `<system-reminder>` blocks:
+
+```
+<system-reminder>
+The following skills are available for use with the Skill tool:
+
+- simplify: Review changed code for reuse, quality, and efficiency, then fix any issues found.
+- keybindings-help: Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: "rebind ctrl+s", "add a chord shortcut"…
+- claude-api: Build apps with the Claude API or Anthropic SDK.
+TRIGGER when: code imports `anthropic`/`@anthropic-ai/sdk`/`claude_agent_sdk`…
+DO NOT TRIGGER when: code imports `openai`/other AI SDK…
+</system-reminder>
+```
+
+**Key observations:**
+- Format: `- name: description…` (one line per skill)
+- Long descriptions truncated with `…` at 250 characters
+- This is ALL the model sees until it decides to invoke a skill
+- Model is told: "When a skill matches the user's request, this is a BLOCKING REQUIREMENT: invoke the relevant Skill tool BEFORE generating any other response"
+
+### Skill Body Injection (on invocation)
+
+When the model invokes a skill via the Skill tool, CC injects the full body:
+
+```
+### Skill: {name}
+Path: {path}
+
+{full SKILL.md content}
+```
+
+On context compaction, skill bodies are truncated to 5,000 tokens with: `[... skill content truncated for compaction; use Read on the skill path if you need the full text]`
+
+### Total Token Budget
+
+- Skill listing: ~100 tokens per skill (metadata only)
+- Invoked skill body: up to 5,000 tokens per skill (compaction limit)
+- Total invoked skills context: 25,000 tokens
+
+---
+
+## Skill Description Patterns (Proven)
+
+Three patterns observed across all official plugins:
+
+### Pattern A: Capability + Usage (simplest)
+
+```yaml
+description: "Review changed code for reuse, quality, and efficiency, then fix any issues found."
+```
+
+Best for: Single-purpose skills with obvious trigger context.
+
+### Pattern B: When-to-use + Examples (most common)
+
+```yaml
+description: "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify keybindings.json. Examples: 'rebind ctrl+s', 'add a chord shortcut', 'customize keybindings'."
+```
+
+Best for: Skills that need explicit trigger phrases to avoid undertriggering.
+
+### Pattern C: Purpose + TRIGGER/DO NOT TRIGGER (auto-invoked)
+
+```yaml
+description: "Build apps with the Claude API or Anthropic SDK."
+when_to_use: "TRIGGER when: code imports `anthropic`/`@anthropic-ai/sdk`/`claude_agent_sdk`, or user asks to use Claude API, Anthropic SDKs, or Agent SDK. DO NOT TRIGGER when: code imports `openai`/other AI SDK, general programming questions."
+```
+
+Best for: Skills that must fire automatically based on code context, with clear counter-examples.
+
+### Pattern D: Capability + Trigger phrases in quotes (official plugin-dev)
+
+```yaml
+description: "This skill should be used when the user asks to 'create a hook', 'add a PreToolUse hook', 'validate tool use', 'implement prompt-based hooks', or mentions hook events, tool validation, or skill lifecycle automation."
+```
+
+Best for: Domain-specific skills where exact user phrases predict intent. Used by 8 of 15 official plugin skills.
+
+### Description Optimization Tips
+
+1. Front-load the key use case — first 250 chars are all the model sees
+2. Include both WHAT it does AND WHEN to use it
+3. List specific trigger phrases in quotes: `"create a skill"`, `"add a hook"`
+4. Add "or mentions X" / "or discusses Y" for edge case coverage
+5. Be slightly pushy — Claude undertriggers skills by default
+6. Third person: "Processes files" not "I process files"
+7. Never start with "Teaches" or "Provides" — use action verbs
+
+---
+
+## Agent Patterns
 
 ### Minimal Agent Template (code-architect style)
 
 ```markdown
 ---
 name: code-architect
-description: Senior software architect for designing implementation blueprints. Use when architecture decisions are needed before implementation.
+description: "Senior software architect for designing implementation blueprints. Use when architecture decisions are needed before implementation."
 model: opus
-allowed-tools:
-  - Read
-  - Glob
-  - Grep
-  - Agent
+disallowedTools:
+  - Write
+  - Edit
+  - NotebookEdit
 ---
 
 You are a senior software architect who delivers comprehensive, actionable
@@ -33,7 +138,7 @@ guidelines. Find similar features to understand established approaches.
 
 **2. Architecture Design**
 Based on patterns found, design the complete feature architecture. Make
-decisive choices - pick one approach and commit. Ensure seamless integration
+decisive choices — pick one approach and commit. Ensure seamless integration
 with existing code. Design for testability, performance, and maintainability.
 
 **3. Complete Implementation Blueprint**
@@ -53,7 +158,7 @@ Deliver a decisive, complete architecture blueprint. Include:
 - **Build Sequence**: Phased implementation steps as a checklist
 
 Make confident architectural choices rather than presenting multiple options.
-Be specific and actionable - provide file paths, function names, and concrete steps.
+Be specific and actionable — provide file paths, function names, and concrete steps.
 ```
 
 ### Exploration Agent Template (code-explorer style)
@@ -61,12 +166,12 @@ Be specific and actionable - provide file paths, function names, and concrete st
 ```markdown
 ---
 name: code-explorer
-description: Expert code analyst for tracing and understanding feature implementations. Use for codebase research, finding patterns, and mapping dependencies.
+description: "Expert code analyst for tracing and understanding feature implementations. Use for codebase research, finding patterns, and mapping dependencies."
 model: haiku
-allowed-tools:
-  - Read
-  - Glob
-  - Grep
+disallowedTools:
+  - Write
+  - Edit
+  - NotebookEdit
 ---
 
 You are an expert code analyst specializing in tracing and understanding
@@ -97,14 +202,24 @@ references for every claim.
 
 ---
 
-## Command Patterns (from feature-dev plugin)
+## Command Patterns (phase-based)
 
 ### Phase Structure Template
 
 ```markdown
 ---
-description: Systematic feature development workflow
-argument-hint: Feature description
+name: feature-dev
+description: "Systematic feature development workflow"
+argument-hint: "[feature description]"
+model: sonnet
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+  - Agent
+  - Glob
+  - Grep
 ---
 
 You are helping a developer implement a new feature. Follow a systematic
@@ -193,6 +308,19 @@ CRITICAL: This is one of the most important phases. DO NOT SKIP.
 
 ## Rule Patterns
 
+### Rule Frontmatter
+
+Rules use minimal frontmatter — only `path` is meaningful:
+
+```yaml
+---
+path: "src/**/*.ts"          # Glob pattern — rule activates for matching files (required)
+description: "Optional description"  # Informational only, not used for triggering
+---
+```
+
+Rules do NOT support: `model`, `allowed-tools`, `user-invocable`, `context`, `agent`, or any other skill/agent fields. They are flat bullet lists scoped to file paths.
+
 ### Path-Scoped Rule Template
 
 ```markdown
@@ -227,37 +355,44 @@ path: "back-end/**/*.php"
 
 ---
 
-## Description Optimization Tips
+## Skill Directory Structure
 
-The `description` field is the primary mechanism that determines if Claude invokes a skill. Tips for better trigger accuracy:
-
-1. Include WHAT it does AND WHEN to use it
-2. List specific trigger phrases and contexts
-3. Be slightly pushy — Claude undertriggers skills by default
-4. Cover edge cases: "even if they don't explicitly ask for X"
-5. Mention adjacent concepts that should trigger the skill
-
-**Good example:**
+### Minimal (no bundled resources)
 
 ```
-Create Claude Code skills, agents, commands, and rules optimized for Claude
-models. Use when creating prompt-based files, designing agent instructions,
-writing skill workflows, crafting rules, or optimizing existing prompts.
-Also use when the user mentions creating tools, workflows, plugins, or
-automations for Claude Code.
+my-skill/
+├── SKILL.md              # Required — frontmatter + body
 ```
 
-**Bad example:**
+### Standard (with references)
 
 ```
-A skill for creating other skills.
+my-skill/
+├── SKILL.md              # Required — overview and navigation
+├── references/
+│   ├── api-reference.md  # Loaded on-demand via Read
+│   └── patterns.md       # Loaded on-demand via Read
 ```
+
+### Complete (all resource types)
+
+```
+my-skill/
+├── SKILL.md              # Required — overview and navigation
+├── references/
+│   ├── syntax.md         # Detailed docs (with TOC if >100 lines)
+│   └── templates.md      # Code patterns and examples
+├── scripts/
+│   └── validate.py       # Executed, source NOT loaded into context
+└── assets/
+    └── viewer.html       # Static files, templates
+```
+
+**One level deep rule**: CC reliably reads `SKILL.md → references/file.md`. Chains like `SKILL.md → advanced.md → details.md` break — CC may only `head -100` deeply nested files.
 
 ---
 
-## Anti-Patterns
-
-Avoid these common mistakes in Claude Code prompts:
+## Common Mistakes
 
 | Anti-Pattern | Fix |
 |---|---|
@@ -269,3 +404,10 @@ Avoid these common mistakes in Claude Code prompts:
 | Bold for inline emphasis | Only for headings and labels |
 | Passive voice instructions | Active imperative: "Analyze", "Run" |
 | 50+ word sentences | Break into 2-3 shorter sentences |
+| Description >250 chars without `when_to_use` | Split: short `description` + detailed `when_to_use` |
+| `allowed-tools` on agents | Use `disallowedTools` — agents use blacklist, not whitelist |
+| `disallowedTools` on skills/commands | Use `allowed-tools` — skills/commands use whitelist, not blacklist |
+| `user-invocable: true` on every skill | Omit — `true` is the default. Only set `false` for internal-only skills |
+| References without "read this when" guidance | Always explain when the model should read each reference |
+| Deeply nested reference chains | Keep all references one level from SKILL.md |
+| Hardcoded file paths or usernames | Use `${CLAUDE_SKILL_DIR}` or `${CLAUDE_PLUGIN_ROOT}` variables |
