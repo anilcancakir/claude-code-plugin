@@ -1,6 +1,7 @@
 ---
 name: frontend-design
 description: "Production-grade UI for web and mobile — design systems, visual hierarchy, distinctive aesthetics. Use for frontend implementation and design decisions."
+when_to_use: "Use when the user asks to 'build a page', 'design a component', 'create a form', 'style the UI', 'improve the design', or mentions CSS, layout, typography, color palette, responsive design, dark mode, mobile UI, or design system. Also trigger when implementing any user-facing screen or component."
 ---
 
 # Frontend Design
@@ -414,6 +415,18 @@ Too many borders = busy design. Alternatives:
 | Color as sole communication channel | Add icons, text, or patterns alongside color |
 | Cookie-cutter design across generations | Every design must be unique and context-specific |
 | Converging on common font/color choices | Vary themes, fonts, and aesthetics deliberately |
+
+---
+
+## Output Guidance
+
+When generating frontend code, structure output as:
+
+1. **Design direction** — 1-2 sentences on aesthetic approach and key decisions
+2. **Code** — complete, working implementation (HTML/CSS/JS, React, Flutter, etc.)
+3. **Responsive notes** — breakpoint behavior if applicable
+
+Lead with code, not explanation. Show the design, don't describe it.
 
 ---
 

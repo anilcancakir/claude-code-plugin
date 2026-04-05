@@ -1,0 +1,8 @@
+{
+  "name": "github-actions",
+  "description": "GitHub Actions workflow generator — CI/CD pipelines, releases, Docker builds, reusable workflows, composite actions for any stack.",
+  "author": {
+    "name": "Anilcan Cakir",
+    "email": "anilcan.cakir@gmail.com"
+  }
+}

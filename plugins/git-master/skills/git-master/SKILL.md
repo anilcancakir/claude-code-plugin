@@ -1,6 +1,7 @@
 ---
 name: git-master
 description: "Git expert — atomic commits with style detection, rebase/squash, and history archaeology (blame, bisect, pickaxe). Use for git operations."
+when_to_use: "Use when the user asks to 'commit', 'rebase', 'squash', 'cherry-pick', 'blame', 'bisect', 'find who changed', 'split commits', 'amend', 'fixup', or mentions git history, merge conflicts, interactive rebase, commit messages, or atomic commits. Also trigger when reviewing git log or preparing a clean branch for PR."
 ---
 
 # Git Master
@@ -493,10 +494,7 @@ ACTIONS:
 - Default to semantic without detection → DETECT first
 - Separate test from implementation → same commit always
 - Group by file type → group by feature/module
-- Vague justification → must be specific
 - Rebase main/master → NEVER
 - `--force` instead of `--force-with-lease` → DANGEROUS
-- Rebase without stashing dirty files → WILL FAIL
 - `-S` when `-G` is appropriate → wrong results
 - Blame without `-C` on moved code → wrong attribution
-- Bisect without proper good/bad boundaries → wasted time

@@ -2,6 +2,18 @@
 
 Platform-specific component patterns, navigation, and mobile finishing touches.
 
+## Contents
+
+- [Navigation Patterns](#navigation-patterns)
+- [App Bar Patterns](#app-bar-patterns)
+- [List Patterns](#list-patterns)
+- [Form Patterns](#form-patterns)
+- [Feedback Patterns](#feedback-patterns)
+- [Empty States](#empty-states)
+- [Pull to Refresh](#pull-to-refresh)
+- [Mobile Finishing Touches](#mobile-finishing-touches)
+- [Touch Target Checklist](#touch-target-checklist)
+
 ---
 
 ## Navigation Patterns
