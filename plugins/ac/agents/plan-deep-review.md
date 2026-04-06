@@ -3,7 +3,8 @@ name: plan-deep-review
 description: "Adversarial plan reviewer — bias toward REJECT. Deep reference verification, AI-slop detection, cross-task dependency analysis, tier challenge. OKAY or REJECT. Use for Complex plans (mandatory) or Standard (opt-in via --deep-review)."
 model: opus
 effort: high
-disallowedTools: Write, Edit
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 15
 color: red
 ---
 

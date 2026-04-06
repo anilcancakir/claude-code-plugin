@@ -100,12 +100,11 @@ Formula: `ambiguity = 1 - Σ(score × weight)`
 **Goal**: Stress-test through parallel adversarial agents. Skip if --bulk → Phase 5.
 
 1. Compile idea summary from Phase 1 research + Phase 3 interview.
-2. Read `./CLAUDE.md` if present → extract as PROJECT_CONVENTIONS. If absent → "No project conventions — infer from codebase patterns."
-3. Launch 2 agents in a single message block (parallel foreground):
+2. Launch 2 agents in a single message block (parallel foreground). Agents receive CLAUDE.md automatically — include project-specific focus in prompts:
 
-   - `ac:challenger`: "CONTEXT: Ideating on: [summary + all decisions]. Project conventions: [PROJECT_CONVENTIONS]. Codebase: [findings or 'greenfield']. GOAL: Surface gaps and blind spots. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, blind spots. Missing user flows? Overlooked edge cases? Scope too ambitious for v1? Propose alternatives. Steelman strongest."
+   - `ac:challenger`: "CONTEXT: Ideating on: [summary + all decisions]. Codebase: [findings or 'greenfield']. GOAL: Surface gaps and blind spots. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, blind spots. Missing user flows? Overlooked edge cases? Scope too ambitious for v1? Propose alternatives. Steelman strongest."
 
-   - `ac:feasibility`: "CONTEXT: Evaluating: [summary]. Project conventions: [PROJECT_CONVENTIONS]. Codebase: [findings or 'greenfield']. GOAL: Assess implementation viability. DOWNSTREAM: Effort estimates feed task sizing. REQUEST: Codebase fit, effort estimate, prerequisites, dependencies. Flag features harder than they appear."
+   - `ac:feasibility`: "CONTEXT: Evaluating: [summary]. Codebase: [findings or 'greenfield']. GOAL: Assess implementation viability. DOWNSTREAM: Effort estimates feed task sizing. REQUEST: Codebase fit, effort estimate, prerequisites, dependencies. Flag features harder than they appear."
 
 4. Synthesize: merge gap reports (deduplicate, keep highest severity), combine feasibility + alternatives.
 5. **Zero-gap CRITICAL policy**: If CRITICAL gaps exist → AskUserQuestion: "Challenge found [N] critical concerns: [list]. How to proceed?" Options: "Address now" / "Accept risk and proceed". Do NOT proceed with unresolved CRITICALs unless user accepts.

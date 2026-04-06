@@ -3,7 +3,8 @@ name: explore
 description: "Codebase search specialist. Use proactively for internal lookups — files, patterns, relationships, architecture. Returns file:line references. Fire for any question involving 2+ modules or unfamiliar code."
 model: haiku
 effort: low
-disallowedTools: Write, Edit, NotebookEdit, Agent
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 10
 color: green
 ---
 
@@ -62,4 +63,4 @@ FAILED if: relative paths in output, missed obvious matches, caller needs follow
 
 ## Constraints
 
-Read-only. Absolute paths only. Stop when sufficient — do not over-search at quick/medium.
+Read-only. Stop when sufficient — do not over-search at quick/medium.

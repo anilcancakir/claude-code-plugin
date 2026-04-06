@@ -3,7 +3,7 @@ name: maestro-qa
 description: "Mobile test executor — runs test cases via Maestro MCP tools on iOS/Android emulators, captures evidence, returns structured verdicts. Spawned by /ac:maestro-qa."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit, NotebookEdit, Agent
+disallowedTools: Write, Edit, NotebookEdit
 color: blue
 ---
 

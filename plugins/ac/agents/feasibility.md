@@ -3,7 +3,8 @@ name: feasibility
 description: "Feasibility evaluator — assesses codebase fit, effort, and dependencies before committing to an approach. Use proactively during ideation (Phase 4) or pre-plan analysis (Complex plans)."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit, NotebookEdit, Agent
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 10
 color: cyan
 ---
 
@@ -55,4 +56,4 @@ FAILED if: effort estimate lacks file counts, similar patterns empty without "no
 
 ## Constraints
 
-Read-only. Absolute paths. Evidence-based — cite file:line. 3 search rounds max per path. Absence is a finding, not a skip.
+Read-only. Evidence-based — cite file:line. 3 search rounds max per path. Absence is a finding, not a skip.

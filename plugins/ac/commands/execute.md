@@ -27,7 +27,7 @@ Plan identifier: $ARGUMENTS
 3. Parse structured steps — extract: step number, title, description, files, done-when, QA, tier (quick/mid/senior), wave assignment.
 4. **Expected format**: `# Plan: [Title]` heading, steps with `**Step N**:` / `Files:` / `Done when:` / `Tier:` / `QA:` fields, `### Wave N` sections, `### Must NOT Have` section. If no Waves section → auto-analyze file overlap for independence. Warn on unexpected format, attempt best-effort parsing.
 5. **Extract conventions**: Parse `### Conventions` section → store as PLAN_CONVENTIONS. If absent → "Read existing files in scope and match patterns, naming, and style before modifying."
-6. **Read project CLAUDE.md** (execute-time supplement): Read `./CLAUDE.md` if present → extract into RUNTIME_CONTEXT (max ~2000 tokens for mid/senior, ~1000 for quick): build/test/lint commands, critical gotchas, naming conventions, architectural rules. Deduplicate against PLAN_CONVENTIONS.
+6. **Extract build/test commands**: Read `./CLAUDE.md` if present → extract into RUNTIME_CONTEXT: build/test/lint commands only. Workers already receive full CLAUDE.md automatically — RUNTIME_CONTEXT supplements with explicit commands for the worker's verification step. Deduplicate against PLAN_CONVENTIONS.
 7. **Tier assignments**: Read `Tier:` per step. Map: `quick`→haiku, `mid`→sonnet, `senior`→opus.
 8. **Codebase state escalation**: Parse `### Research Summary` for `**Codebase State**:`. If `Chaotic` or `Legacy` → escalate all `quick` to `mid` (in-memory only). `Disciplined` or `Transitional` → no change. Not found → default `Transitional`.
 9. **Initialize wisdom**: Set ACCUMULATED_WISDOM = empty. Populated after each wave, injected into subsequent worker prompts.
@@ -97,12 +97,10 @@ Update each step's task: `TaskUpdate(status: in_progress)`.
 **Files**: [paths]
 **Done when**: [acceptance criteria, verbatim]
 
-**Conventions**: [PLAN_CONVENTIONS]
-[If RUNTIME_CONTEXT non-empty:] **Project Context**: [RUNTIME_CONTEXT]
+**Plan Conventions**: [PLAN_CONVENTIONS]
+[If RUNTIME_CONTEXT non-empty:] **Build/Test Commands**: [RUNTIME_CONTEXT]
 
-Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions.
-
-Follow instructions literally. Do not abbreviate. Stay strictly in scope.
+Follow CLAUDE.md conventions (already in your context) + plan conventions above. Stay strictly in scope.
 
 [If ACCUMULATED_WISDOM non-empty:] **Wisdom from prior steps**: [ACCUMULATED_WISDOM]
 
@@ -126,8 +124,9 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 
 ## Must Do
 
-- Read `./CLAUDE.md` + existing files before modifying — follow conventions
+- Follow CLAUDE.md conventions (already in your context) + plan conventions below
 - [PLAN_CONVENTIONS or "Match existing patterns in target files"]
+- Read existing files before modifying — understand context
 - Implement ONLY your assigned step + run verification after changes
 - If tests fail, fix root cause — do not skip or modify tests to pass
 
@@ -136,8 +135,8 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 Stay in scope — no out-of-scope files, no bonus refactors, no annotations on unchanged code.
 
 [If RUNTIME_CONTEXT non-empty:]
-## Project Context
-[RUNTIME_CONTEXT — build/test/lint commands, gotchas]
+## Build/Test Commands
+[RUNTIME_CONTEXT — build/test/lint commands]
 
 [If tier = senior:]
 **Senior Tier**: Explore deeply before acting. Check edge cases, cross-cutting concerns, architectural impact. Trace downstream effects.
@@ -231,7 +230,7 @@ plan-verifier APPROVE → proceed to Phase 4. REJECT → fix, re-verify.
 Layer 1 (plan-verifier) must pass first. Then spawn:
 
 ```
-Agent(subagent_type: "ac:plan-code-review", prompt: "Review implementation against plan at [plan-file-path]. Modified files: [list]. Conventions: [PLAN_CONVENTIONS]. Runtime context: [RUNTIME_CONTEXT].")
+Agent(subagent_type: "ac:plan-code-review", prompt: "Review implementation against plan at [plan-file-path]. Modified files: [list]. Plan conventions: [PLAN_CONVENTIONS].")
 ```
 
 APPROVED → Phase 4. BLOCKED → fix, re-verify from Layer 2.

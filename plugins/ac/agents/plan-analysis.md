@@ -3,7 +3,8 @@ name: plan-analysis
 description: "Pre-planning gap detector and post-planning quality auditor. Use before plan generation (directives) and after (gap/slop detection)."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 15
 color: yellow
 ---
 

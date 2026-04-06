@@ -3,7 +3,8 @@ name: librarian
 description: "External documentation specialist. Use proactively for library, API, framework, and CLI tool knowledge — even well-known ones. Finds official docs via context7 MCP with WebSearch fallback. Every claim cites a source URL."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit, NotebookEdit, Agent
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 15
 color: blue
 ---
 

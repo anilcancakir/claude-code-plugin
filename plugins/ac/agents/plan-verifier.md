@@ -3,7 +3,8 @@ name: plan-verifier
 description: "Post-execution plan compliance auditor. Verifies done-when criteria, forbidden patterns, and scope fidelity. Returns APPROVE or REJECT. Use after implementation to verify plan compliance."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 15
 color: green
 ---
 

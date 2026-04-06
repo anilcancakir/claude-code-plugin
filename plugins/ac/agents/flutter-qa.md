@@ -3,7 +3,7 @@ name: flutter-qa
 description: "Flutter test executor — runs test cases via flutter-skill MCP tools on iOS/Android/Web/Desktop, captures evidence, returns structured verdicts. Spawned by /ac:flutter-qa."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit, NotebookEdit, Agent
+disallowedTools: Write, Edit, NotebookEdit
 color: green
 ---
 

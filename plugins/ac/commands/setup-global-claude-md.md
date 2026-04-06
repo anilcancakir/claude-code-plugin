@@ -8,7 +8,7 @@ argument-hint: update, enhance, or overwrite (optional)
 
 Generate or update `~/.claude/CLAUDE.md`. This file is injected into every Claude Code conversation as user-rules. Goal: turn CC into a structured orchestrator that delegates to ac:explore (codebase search), ac:librarian (external docs), and ac:plan (structured planning).
 
-**Context propagation**: Global CLAUDE.md reaches the main CC session only — subagents receive empty `userContext: {}`. ac:plan and ac:execute compensate by extracting CLAUDE.md content at plan-time and injecting it into worker prompts.
+**Context propagation**: Global CLAUDE.md is loaded into the main CC session AND all plugin subagents (ac:explore, ac:librarian, ac:plan-worker, etc.). Only CC's built-in Explore/Plan agents omit it for token savings. This means every ac agent sees the workflow directives, skills table, and rules defined here.
 
 ## Section Ownership
 

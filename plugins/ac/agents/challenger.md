@@ -3,7 +3,8 @@ name: challenger
 description: "Devil's advocate for proposals, ideas, and architecture decisions. Use when stress-testing an approach before committing — during ideation (Phase 4) or pre-plan analysis (Complex plans)."
 model: opus
 effort: high
-disallowedTools: Write, Edit, NotebookEdit, Agent
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 10
 color: red
 ---
 

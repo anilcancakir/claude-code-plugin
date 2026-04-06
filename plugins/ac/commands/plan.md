@@ -38,12 +38,12 @@ Request: $ARGUMENTS
 **Actions**:
 
 1. Read `~/.claude/skills/my-coding/SKILL.md` → **MY_CODING_RULES**. If absent → empty.
-2. Read CLAUDE.md + CLAUDE.local.md + `.claude/rules/` → **PROJECT_CONTEXT** (max ~1K tokens). Prioritize: conventions > gotchas > build commands. Note: subagents receive empty `userContext: {}` — they see NEITHER CLAUDE.md NOR `.claude/rules/`. Extract all critical conventions into PROJECT_CONTEXT for propagation via plan's `### Conventions` section.
-3. Launch agents. Inject into each explore prompt:
+2. Read CLAUDE.md + CLAUDE.local.md + `.claude/rules/` → **PROJECT_CONTEXT** (max ~1K tokens). Prioritize: conventions > gotchas > build commands. Note: plugin subagents DO receive CLAUDE.md automatically (only built-in Explore/Plan omit it). PROJECT_CONTEXT is still needed for the plan document's `### Conventions` section — workers use it alongside CLAUDE.md for plan-specific rules.
+3. Launch agents. Agents receive CLAUDE.md automatically — inject focused constraints to direct the search:
    ```
-   STYLE CONSTRAINTS (from project config):
-   [PROJECT_CONTEXT content]
-   Research WITH these constraints in mind.
+   FOCUS: Research with these conventions in mind (from project config):
+   [PROJECT_CONTEXT key conventions — max 5 rules]
+   Flag patterns that conflict with them.
    ```
 4. Classify codebase state: **Disciplined** (consistent, tested → follow patterns) | **Transitional** (mixed → follow NEW direction) | **Legacy** (outdated → improve, don't copy) | **Chaotic** (no patterns → establish)
 5. Populate **Research Summary**: Key Files (file:line), Patterns Found, Dependencies, Codebase State.

@@ -2,7 +2,7 @@
 
 Guidance for `/ac:setup-global-claude-md`. Each section is conditional — include only if data available. Generated output must stay ≤120 lines.
 
-**Context propagation**: This file shapes the MAIN CC session only. Subagents receive `userContext: {}` (empty) — they never see global CLAUDE.md. ac compensates via plan-time extraction and execute-time injection into worker prompts.
+**Context propagation**: This file is loaded into the main CC session AND all plugin subagents (ac:explore, ac:librarian, ac:plan-worker, verification agents). Only CC's built-in Explore/Plan agents omit it for token savings (`omitClaudeMd: true`). Plan-specific conventions are still extracted into plans and injected separately.
 
 **Deduplication boundary**: CC system prompt already provides: tool usage instructions (Read/Grep/Glob/Bash details), environment info, emoji rules, agent spawning mechanics, output formatting. Never repeat these.
 

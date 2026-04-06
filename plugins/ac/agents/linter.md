@@ -2,7 +2,9 @@
 name: linter
 description: LSP code intelligence verifier. Use after code changes to check diagnostics and confirm symbol structure.
 model: haiku
+effort: low
 tools: LSP, Glob, Read
+maxTurns: 5
 color: yellow
 ---
 

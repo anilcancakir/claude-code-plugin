@@ -3,7 +3,8 @@ name: plan-review
 description: "Plan reviewer — blockers-only, approval bias. Verifies references, executability, QA scenarios, tier sanity. OKAY or REJECT. Use after plan generation for Standard+ plans."
 model: sonnet
 effort: medium
-disallowedTools: Write, Edit
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 10
 color: green
 ---
 

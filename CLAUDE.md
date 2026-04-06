@@ -94,7 +94,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | Command | Description |
 |---------|-------------|
 | `/ac:plan` | Lead Developer — 7-phase planning: classify (intent + complexity) → research (explore + librarian agents) → pre-plan analysis (plan-analysis + feasibility + challenger for Complex) → interview (clearance check, max 3 rounds) → generate plan (tier assignment, wave rules, QA scenarios) → review (plan-review for Standard, +plan-deep-review for Complex) → deliver |
-| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, complexity-gated layered verification (Simple: plan-verifier + linter, Standard: +plan-code-review, Complex: +plan-deep-code-review), 3-strike rule, context propagation (PLAN_CONVENTIONS + RUNTIME_CONTEXT) |
+| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, complexity-gated layered verification (Simple: plan-verifier + linter, Standard: +plan-code-review, Complex: +plan-deep-code-review), 3-strike rule |
 | `/ac:init-claude-md` | Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
@@ -126,9 +126,9 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `maestro-qa` | `"ac:maestro-qa"` | Mobile test executor — Maestro MCP on iOS/Android. Spawned by /ac:maestro-qa |
 | `flutter-qa` | `"ac:flutter-qa"` | Flutter test executor — flutter-skill MCP. Spawned by /ac:flutter-qa |
 
-Model, effort, color, and tools are defined in each agent's frontmatter file.
+Model, effort, color, maxTurns, and tools are defined in each agent's frontmatter file.
 
-15 agents total. Most agents use denylist (`disallowedTools:`) — advisory agents deny `Write, Edit`, execution agent (`plan-worker`) denies `Agent, NotebookEdit`. Denylist auto-includes MCP tools without explicit allowlisting. Exceptions: `linter` uses allowlist (`tools: LSP, Glob, Read`) for intentional LSP access. Plan review has two tiers: `plan-review` (Sonnet, blockers-only, approval bias) for Standard+ plans, `plan-deep-review` (Opus, adversarial, bias toward REJECT) mandatory for Complex. Verification is layered/sequential: `plan-verifier` → `plan-code-review` → `plan-deep-code-review` — each layer gates the next, depth scales with plan complexity. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
+15 agents total. All agents have `maxTurns` to prevent runaway loops (5-25 depending on role complexity). Advisory agents use denylist `disallowedTools: Write, Edit, NotebookEdit`. Execution agent (`plan-worker`) denies only `NotebookEdit`. Denylist auto-includes MCP tools without explicit allowlisting. Exception: `linter` uses allowlist (`tools: LSP, Glob, Read`) for intentional LSP access. `Agent` is NOT denied — CC already prevents subagents from spawning subagents, making it redundant. Plan review has two tiers: `plan-review` (Sonnet, blockers-only, approval bias) for Standard+ plans, `plan-deep-review` (Opus, adversarial, bias toward REJECT) mandatory for Complex. Verification is layered/sequential: `plan-verifier` → `plan-code-review` → `plan-deep-code-review` — each layer gates the next, depth scales with plan complexity. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
 ## Skills & MCP
 
@@ -234,12 +234,11 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **Tiered code search**: Grep (text) → LSP (semantic). Agents use LSP via code intelligence for structural queries when available.
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/`, flutter-qa state to `.ac/flutter-qa/`, visual regression baselines to `.ac/qa/baselines/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
-- **Global CLAUDE.md dedup boundary**: Command prompts must not duplicate directives already in the global CLAUDE.md template (Intent Gate, Delegation Check, Research delegation, Verification, AskUserQuestion enforcement, barrier semantics). These load every message. Commands specify WHAT to do (which agents, which prompts), not HOW CC should behave. Worker templates for subagents are exempt — subagents don't receive global CLAUDE.md.
-- **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:
-  - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section (required)
-  - **Execute-time** (`execute.md`): Reads CLAUDE.md fresh → extracts build/test/lint commands + gotchas as `RUNTIME_CONTEXT` (deduplicated against `PLAN_CONVENTIONS`) → injected into worker prompts (compact for quick tier, full for mid/senior)
-  - **Verification-time** (`execute.md` Phase 3): `PLAN_CONVENTIONS` + `RUNTIME_CONTEXT` passed to plan-verifier, plan-code-review, and plan-deep-code-review agent prompts for convention compliance checking
-  - **Ideation-time** (`ideate.md`): Reads CLAUDE.md → extracts as `PROJECT_CONVENTIONS` → injected into challenger and feasibility agent prompts
+- **Global CLAUDE.md dedup boundary**: Command prompts must not duplicate directives already in the global CLAUDE.md template (Intent Gate, Delegation Check, Research delegation, Verification, AskUserQuestion enforcement, barrier semantics). These load every message. Commands specify WHAT to do (which agents, which prompts), not HOW CC should behave.
+- **Project context propagation**: Plugin subagents receive CLAUDE.md automatically (only CC's built-in Explore/Plan agents omit it via `omitClaudeMd: true`). ac's extraction pipeline adds plan-specific conventions beyond CLAUDE.md:
+  - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section. This is a plan document section, not context injection — workers use it alongside their auto-loaded CLAUDE.md
+  - **Execute-time** (`execute.md`): Extracts build/test/lint commands from CLAUDE.md as `RUNTIME_CONTEXT` for quick reference in worker briefings. Workers already receive full CLAUDE.md — RUNTIME_CONTEXT adds explicit test commands for verification steps
+  - **Verification-time** (`execute.md` Phase 3): `PLAN_CONVENTIONS` passed to verification agents. Agents already receive CLAUDE.md — plan conventions add plan-specific rules
   - **Codebase State**: Plan classifies target area (Disciplined/Transitional/Legacy/Chaotic) → execute uses for tier escalation (Chaotic/Legacy auto-escalates quick→mid)
 
 ## Key Files
@@ -275,5 +274,5 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - Commands use `${CLAUDE_PLUGIN_ROOT}` for template paths — set by Claude Code at runtime to the plugin's actual directory
 - Commands delegate to `skill-creator` for file generation — they don't write files directly
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
-- CC subagents receive `userContext: {}` (no CLAUDE.md) by design — ac's context propagation pipeline compensates by extracting and injecting project rules at plan/execute/verify time via prompt variables (PROJECT_CONTEXT, PLAN_CONVENTIONS, RUNTIME_CONTEXT)
-- Global CLAUDE.md template directives (Intent Gate, Delegation Check, barriers, AskUserQuestion enforcement) load every message — don't repeat them in command prompts. Worker templates for subagents are the exception (they don't receive CLAUDE.md).
+- Plugin subagents receive CLAUDE.md automatically (via `userContext.claudeMd`). Only CC's built-in Explore/Plan agents have `omitClaudeMd: true` for token savings. ac's context pipeline adds plan-specific conventions (PLAN_CONVENTIONS) beyond what CLAUDE.md provides.
+- Global CLAUDE.md template directives (Intent Gate, Delegation Check, barriers, AskUserQuestion enforcement) load every message — don't repeat them in command prompts. Since subagents also receive CLAUDE.md, avoid re-injecting its content into agent prompts.

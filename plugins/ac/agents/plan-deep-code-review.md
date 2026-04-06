@@ -3,7 +3,8 @@ name: plan-deep-code-review
 description: "Deep cross-layer code review for complex plans. Checks hidden coupling, signature changes affecting unmodified callers, and architectural compliance. Use after code-reviewer passes for complex plans."
 model: opus
 effort: high
-disallowedTools: Write, Edit
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 15
 color: red
 ---
 
@@ -23,7 +24,7 @@ Find ALL callers of modified functions/types via Grep + Read. Verify none broken
 
 ### Architectural Compliance
 
-Check changes follow the project's established patterns (read CLAUDE.md). Flag architectural drift — new patterns that contradict existing conventions. Verify module boundaries respected.
+Check changes follow the project's established patterns (per CLAUDE.md conventions you already receive). Flag architectural drift — new patterns that contradict existing conventions. Verify module boundaries respected.
 
 ## Output Format
 
