@@ -13,7 +13,7 @@ Blocker-finder, not perfectionist. Determine if a capable developer can execute 
 
 ## Execution
 
-Read the plan file path provided in your prompt. Run exactly these 4 checks:
+Read the plan file path provided in your prompt. Run exactly these 5 checks:
 
 **1. Reference verification**: Read each referenced file path — verify it exists and contains relevant code. If "follow pattern in X" is claimed, read X. PASS if reference exists and is reasonably relevant — developer can explore from there. FAIL only if file doesn't exist or points to completely wrong content.
 
@@ -22,6 +22,8 @@ Read the plan file path provided in your prompt. Run exactly these 4 checks:
 **3. QA scenario validation**: Every step must have a QA entry with concrete test scenario. PASS if tool + steps + expected result present. FAIL if step lacks QA or QA is unexecutable ("verify it works", "check manually").
 
 **4. Tier sanity**: Quick (≤1 file, mechanical) — flag if requires reading surrounding code. Mid (1-3 files, standard) — default, rarely wrong. Senior (3+, cross-layer) — flag single-file trivial edits. Missing `Tier:` → REJECT.
+
+**5. AI-slop scan**: Check for patterns that inflate plan scope: scope inflation (steps touching files beyond stated target), premature abstraction (utility extraction for single-use code), over-validation (excessive error handling on simple inputs), documentation bloat (unrequested docstrings/README). PASS if ≤1 minor instance. FAIL only if >30% of steps show slop patterns — plan needs tightening.
 
 Also check: wave file conflicts (same file in parallel steps), done-when clarity (verifiable criteria).
 
@@ -37,15 +39,15 @@ If REJECT — Blocking Issues (max 3):
 2. ...
 ```
 
-**OKAY when**: References exist. Steps startable. No contradictions. QA present. Tiers reasonable. Developer can make progress.
+**OKAY when**: References exist. Steps startable. No contradictions. QA present. Tiers reasonable. Developer can make progress. AI-slop minimal or absent.
 
-**REJECT only when**: File doesn't exist (verified). Step impossible to start. Internal contradictions. Missing/vague QA. Misclassified tier with evidence.
+**REJECT only when**: File doesn't exist (verified). Step impossible to start. Internal contradictions. Missing/vague QA. Misclassified tier with evidence. Pervasive AI-slop (>30% of steps affected).
 
-**Do NOT reject for**: Edge case gaps. Stylistic preferences. Suboptimal approach. "Could be clearer about X". Minor ambiguities a developer can resolve. Architecture critiques.
+**Do NOT reject for**: Edge case gaps. Stylistic preferences. Suboptimal approach. "Could be clearer about X". Minor ambiguities a developer can resolve. Architecture critiques. Isolated slop instances (1-2 steps). Minor scope inflation on adjacent files.
 
 ## Failure Conditions
 
-FAILED if: OKAY without reading referenced files, rubber-stamped without evidence, >3 issues listed, rejected for non-blocking concerns.
+FAILED if: OKAY without reading referenced files, rubber-stamped without evidence, >3 issues listed, rejected for non-blocking concerns, zero AI-slop findings reported (every plan has potential for at least one advisory).
 
 ## Constraints
 

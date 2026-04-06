@@ -29,11 +29,11 @@ Request: $ARGUMENTS
 
 | Intent | Standard | Complex |
 |--------|----------|---------|
-| **Build** | 1 explore: conventions, similar implementations, project structure | 2 explore (conventions + organization) + 1 librarian (official docs) |
-| **Refactor** | 1 explore: all usages, call sites, type flow, risk | 2 explore (impact scope + test coverage) |
-| **Mid-sized** | 1 explore: current implementation, callers, tests | 1 explore + 1 librarian (API docs, migration guides) |
-| **Architecture** | 1 explore: module boundaries, dependency direction | 1 explore + 2 librarian (best practices + case studies) |
-| **Research** | 1 explore: current state, limitations, TODOs | 1 explore + 2 librarian (API reference + OSS examples) |
+| **Build** | 1 explore: conventions, similar implementations, project structure | 2 explore (conventions + organization) + 1 librarian (official docs) + 1 challenger (stress-test approach) |
+| **Refactor** | 1 explore: all usages, call sites, type flow, risk | 2 explore (impact scope + test coverage) + 1 challenger (stress-test approach) |
+| **Mid-sized** | 1 explore: current implementation, callers, tests | 1 explore + 1 librarian (API docs, migration guides) + 1 challenger (stress-test approach) |
+| **Architecture** | 1 explore: module boundaries, dependency direction | 1 explore + 2 librarian (best practices + case studies) + 1 challenger (stress-test approach) |
+| **Research** | 1 explore: current state, limitations, TODOs | 1 explore + 2 librarian (API reference + OSS examples) + 1 challenger (stress-test approach) |
 
 **Actions**:
 
@@ -64,24 +64,31 @@ Return: MUST DO / MUST NOT directives and QUESTIONS if any.")
 ```
 Incorporate directives. Merge QUESTIONS into interview queue.
 
-**Complex**: Spawn 3 agents parallel (single message, foreground):
+**Complex**: Spawn 2 agents parallel (single message, foreground). Challenger already ran in Phase 2 — its findings are in research results.
 - **plan-analysis** — context sufficiency, hidden requirements, gaps, directives
 - **feasibility** — effort estimation, prerequisites, codebase fit
-- **challenger** — stress-test approach, surface risks, propose alternatives
 ```
 Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode. Request: [request]. Research: [summary]. Return directives.")
 Agent(subagent_type: "ac:feasibility", prompt: "Assess feasibility: [request]. Codebase area: [key files]. Report fit, effort, prerequisites.")
-Agent(subagent_type: "ac:challenger", prompt: "Stress-test this approach: [request + proposed approach]. Find gaps, propose alternatives.")
 ```
-Synthesize: plan-analysis directives → plan constraints. Feasibility prerequisites → step ordering. Challenger gaps → addressed or noted as risks.
+Synthesize: plan-analysis directives → plan constraints. Feasibility prerequisites → step ordering. Challenger findings from Phase 2 → addressed or noted as risks.
 
 ---
 
 ## Phase 4: Interview (convergence)
 
-Resolve ambiguity before plan generation. Max 3 rounds. Skip if research + analysis resolved everything.
+Resolve ambiguity before plan generation. Max 3 rounds.
 
-**Clearance check** (evaluate after each answer):
+**Auto-skip conditions** (ALL must be true → skip directly to Phase 5):
+1. Phase 3 plan-analysis returned zero QUESTIONS
+2. All 5 clearance criteria below evaluable as met from research + analysis results
+3. Intent is NOT Architecture (always interview for architectural decisions)
+
+**Task-driven auto-skip**: Source is `.ac/tasks/` file with User Story present + ≥3 Acceptance Criteria + Phase 3 found zero CRITICAL gaps → auto-skip.
+
+When auto-skipped, announce: "Interview skipped — all clearance criteria met from research."
+
+**Clearance check** (evaluate after each answer — or evaluate once for auto-skip decision):
 - [ ] Core objective clearly defined?
 - [ ] Scope boundaries established (what's IN and what's OUT)?
 - [ ] Technical approach decided?
@@ -115,12 +122,24 @@ Assign per-step based on scope and required reasoning:
 | Tier | Files | Model | When | Benchmark Context |
 |------|-------|-------|------|-------------------|
 | **quick** | ≤1 | haiku | Mechanical: config, rename, scaffold, boilerplate | SWE-bench 73%, 200K context, $5/MTok. Fast (93 tok/s). Fails at cross-file reasoning. |
-| **mid** | 1-3 | sonnet | Standard implementation, business logic. **DEFAULT** | SWE-bench 80%, 1M context, $15/MTok. 98.5% of Opus coding at 1/5 cost. |
-| **senior** | 3+ | opus | Cross-layer, architecture, migration, complex edge cases | SWE-bench 81%, GPQA 91% (+17pp over Sonnet). $75/MTok. Justified for deep reasoning. |
+| **mid** | 1-3 | sonnet | Standard implementation, business logic. **DEFAULT** | SWE-bench 80%, 200K context, $15/MTok. 98.5% of Opus coding at 1/5 cost. |
+| **senior** | 3+ | opus | Cross-layer, architecture, migration, complex edge cases | SWE-bench 81%, 200K context, GPQA 91% (+17pp over Sonnet). $75/MTok. Justified for deep reasoning. |
 
 **Quick-tier enrichment**: Compensate for Haiku's lower reasoning — write exhaustively explicit descriptions: exact file, exact change, before/after state. No ambiguity.
 
 **Codebase state escalation**: Chaotic or Legacy → all `quick` steps escalate to `mid`.
+
+### Tier-Aware Step Verbosity
+
+Step descriptions scale with tier to minimize plan size while ensuring worker success:
+
+| Tier | Verbosity | What to Include | What to Omit |
+|------|-----------|-----------------|--------------|
+| **quick** | Verbose | Exact commands, before/after state, full config values. Haiku needs explicit instructions — no ambiguity. | Nothing — spell everything out. |
+| **mid** | Standard | Description, acceptance criteria, key values/parameters. Sonnet infers implementation from context. | Full command blocks, complete file contents, inline configs. |
+| **senior** | Lean | High-level description, acceptance criteria, constraints, architectural notes. Opus explores deeply before acting. | Step-by-step instructions, command syntax, implementation details. |
+
+Quick steps compensate for Haiku's lower reasoning. Mid and senior steps trust the model to read existing code and figure out implementation — this is what they're good at.
 
 ### Wave Rules
 
@@ -144,21 +163,18 @@ Assign per-step based on scope and required reasoning:
 
 **Simple**: Skip — save plan directly.
 
-**Standard**: Spawn 2 agents parallel (single message, foreground):
+**Standard**: Spawn plan-review (foreground). plan-review now includes AI-slop detection (check 5).
 ```
-Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: .ac/plans/[name].md. Run: gap classification, AI-slop detection, acceptance criteria audit, scope boundary check, tier sanity.")
-Agent(subagent_type: "ac:plan-review", prompt: "Review plan: .ac/plans/[name].md. Check references, executability, QA scenarios, tier sanity. Blockers-only — OKAY or REJECT.")
+Agent(subagent_type: "ac:plan-review", prompt: "Review plan: .ac/plans/[name].md. Check references, executability, QA scenarios, tier sanity, AI-slop patterns. Blockers-only — OKAY or REJECT.")
 ```
-plan-analysis: CRITICAL gaps → surface to user. MINOR → fix. AI-slop → simplify.
-plan-review: REJECT → fix cited issues, re-submit (max 2 iterations). OKAY → proceed.
+REJECT → fix cited issues, re-submit (max 2 iterations). OKAY → proceed.
 
-**Complex** (mandatory): Spawn 3 agents parallel (single message, foreground):
+**Complex** (mandatory): Spawn 2 agents parallel (single message, foreground):
 ```
-Agent(subagent_type: "ac:plan-analysis", prompt: "Post-generation mode. Plan file: .ac/plans/[name].md. Full analysis.")
-Agent(subagent_type: "ac:plan-review", prompt: "Review plan: .ac/plans/[name].md. Blockers-only review.")
+Agent(subagent_type: "ac:plan-review", prompt: "Review plan: .ac/plans/[name].md. Check references, executability, QA scenarios, tier sanity, AI-slop patterns. Blockers-only — OKAY or REJECT.")
 Agent(subagent_type: "ac:plan-deep-review", prompt: "Adversarial review. Plan: .ac/plans/[name].md. Deep reference verification, AI-slop detection, cross-task dependencies, tier challenge. Earn approval.")
 ```
-Merge findings from all 3. Either REJECT → fix cited issues, re-submit (max 2 iterations). Both reviewers OKAY → proceed.
+Merge findings from both. Either REJECT → fix cited issues, re-submit (max 2 iterations). Both reviewers OKAY → proceed.
 
 **--deep-review on Standard**: When selected or $deepReview = true → add plan-deep-review (opus) to Standard review flow.
 
@@ -181,11 +197,36 @@ Merge findings from all 3. Either REJECT → fix cited issues, re-submit (max 2 
 ```
 
 3. Next step (complexity-conditional):
-   - **Simple**: Auto-execute (invoke ac:execute with plan path)
-   - **Standard**: AskUserQuestion → Execute (Recommended) / Deep Review / Adjust
-   - **Complex**: Deep Review already done. AskUserQuestion → Execute (Recommended) / Adjust
 
-4. Execute selected → invoke ac:execute. Plan mode active → ExitPlanMode first.
+   **Simple**: Auto-execute — invoke ac:execute with plan path.
+
+   **Standard**:
+   ```
+   AskUserQuestion(
+     question: "Plan ready. How to proceed?"
+     options:
+       - label: "Execute"
+         description: "Start execution with plan-worker agents."
+       - label: "Deep Review First"
+         description: "Run adversarial plan-deep-review (opus) before executing."
+       - label: "Adjust"
+         description: "Modify the plan before proceeding."
+   )
+   ```
+
+   **Complex** (deep review already done):
+   ```
+   AskUserQuestion(
+     question: "Plan reviewed and approved. How to proceed?"
+     options:
+       - label: "Execute"
+         description: "Start execution with plan-worker agents."
+       - label: "Adjust"
+         description: "Modify the plan before proceeding."
+   )
+   ```
+
+4. Execute selected → invoke ac:execute with plan path. Plan mode active → ExitPlanMode first.
 
 ---
 
@@ -212,8 +253,9 @@ The Developer (ac:execute) parses this format. All sections required unless note
 ### Wave 1
 
 **Step 1**: {imperative title}
+- **Type**: code | infra
 - **Tier**: quick | mid | senior
-- **Files**: {comma-separated absolute paths}
+- **Files**: {absolute paths — or "N/A (server-side)" for infra steps}
 - **Done when**:
   - {executable criterion — greppable, testable, or readable}
 - **QA**: {test command + expected result}
@@ -224,6 +266,25 @@ The Developer (ac:execute) parses this format. All sections required unless note
 - **Files**: {paths — MUST NOT overlap with Step 1 within same wave}
 - **Done when**: ...
 - **QA**: ...
+
+**Tier verbosity examples**:
+
+Quick (verbose — Haiku needs everything spelled out):
+- **Description**: Create PostgreSQL database `kodizm_ai` with user `kodizm_ai_user` on port 6543.
+- **Commands**:
+  ```bash
+  sudo -u postgres psql -p 6543 -c "CREATE DATABASE kodizm_ai OWNER kodizm_ai_user;"
+  ```
+- **Done when**: `psql -l | grep kodizm_ai` returns a row
+
+Mid (standard — Sonnet reads context):
+- **Description**: Create production .env for API based on .env.example. Key overrides: DB_PORT=6543, REDIS_DB=2, QUEUE=redis.
+- **Done when**: .env exists with correct values per .env.example
+
+Senior (lean — Opus explores deeply):
+- **Description**: Design and implement CI/CD workflow following existing deploy patterns.
+- **Constraints**: SSH deploy, zero-downtime, run migrations
+- **Done when**: Workflow deploys on push to master, runs full pipeline
 
 ### Wave 2 (depends on Wave 1)
 
@@ -237,6 +298,9 @@ The Developer (ac:execute) parses this format. All sections required unless note
 ### Risks
 - {Open questions, unresolved gaps, assumptions made}
 
+### Context
+(Optional — for plans with large reference data: server details, port tables, secret inventories, environment variables. Workers read on demand. Omit for code-only plans.)
+
 ### Task Context
 (task mode only — source path, type, size, priority)
 ```
@@ -247,10 +311,10 @@ The Developer (ac:execute) parses this format. All sections required unless note
 
 | | Simple | Standard | Complex |
 |---|--------|----------|---------|
-| **Research** | Direct Read | 1 explore | 2-3 explore + librarian |
-| **Pre-plan** | skip | plan-analysis | plan-analysis + feasibility + challenger |
-| **Interview** | 0-1 round | ≤3 rounds | ≤3 rounds |
-| **Review** | skip | plan-analysis + plan-review (sonnet) | plan-analysis + plan-review (sonnet) + plan-deep-review (opus) |
+| **Research** | Direct Read | 1 explore | 2-3 explore + librarian + challenger |
+| **Pre-plan** | skip | plan-analysis | plan-analysis + feasibility |
+| **Interview** | 0-1 round | ≤3 rounds (auto-skip if clear) | ≤3 rounds (auto-skip if clear) |
+| **Review** | skip | plan-review (sonnet, enhanced) | plan-review (sonnet) + plan-deep-review (opus) |
 | **Execution verification** | build + test | plan-verifier + plan-code-review | plan-verifier + plan-code-review + plan-deep-code-review |
 
 Do not write code or modify source files. Only produce the plan.

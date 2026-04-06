@@ -118,10 +118,10 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `explore` | `"ac:explore"` | Codebase search specialist — files, patterns, relationships. Returns file:line references |
 | `librarian` | `"ac:librarian"` | External docs specialist — official docs via context7 MCP with WebSearch fallback |
 | `linter` | `"ac:linter"` | LSP code intelligence verifier — diagnostics and symbol structure checks |
-| `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-gen directives (hidden intentions, AI-slop risks) and post-gen gap/slop detection |
+| `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-gen directives (hidden intentions, AI-slop risks, unstated requirements). AI-slop detection in review phase handled by plan-review |
 | `plan-review` | `"ac:plan-review"` | Plan reviewer — blockers-only, approval bias, OKAY/REJECT verdict. Standard+ plans |
 | `plan-deep-review` | `"ac:plan-deep-review"` | Adversarial plan reviewer — bias toward REJECT, deep reference verification, AI-slop detection. Complex (mandatory) or Standard (opt-in) |
-| `plan-worker` | `"ac:plan-worker"` | Code implementation worker — executes single plan steps with wisdom injection and structured verification output |
+| `plan-worker` | `"ac:plan-worker"` | Plan step executor — executes single plan steps (code, server, infrastructure) with wisdom injection and structured verification output |
 | `plan-verifier` | `"ac:plan-verifier"` | Post-execution plan compliance auditor — L1/L2/L3 depth checks (APPROVE/REJECT) |
 | `plan-code-review` | `"ac:plan-code-review"` | 2-stage code reviewer — spec compliance, then quality (APPROVED/BLOCKED) |
 | `plan-deep-code-review` | `"ac:plan-deep-code-review"` | Deep cross-layer code review for complex plans — hidden coupling, caller impact, architectural compliance (APPROVED/BLOCKED) |
@@ -231,6 +231,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
 - **Model routing**: Haiku (search/fast), Sonnet (execution/analysis), Opus (planning/architecture/creation). Workers get per-step model based on tier (quick→Haiku, mid→Sonnet, senior→Opus) with auto-escalation on failure
+- **Tier-aware plan verbosity**: Plan step descriptions scale with worker tier — quick (verbose: full commands, before/after state for Haiku), mid (standard: description + criteria for Sonnet), senior (lean: criteria + constraints for Opus). Reduces plan size ~50% without sacrificing worker success. Step type (`code`/`infra`) routes to appropriate briefing format.
 - **Agent model customization**: Explore (default Haiku) and Librarian (default Sonnet) — override via Claude Code's native `ANTHROPIC_DEFAULT_HAIKU_MODEL` / `ANTHROPIC_DEFAULT_SONNET_MODEL` env vars. Model profiles: `quality` (all Opus) / `balanced` (default — Haiku/Sonnet/Opus per frontmatter) / `budget` (Sonnet+Haiku only) — configure via env vars
 - **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → references/ on demand
 - **Read-only advisory**: Agents that advise never have write tools
@@ -238,7 +239,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **reliability-first**: Right model for right task — default Sonnet execution, Opus for planning/investigation/architecture
 - **Foreground-first agent synchronization**: Parallel agents that must all complete before proceeding use foreground (default) — CC waits for all automatically. Background (`run_in_background: true`) only for genuinely independent work; when all agents have reported, proceed. Verification agents are always foreground. All parallel Agent calls must be in a single message block.
 - **Layered verification**: Verification is sequential and gated — `plan-verifier` → `plan-code-review` → `plan-deep-code-review`. Each layer must APPROVE before the next runs. Depth scales with complexity: Simple (plan-verifier + linter), Standard (+plan-code-review), Complex (+plan-deep-code-review, mandatory — cannot be bypassed). Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification. 3-strike rule: 3 failures across all layers → halt pipeline.
-- **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) — mandatory for Complex, opt-in for Standard.
+- **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode (Phase 3) to catch hidden intentions and AI-slop risks before plan writing. Review pipeline: Standard → plan-review only. Complex → plan-review + plan-deep-review.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled (e.g., maestro MCP for mobile QA, flutter-skill MCP for Flutter QA)
 - **Tiered code search**: Grep (text) → LSP (semantic). Agents use LSP via code intelligence for structural queries when available.
@@ -258,7 +259,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - `plugins/ac/skills/claude-md-writer/SKILL.md` — CLAUDE.md authoring patterns, quality scoring, compression tactics
 - `plugins/ac/skills/claude-md-writer/references/` — Section patterns (global + project), CLAUDE.md-specific dedup guide
 - `plugins/ac/skills/skill-creator/references/skill-patterns.md` — Pattern library for writing Claude Code skills
-- `plugins/ac/agents/plan-worker.md` — Code implementation worker agent (kodizm 5-section format)
+- `plugins/ac/agents/plan-worker.md` — Plan step executor (kodizm 5-section format)
 - `plugins/ac/agents/plan-deep-code-review.md` — Deep cross-layer code review agent for complex plans
 - `plugins/ac/references/coding-style-template.md` — Template for `my-coding` skill generation
 - `plugins/ac/references/language-style-template.md` — Template for `my-language` skill generation

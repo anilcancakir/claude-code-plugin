@@ -24,7 +24,7 @@ Plan identifier: $ARGUMENTS
 
 1. Plans stored in `.ac/plans/`. If `$ARGUMENTS` is a full path, use directly. If slug (e.g., `auth-system`), resolve to `.ac/plans/$ARGUMENTS.md`.
 2. Read the plan file. If missing → inform user and stop.
-3. Parse structured steps — extract: step number, title, description, files, done-when, QA, tier (quick/mid/senior), wave assignment.
+3. Parse structured steps — extract: step number, title, description, files, done-when, QA, tier (quick/mid/senior), type (code/infra), wave assignment.
 4. **Expected format**: `# Plan: [Title]` heading, steps with `**Step N**:` / `Files:` / `Done when:` / `Tier:` / `QA:` fields, `### Wave N` sections, `### Must NOT Have` section. If no Waves section → auto-analyze file overlap for independence. Warn on unexpected format, attempt best-effort parsing.
 5. **Extract conventions**: Parse `### Conventions` section → store as PLAN_CONVENTIONS. If absent → "Read existing files in scope and match patterns, naming, and style before modifying."
 6. **Extract build/test commands**: Read `./CLAUDE.md` if present → extract into RUNTIME_CONTEXT: build/test/lint commands only. Workers already receive full CLAUDE.md automatically — RUNTIME_CONTEXT supplements with explicit commands for the worker's verification step. Deduplicate against PLAN_CONVENTIONS.
@@ -84,6 +84,8 @@ Update each step's task: `TaskUpdate(status: in_progress)`.
 
 **Tier → model mapping**: `quick`→haiku, `mid`→sonnet, `senior`→opus.
 
+**Context dedup**: Workers receive CLAUDE.md and project rules automatically via CC's context injection. PLAN_CONVENTIONS must contain ONLY plan-specific conventions (from the plan's `### Conventions` section) — do NOT duplicate generic coding rules, linter settings, or project conventions already in CLAUDE.md.
+
 **Step briefing format** — each worker receives a self-contained prompt:
 
 **Quick tier** (Haiku — exhaustively explicit, compensate for lower reasoning):
@@ -97,7 +99,7 @@ Update each step's task: `TaskUpdate(status: in_progress)`.
 **Files**: [paths]
 **Done when**: [acceptance criteria, verbatim]
 
-**Plan Conventions**: [PLAN_CONVENTIONS]
+**Plan Conventions** (plan-specific only): [PLAN_CONVENTIONS]
 [If RUNTIME_CONTEXT non-empty:] **Build/Test Commands**: [RUNTIME_CONTEXT]
 
 Follow CLAUDE.md conventions (already in your context) + plan conventions above. Stay strictly in scope.
@@ -125,7 +127,7 @@ After changes: run build, tests, lint. Summarize: files changed, verification re
 ## Must Do
 
 - Follow CLAUDE.md conventions (already in your context) + plan conventions below
-- [PLAN_CONVENTIONS or "Match existing patterns in target files"]
+- [PLAN_CONVENTIONS — plan-specific only, not generic coding rules already in CLAUDE.md]
 - Read existing files before modifying — understand context
 - Implement ONLY your assigned step + run verification after changes
 - If tests fail, fix root cause — do not skip or modify tests to pass
@@ -152,6 +154,34 @@ Stay in scope — no out-of-scope files, no bonus refactors, no annotations on u
 
 ### Tests
 - Command: [command] → [result]
+
+### Issues (if any)
+- [description]
+```
+
+**Infrastructure tier** (any model — for steps with `Type: infra`):
+
+```markdown
+## Task (Infrastructure)
+
+**Assignment**: [Step title]
+[Full step description]
+
+**Target**: [SSH connection string from plan, e.g., "ssh -p 13664 user@host"]
+**Commands**: [Commands from plan step]
+**Done when**: [acceptance criteria, verbatim]
+
+Execute commands via Bash tool (SSH to target). Verify done-when after each command group. Report connection details and command outputs.
+
+[If ACCUMULATED_WISDOM non-empty:] **Wisdom from prior steps**: [ACCUMULATED_WISDOM]
+
+## Output Format
+
+### Changes Made
+- [target:command] — [what was executed and result]
+
+### Verification
+- Done-when check: [command] → [PASS/FAIL]
 
 ### Issues (if any)
 - [description]
