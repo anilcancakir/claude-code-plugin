@@ -1,0 +1,146 @@
+---
+name: rule-creator
+description: "Create path-scoped .claude/rules/ for Claude Code projects. Use when adding coding conventions, framework patterns, or domain-specific rules that auto-inject when matching files are touched."
+when_to_use: "TRIGGER when: 'create a rule', 'add a coding rule', 'add convention for', working with .claude/rules/. DO NOT TRIGGER: creating skills, agents, or commands. Note: /ac:init-rules auto-generates rules from analysis — this skill is for manual/custom rule creation."
+model: sonnet
+effort: medium
+---
+
+Create path-scoped rules that auto-inject when Claude Code reads, writes, or edits matching files. Rules hold "how to code HERE" — CLAUDE.md holds "what this project IS".
+
+## Context Layer Stack
+
+```
+~/.claude/CLAUDE.md          ← always (global)
+./CLAUDE.md                  ← always (project)
+.claude/rules/<name>.md      ← ON-DEMAND when matching file touched
+```
+
+CLAUDE.md and rules are visible simultaneously. Any overlap = wasted tokens. Rules are ADDITIVE — never duplicating CLAUDE.md, never re-stating what `my-coding` already covers.
+
+## Two-Tier Rules
+
+| Tier | Scope | Lines | Example |
+|------|-------|-------|---------|
+| **Stack** | All files of a language | 10-20 | `flutter.md` → `lib/**/*.dart` |
+| **Domain** | Specific module | 15-40 | `database.md` → `lib/src/database/**/*.dart` |
+
+Stack and domain globs can overlap — both inject when a domain file is touched. This is intentional: stack provides general conventions, domain adds deep API knowledge.
+
+## Core Process
+
+**1. Identify Scope**
+
+Determine which files need this rule. Define the narrowest glob that covers the affected area:
+- Language-wide: `lib/**/*.dart`, `src/**/*.ts`
+- Module-specific: `src/api/**/*.ts`, `app/Http/Controllers/**/*.php`
+- Test files: `test/**/*_test.dart`, `tests/**/*.test.ts`
+
+Avoid `**/*` — too broad. Rules must add value only when the matched files are being touched.
+
+**2. Classify Tier**
+
+- **Stack rule** (10-20 lines): applies to all files of a language/framework — import style, naming, general conventions
+- **Domain rule** (15-40 lines): applies to a specific module — API patterns, must-know method signatures, domain-specific gotchas
+
+**3. Dedup Check**
+
+Read these sources before writing any rule content:
+1. `./CLAUDE.md` — project-wide conventions already stated
+2. `~/.claude/CLAUDE.md` — global workflow rules
+3. `~/.claude/skills/my-coding/SKILL.md` — general coding standards
+
+Apply this algorithm to each proposed convention:
+- **Exact match** found in any source → skip it
+- **Semantic overlap** (broader rule covers this case) → skip it
+- **Conflict** (proposed rule contradicts an existing rule) → flag for user decision, present both, ask which takes precedence
+- **Complement** (adds specificity to a broad rule) → keep it
+
+Also verify no proposed convention duplicates another rule in `.claude/rules/` if rules already exist.
+
+**4. Draft Rule**
+
+Flat bullet list, imperative mood. Optional H1 heading for domain rules (not for stack rules).
+
+Include:
+- Naming patterns specific to this path
+- Key API method signatures and usage patterns
+- Framework conventions that aren't obvious from the code
+- Gotchas — known footguns, deprecated APIs, things to avoid
+
+Exclude:
+- Generic advice ("write clean code", "use descriptive names", "handle errors")
+- Workflow instructions, TodoWrite mentions, TDD process
+- Setup or installation steps
+- Content discoverable via Glob or LS (directory structure, file lists)
+
+**5. Verify**
+
+- No convention duplicates CLAUDE.md or my-coding content
+- No rule-to-rule duplication with existing `.claude/rules/` files
+- Line count within tier limit (stack: 10-20, domain: 15-40)
+- Glob is specific enough to target the right files
+
+## Rule Frontmatter
+
+```yaml
+---
+path: "<glob>"
+description: "<informational only — not used for triggering>"
+---
+```
+
+`path` is the only meaningful field — it controls when the rule injects. `description` is informational only.
+
+Rules do NOT support: `model`, `tools`, `user-invocable`, `context`, or any other skill/agent frontmatter fields. The rule system is intentionally minimal.
+
+## Anti-Slop Rules
+
+- NEVER include workflow instructions, TodoWrite, delegation patterns, 3-strike rule, TDD process — these live in CLAUDE.md
+- NEVER include generic advice: "write clean code", "use descriptive names", "handle errors appropriately"
+- NEVER include setup, installation, or configuration steps
+- NEVER include content discoverable via Glob or LS (file lists, directory trees)
+- NEVER duplicate anything already in `~/.claude/CLAUDE.md` or `./CLAUDE.md`
+- NEVER duplicate anything already in `~/.claude/skills/my-coding/SKILL.md`
+
+**Rules = project-specific, path-specific, verifiable conventions only.**
+
+## Examples
+
+### Stack Rule — Flutter
+
+```markdown
+---
+path: "lib/**/*.dart"
+description: "Flutter/Dart conventions for all app source files"
+---
+
+- Use `freezed` for data classes — never write `copyWith` or `==` manually
+- Import with relative paths within `lib/`, package paths for external deps
+- Prefer `AsyncValue` from Riverpod over raw `Future` in UI state
+- Name providers `<feature>Provider` — never suffix with `Notifier` unless it IS a notifier
+- `context.mounted` check required after every `await` that uses `context`
+- Use `ref.invalidate()` to force refresh, not `ref.refresh()` (deprecated)
+- `AppException` for domain errors, `Failure` sealed class for result types
+```
+
+### Domain Rule — API Layer
+
+```markdown
+---
+path: "src/api/**/*.ts"
+description: "API route handlers and middleware conventions"
+---
+
+# API Layer
+
+- Export route handlers as named functions — never default exports
+- Validate all request bodies with Zod schemas before business logic
+- Return `ApiResponse<T>` wrapper — never raw objects from handlers
+- Use `withAuth(handler)` middleware HOC for authenticated routes
+- Error handling: `throw new ApiError(code, message)` — caught by global error middleware
+- Route files name pattern: `<resource>.routes.ts`, handler files: `<resource>.handlers.ts`
+- `req.user` is typed as `AuthenticatedUser` after `withAuth` — no null checks needed inside
+- Never call service layer from middleware — middleware is cross-cutting only
+- Pagination: `PaginatedQuery` schema from `@/schemas/common` — don't redefine per-route
+```

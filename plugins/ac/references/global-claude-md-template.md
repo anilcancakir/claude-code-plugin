@@ -92,7 +92,7 @@ Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-tri
 | `<plugin>:<skill>` | <when — from frontmatter description> |
 ```
 
-Include only detected + user-approved skills. Never include `skill-creator`. Omit section if none.
+Include only detected + user-approved skills. Never include creator skills (`skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `prompt-writer`). Omit section if none.
 
 ## Section: MCP (if MCP servers detected + user approved)
 
