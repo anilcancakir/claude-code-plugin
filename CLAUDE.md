@@ -16,8 +16,8 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
-│   │   ├── commands/             # 14 user-invocable /ac:* commands
-│   │   ├── agents/               # 16 read-only agent definitions
+│   │   ├── commands/             # 12 user-invocable /ac:* commands
+│   │   ├── agents/               # 15 agent definitions (advisory: read-only, worker: write access)
 │   │   ├── skills/
 │   │   │   ├── skill-creator/    # Skill + references/ for component creation
 │   │   │   ├── browser-qa/       # Skill + references/ for browser QA workflows
@@ -32,6 +32,14 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   ├── skills/
 │   │   │   └── github-cli/
 │   │   │       └── SKILL.md      # Comprehensive gh reference (338 lines)
+│   │   ├── README.md
+│   │   └── LICENSE
+│   ├── github-actions/           # GitHub Actions workflow generator plugin
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── skills/
+│   │   │   └── github-actions/
+│   │   │       └── SKILL.md      # CI/CD, releases, Docker, security hardening
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── git-master/               # Git expert skill plugin
@@ -85,8 +93,8 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 | Command | Description |
 |---------|-------------|
-| `/ac:plan` | Lead-developer pattern (Identity + Capabilities & Constraints) — classify → research (with CLAUDE.md + my-coding context extraction) → dynamic convergence interview (≤20% ambiguity) → pre-generation analysis → plan (with QA scenarios, required Conventions section, mandatory Deep Review for Complex) |
-| `/ac:execute` | Developer pattern (Identity + Capabilities & Constraints) — execute approved plan with project context propagation (PLAN_CONVENTIONS + RUNTIME_CONTEXT → plan-worker agents, convention-aware layered verification: plan-verifier → plan-code-review → plan-deep-code-review) + Codebase State tier escalation |
+| `/ac:plan` | Lead Developer — 7-phase planning: classify (intent + complexity) → research (explore + librarian agents) → pre-plan analysis (plan-analysis + feasibility + challenger for Complex) → interview (clearance check, max 3 rounds) → generate plan (tier assignment, wave rules, QA scenarios) → review (plan-review for Standard, +plan-deep-review for Complex) → deliver |
+| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, complexity-gated layered verification (Simple: plan-verifier + linter, Standard: +plan-code-review, Complex: +plan-deep-code-review), 3-strike rule, context propagation (PLAN_CONVENTIONS + RUNTIME_CONTEXT) |
 | `/ac:init-claude-md` | Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
@@ -94,11 +102,9 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `/ac:setup-global-claude-md` | Generate global CLAUDE.md — interviews developer, detects skills, produces orchestration config |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available |
 | `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports `--bulk` and `--loop` |
-| `/ac:work` | Ad-hoc parallel execution — decompose request into independent tasks, route to model tiers, fire simultaneously, complexity-driven verification |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck), parallel execution across up to 4 agents, knowledge sharing across waves. Auto-detects Playwright CLI. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
 | `/ac:maestro-qa` | Mobile QA testing — 5 modes (ad-hoc, bug-repro, plan-verify, recheck, flow-run), MCP-driven via Maestro CLI, parallel execution across devices, knowledge sharing. Auto-detects Maestro MCP. Flags: `--no-parallel`, `--no-evidence`, `--platform` |
 | `/ac:flutter-qa` | Flutter QA testing — 6 modes (ad-hoc, bug-repro, plan-verify, recheck, test-run, visual-regression), MCP-driven via flutter-skill, parallel execution across sessions, knowledge sharing. Auto-detects flutter-skill MCP. Flags: `--no-parallel`, `--no-evidence`, `--platform`, `--uri` |
-| `/ac:progress` | Show execution progress — active plans, task status, next action |
 
 ## Agents (ac plugin)
 
@@ -107,23 +113,22 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `explore` | `"ac:explore"` | Codebase search specialist — files, patterns, relationships. Returns file:line references |
 | `librarian` | `"ac:librarian"` | External docs specialist — official docs via context7 MCP with WebSearch fallback |
 | `linter` | `"ac:linter"` | LSP code intelligence verifier — diagnostics and symbol structure checks |
-| `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-generation directives and post-generation gap/slop detection |
-| `plan-review` | `"ac:plan-review"` | Adversarial plan reviewer — bias toward REJECT (OKAY/REJECT verdict) |
-| `plan-verifier` | `"ac:plan-verifier"` | Post-execution plan compliance auditor (APPROVE/REJECT) |
-| `plan-worker` | `"ac:plan-worker"` | Code implementation worker — executes single plan steps with self-contained briefings |
+| `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-gen directives (hidden intentions, AI-slop risks) and post-gen gap/slop detection |
+| `plan-review` | `"ac:plan-review"` | Plan reviewer — blockers-only, approval bias, OKAY/REJECT verdict. Standard+ plans |
+| `plan-deep-review` | `"ac:plan-deep-review"` | Adversarial plan reviewer — bias toward REJECT, deep reference verification, AI-slop detection. Complex (mandatory) or Standard (opt-in) |
+| `plan-worker` | `"ac:plan-worker"` | Code implementation worker — executes single plan steps with wisdom injection and structured verification output |
+| `plan-verifier` | `"ac:plan-verifier"` | Post-execution plan compliance auditor — L1/L2/L3 depth checks (APPROVE/REJECT) |
 | `plan-code-review` | `"ac:plan-code-review"` | 2-stage code reviewer — spec compliance, then quality (APPROVED/BLOCKED) |
 | `plan-deep-code-review` | `"ac:plan-deep-code-review"` | Deep cross-layer code review for complex plans — hidden coupling, caller impact, architectural compliance (APPROVED/BLOCKED) |
-| `challenger` | `"ac:challenger"` | Devil's advocate for proposals and architecture decisions |
-| `feasibility` | `"ac:feasibility"` | Feasibility evaluator — codebase fit, effort, dependencies |
-| `security-reviewer` | `"ac:security-reviewer"` | OWASP-aware security scanner with severity×exploitability scoring |
-| `code-simplifier` | `"ac:code-simplifier"` | Simplification advisor — preserves behavior, read-only, opt-in |
+| `challenger` | `"ac:challenger"` | Devil's advocate — stress-tests ideas and proposals, finds gaps, steelmans alternatives. Used in ideation (Phase 4) and pre-plan analysis (Complex) |
+| `feasibility` | `"ac:feasibility"` | Feasibility evaluator — codebase fit, effort, dependencies. Used in ideation (Phase 4) and pre-plan analysis (Complex) |
 | `browser-qa` | `"ac:browser-qa"` | Browser test executor — Playwright CLI, captures evidence. Spawned by /ac:browser-qa |
 | `maestro-qa` | `"ac:maestro-qa"` | Mobile test executor — Maestro MCP on iOS/Android. Spawned by /ac:maestro-qa |
 | `flutter-qa` | `"ac:flutter-qa"` | Flutter test executor — flutter-skill MCP. Spawned by /ac:flutter-qa |
 
 Model, effort, color, and tools are defined in each agent's frontmatter file.
 
-16 agents total. Advisory agents enforce `disallowedTools: Write, Edit` as defense-in-depth. The execution agent (`plan-worker`) uses `disallowedTools: Agent, NotebookEdit` instead — it needs write access to implement code. `librarian`, `maestro-qa`, and `flutter-qa` use denylist-only (`disallowedTools:`) so MCP tools are auto-included without explicit allowlisting. Verification is layered/sequential: `plan-verifier` → `plan-code-review` → `plan-deep-code-review` — each layer gates the next, depth scales with plan complexity. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
+15 agents total. Most agents use denylist (`disallowedTools:`) — advisory agents deny `Write, Edit`, execution agent (`plan-worker`) denies `Agent, NotebookEdit`. Denylist auto-includes MCP tools without explicit allowlisting. Exceptions: `linter` uses allowlist (`tools: LSP, Glob, Read`) for intentional LSP access. Plan review has two tiers: `plan-review` (Sonnet, blockers-only, approval bias) for Standard+ plans, `plan-deep-review` (Opus, adversarial, bias toward REJECT) mandatory for Complex. Verification is layered/sequential: `plan-verifier` → `plan-code-review` → `plan-deep-code-review` — each layer gates the next, depth scales with plan complexity. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
 ## Skills & MCP
 
@@ -137,6 +142,9 @@ Model, effort, color, and tools are defined in each agent's frontmatter file.
 
 ### github-cli plugin
 - `github-cli` (Sonnet) — gh patterns for issues, PRs, releases, actions, gh api (REST + GraphQL), scripting
+
+### github-actions plugin
+- `github-actions` (Sonnet) — GitHub Actions workflow generator — CI/CD pipelines, releases, Docker builds, reusable workflows, security hardening
 
 ### git-master plugin
 - `git-master` (Sonnet) — Atomic commits with style detection, rebase/squash, history archaeology
@@ -219,20 +227,18 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
 - **reliability-first**: Right model for right task — default Sonnet execution, Opus for planning/investigation/architecture
 - **Foreground-first agent synchronization**: Parallel agents that must all complete before proceeding use foreground (default) — CC waits for all automatically. Background (`run_in_background: true`) only for genuinely independent work; when all agents have reported, proceed. Verification agents are always foreground. All parallel Agent calls must be in a single message block.
-- **Layered verification**: Verification is sequential and gated — `plan-verifier` → `plan-code-review` → `plan-deep-code-review`. Each layer must APPROVE before the next runs. Depth scales with complexity: Simple (build+test only), Standard (plan-verifier + plan-code-review), Complex (all 3 layers, mandatory — cannot be bypassed). Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification.
-- **Complexity-driven verification**: Verification depth scales with plan complexity — Simple (build+test only), Standard (plan-verifier + plan-code-review, skip plan-deep-code-review), Complex (full layered verification, mandatory — cannot be bypassed by --loop or any flag). Build+test and verification agents launch as foreground in a single message block.
+- **Layered verification**: Verification is sequential and gated — `plan-verifier` → `plan-code-review` → `plan-deep-code-review`. Each layer must APPROVE before the next runs. Depth scales with complexity: Simple (plan-verifier + linter), Standard (+plan-code-review), Complex (+plan-deep-code-review, mandatory — cannot be bypassed). Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification. 3-strike rule: 3 failures across all layers → halt pipeline.
 - **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode to catch hidden intentions and AI-slop risks before plan writing. Post-gen analysis runs in parallel with Deep Review (plan-review) — mandatory for Complex, opt-in for Standard.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled (e.g., maestro MCP for mobile QA, flutter-skill MCP for Flutter QA)
 - **Tiered code search**: Grep (text) → LSP (semantic). Agents use LSP via code intelligence for structural queries when available.
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/`, flutter-qa state to `.ac/flutter-qa/`, visual regression baselines to `.ac/qa/baselines/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
-- **Ad-hoc parallel execution**: `/ac:work` provides plan-free parallel execution for multi-file tasks. Decomposes requests into independent tasks with file ownership validation, routes each to correct model tier (quick→Haiku, mid→Sonnet, senior→Opus), fires simultaneously, and runs complexity-driven verification. For structured multi-step work with dependencies, use `/ac:plan` + `/ac:execute` instead
 - **Global CLAUDE.md dedup boundary**: Command prompts must not duplicate directives already in the global CLAUDE.md template (Intent Gate, Delegation Check, Research delegation, Verification, AskUserQuestion enforcement, barrier semantics). These load every message. Commands specify WHAT to do (which agents, which prompts), not HOW CC should behave. Worker templates for subagents are exempt — subagents don't receive global CLAUDE.md.
 - **Project context propagation**: Subagents don't receive CLAUDE.md by design (CC's `userContext: {}` for subagents). ac compensates with a hybrid extraction pipeline:
   - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section (required)
   - **Execute-time** (`execute.md`): Reads CLAUDE.md fresh → extracts build/test/lint commands + gotchas as `RUNTIME_CONTEXT` (deduplicated against `PLAN_CONVENTIONS`) → injected into worker prompts (compact for quick tier, full for mid/senior)
-  - **Verification-time** (`execute.md` Phase 5): `PLAN_CONVENTIONS` + `RUNTIME_CONTEXT` passed to plan-code-review and plan-verifier agent prompts for convention compliance checking
+  - **Verification-time** (`execute.md` Phase 3): `PLAN_CONVENTIONS` + `RUNTIME_CONTEXT` passed to plan-verifier, plan-code-review, and plan-deep-code-review agent prompts for convention compliance checking
   - **Ideation-time** (`ideate.md`): Reads CLAUDE.md → extracts as `PROJECT_CONVENTIONS` → injected into challenger and feasibility agent prompts
   - **Codebase State**: Plan classifies target area (Disciplined/Transitional/Legacy/Chaotic) → execute uses for tier escalation (Chaotic/Legacy auto-escalates quick→mid)
 

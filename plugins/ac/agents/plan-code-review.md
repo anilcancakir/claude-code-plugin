@@ -3,7 +3,6 @@ name: plan-code-review
 description: "2-stage code reviewer — spec compliance against plan criteria, then code quality. Use after implementation before marking complete."
 model: sonnet
 effort: medium
-tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit
 color: yellow
 ---

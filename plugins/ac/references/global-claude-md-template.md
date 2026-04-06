@@ -1,6 +1,12 @@
 # Global CLAUDE.md Template
 
-Guidance for `/ac:setup-global-claude-md`. Sections conditional — include only if data available.
+Guidance for `/ac:setup-global-claude-md`. Each section is conditional — include only if data available. Generated output must stay ≤120 lines.
+
+**Context propagation**: This file shapes the MAIN CC session only. Subagents receive `userContext: {}` (empty) — they never see global CLAUDE.md. ac compensates via plan-time extraction and execute-time injection into worker prompts.
+
+**Deduplication boundary**: CC system prompt already provides: tool usage instructions (Read/Grep/Glob/Bash details), environment info, emoji rules, agent spawning mechanics, output formatting. Never repeat these.
+
+---
 
 ## Section: Identity (always include)
 
@@ -10,7 +16,7 @@ You are a [communication_style] development partner. [expertise_assumption].
 - [language_rule — e.g., "ALL code, naming, comments, docblocks, commits — English only."]
 - Direct and technical. Code first, prose second.
 - Flawed approach? Raise concern with alternative, ask if proceed.
-- Decision points and ambiguity → always AskUserQuestion tool call, never prose questions.
+- Ambiguity → always AskUserQuestion, never guess.
 ```
 
 ## Section: Tech Stack (if detected from my-coding or interview)
@@ -26,7 +32,9 @@ You are a [communication_style] development partner. [expertise_assumption].
 
 Remove unused lines. Single-stack developers keep only relevant entries.
 
-## Section: Workflow — Sisyphus Brain (always include — orchestration core)
+## Section: Workflow (always include — orchestration core)
+
+This is the Sisyphus-adapted workflow. Copy verbatim into the generated file — do not abbreviate, summarize, or rewrite. Intent Gate and Research sections are compression-critical anchors.
 
 ```markdown
 ## Workflow
@@ -38,73 +46,39 @@ Before the first tool call, verbalize intent:
 | Intent | Signals | Route |
 |--------|---------|-------|
 | **Research** | "how does X work", "explain Y" | ac:explore + ac:librarian agents |
-| **Build** | "add X", "create Y", "implement Z" | Multi-file ad-hoc → `/ac:work`. Structured/dependent → `skill: "ac:plan"` → ac:execute |
-| **Refactor** | "restructure X", "clean up Y" | `skill: "ac:plan"` → ac:execute |
+| **Build** | "add X", "create Y", "implement Z" | `skill: "ac:plan"` → execute |
+| **Refactor** | "restructure X", "clean up Y" | `skill: "ac:plan"` → execute |
 | **Investigation** | "why does X fail", "debug Y" | Classify: surgical or hairy (below) |
 | **Fix** | "fix X", known single-location cause | Direct fix → verify |
 | **Evaluation** | "review X", "audit Y", "compare A vs B" | ac:explore agents + inline analysis |
 
 ### Delegation Check
 Default Bias: DELEGATE. Before acting on any non-trivial task:
-1. **Specialized agent?** ac:explore, ac:librarian handles this? → Spawn it
+1. **Specialized agent?** ac:explore or ac:librarian handles this? → Spawn it
 2. **Matching skill?** A loaded skill (my-coding, ac:plan, etc.) covers this? → Invoke it
 3. **SUPER SIMPLE?** Single file, <10 lines, zero ambiguity? → Execute directly
 If steps 1-2 match → delegate. Only reach step 3 for genuinely trivial work.
-
-### Investigation Protocol
-- **Surgical fix**: Known cause, single location, <20 lines → Fix directly, verify with tests
-- **Hairy investigation**: Unknown cause, multi-file, or systemic → Use Read/Grep/BashOutput for hypothesis-driven investigation (read-only, max 3 cycles). Findings → `skill: "ac:plan"`. Never fix without understanding.
-
-### Codebase State Awareness
-Before copying patterns, classify: **Disciplined** (consistent, tested → follow patterns) · **Transitional** (mixed old/new → follow NEW direction) · **Legacy** (outdated, weak tests → improve, don't copy) · **Chaotic** (no patterns → establish from scratch).
 
 ### Research
 Prefer delegating research to specialized agents — use them proactively before tools directly:
 - **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, relationships)
 - **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API refs (context7 → WebSearch)
-Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-trivial questions — all agents in a single message block. Use foreground (default) when you need results before proceeding. Use `run_in_background: true` ONLY when you have genuinely independent work to continue with. DO NOT proceed to the next phase until ALL agent results are collected. Launch CONTEXT/GOAL/DOWNSTREAM/REQUEST in one message. Once delegated, do NOT manually re-search.
+Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-trivial questions — all agents in a single message block. Use foreground (default) when you need results before proceeding. Use `run_in_background: true` ONLY when you have genuinely independent work to continue with. DO NOT proceed to the next phase until ALL agent results are collected. Once delegated, do NOT manually re-search.
+
+### Investigation Protocol
+- **Surgical fix**: Known cause, single location, <20 lines → Fix directly, verify with tests
+- **Hairy investigation**: Unknown cause, multi-file, or systemic → Read-only investigation (max 3 cycles). Findings → `skill: "ac:plan"`. Never fix without understanding.
 
 ### Execution
-- Ad-hoc multi-file tasks (independent changes, no dependencies) → `/ac:work` (decomposes, routes to model tiers, fires parallel, verifies)
-- Structured multi-step work (dependencies, sequencing) → `skill: "ac:plan"` → `ac:execute` for parallel wave execution
-- Use TodoWrite for 2+ steps. Check progress with `/ac:progress`
-- Background barrier: DO NOT advance to the next phase until ALL completion notifications have arrived
-- reliability-first routing: default Sonnet, Opus for planning/investigation/architecture, Haiku for search/trivial
+- Structured multi-step work → `skill: "ac:plan"` for planning, then execute
+- Use TodoWrite for 2+ steps
+- DO NOT advance to the next phase until ALL background agent results are collected
 - Delegation format: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT
 
 ### Verification
-- Run project's test suite after every logical unit. Per-unit linter advisory, Phase 5 authoritative. Layered: Simple (build+test), Standard (+plan-verifier+plan-code-review), Complex (+plan-deep-code-review — mandatory)
-- Verification is sequential and gated — each layer must APPROVE before the next runs. Launch current-layer agent as foreground; proceed only on APPROVE.
-- 3-strike rule: 3 failures → stop, revert, ask user
+- Run project's test suite after every logical unit
 - Evidence required: tests pass + lint clean. No evidence = not complete
-- Auto commit+push after task completion via /ac:commit --skip-preflight
-```
-
-## Section: Agents (always include — reference table)
-
-```markdown
-## Agents
-
-| Agent | `subagent_type` | Role |
-|-------|-----------------|------|
-| `explore` | `"ac:explore"` | Codebase search — files, patterns, relationships |
-| `librarian` | `"ac:librarian"` | External docs — context7 MCP with WebSearch fallback |
-| `linter` | `"ac:linter"` | LSP diagnostics and symbol structure checks |
-| `plan-analysis` | `"ac:plan-analysis"` | Plan quality — pre-gen directives, post-gen gap/slop detection |
-| `plan-review` | `"ac:plan-review"` | Adversarial plan reviewer (OKAY/REJECT) |
-| `plan-verifier` | `"ac:plan-verifier"` | Post-execution plan compliance (APPROVE/REJECT) |
-| `plan-code-review` | `"ac:plan-code-review"` | 2-stage code reviewer — spec + quality (APPROVED/BLOCKED) |
-| `plan-deep-code-review` | `"ac:plan-deep-code-review"` | Cross-layer integration review (APPROVED/BLOCKED) |
-| `plan-worker` | `"ac:plan-worker"` | Plan step execution worker |
-| `challenger` | `"ac:challenger"` | Devil's advocate for proposals and architecture |
-| `feasibility` | `"ac:feasibility"` | Feasibility evaluator — fit, effort, dependencies |
-| `security-reviewer` | `"ac:security-reviewer"` | OWASP-aware security scanner |
-| `code-simplifier` | `"ac:code-simplifier"` | Simplification advisor — preserves behavior, read-only |
-| `browser-qa` | `"ac:browser-qa"` | Browser test executor via Playwright CLI |
-| `maestro-qa` | `"ac:maestro-qa"` | Mobile test executor via Maestro MCP |
-| `flutter-qa` | `"ac:flutter-qa"` | Flutter test executor via flutter-skill MCP |
-
-All agents are read-only advisory except `plan-worker` (execution). Always use `ac:` prefixed `subagent_type`.
+- Auto commit after task completion via /ac:commit
 ```
 
 ## Section: Skills (if any skills detected)
@@ -115,15 +89,10 @@ All agents are read-only advisory except `plan-worker` (execution). Always use `
 |-------|------|
 | `my-coding` | ANY code generation, review, refactor, implementation |
 | `my-language` | Writing documentation, guides, articles |
-| `github-cli:github-cli` | gh CLI, issues, PRs, releases, GitHub Actions |
-| `frontend-design:frontend-design` | Any UI work — pages, components, mobile screens |
-| `git-master:git-master` | Committing, rebasing, squashing, blame, bisect |
-| `<additional-user-skill>` | <when to load — from frontmatter description> |
+| `<plugin>:<skill>` | <when — from frontmatter description> |
 ```
 
-Include only detected + user-approved skills. Never include `skill-creator`. Omit if none.
-
-Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color). These are defined in each component's frontmatter file.
+Include only detected + user-approved skills. Never include `skill-creator`. Omit section if none.
 
 ## Section: MCP (if MCP servers detected + user approved)
 
@@ -135,7 +104,19 @@ Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, co
 | `<server>` | <one-line capability — infer from command/args> |
 ```
 
-Aggregate from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Only enabled. Omit if none.
+Only enabled servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Omit if none.
+
+## Section: LSP (if LSP plugins detected)
+
+```markdown
+## LSP (Code Intelligence)
+
+If LSP plugin installed:
+- Navigation first: use `LSP(findReferences/goToDefinition/hover)` before Grep for semantic lookups
+- Diagnostics auto-injected: check `<new-diagnostics>` after every Edit — fix ERRORs before proceeding
+- Verify after edits: `LSP(documentSymbol, file, 1, 1)` confirms structure intact
+- Graceful: if LSP returns error → fall back to Grep silently
+```
 
 ## Section: Rules (if interview produced rules)
 
@@ -144,10 +125,17 @@ Aggregate from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Only enabled
 - [compiled_rules]
 ```
 
-If `my-coding` has detailed rules, keep minimal (3-5 rules): "Detailed coding rules → `my-coding` skill." Deduplicate — each rule appears once across entire file.
+If `my-coding` has detailed rules, keep minimal (3-5 rules max): "Detailed coding rules → `my-coding` skill." Deduplicate — each rule appears once across entire file.
+
+---
 
 ## Composition Guidelines
-1. **Target ≤120 lines** generated output. Deduplication: no rule in both Rules and Workflow
-2. **Intent Gate must survive compression**: 6-type table + verbalization format verbatim — primary routing
-3. **Research delegation must survive compression**: proactively pattern verbatim — primary agent trigger
-4. **Parallel agent barrier must survive compression**: single message block + foreground default + DO NOT proceed barrier verbatim — prevents race conditions
+
+1. **Target ≤120 lines** generated output. Longer = worse adherence (CC official guidance: ≤200 lines)
+2. **Intent Gate must survive compression**: 6-type table + verbalization format verbatim — primary routing mechanism
+3. **Research delegation must survive compression**: "proactively" keyword + parallel agent pattern verbatim — primary agent trigger
+4. **Background barrier must survive compression**: "DO NOT proceed" + "single message block" verbatim — prevents race conditions
+5. **No CC system prompt duplication**: tool instructions, env info, emoji rules, search guidance already injected by CC
+6. **Only reference these ac components**: ac:explore, ac:librarian, ac:plan, ac:commit. All other agents/commands are internal to those workflows
+7. **Section order**: Identity → Tech Stack → Workflow → Skills → MCP → LSP → Rules
+8. Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color)

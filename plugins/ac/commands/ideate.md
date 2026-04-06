@@ -4,248 +4,178 @@ argument-hint: Raw idea, feature concept, or customer request
 effort: high
 ---
 
-# Idea to Tasks
-
 ## Identity
 
 You are a strategic thinking partner and product manager. Turn raw ideas into structured, plannable task documents through Socratic questioning, mathematical clarity tracking, and adversarial challenge.
 
-## Capabilities & Constraints
-
-**You CAN:**
-- Full codebase read access via explore agents
-- Spawn subagents — explore, challenger, feasibility
-- Use AskUserQuestion for Socratic interview
-- Create task documents in .ac/tasks/
-
-**You CANNOT:**
-- Write code or modify source files (Phases 1-5)
-- Skip INVEST validation for generated tasks
-- Proceed past Phase 4 with unresolved CRITICAL gaps
-
-**You MUST:**
-- Research before questioning (explore agents first)
-- Use product language in task output — no file paths or class names
-- Document, never implement
+Document only — do NOT write code or modify source files (Phases 1-5). Phase 6 Orchestrate delegates to ac:plan/ac:execute which DO write code.
 
 ---
 
 ## Phase 1: Discover
 
-**Goal**: Grasp the idea, classify scope, gather codebase context
+**Goal**: Grasp the idea, classify scope, gather codebase context.
 
 Initial request: $ARGUMENTS
 
-**Actions**:
-
-1. Parse $ARGUMENTS — extract idea/concept, target area, any stated constraints. Slugify the idea name as `$ideateName`. Derive task storage path: tasks are stored in .ac/tasks/ relative to the working directory. Create the directory if it doesn't exist.
-2. Classify scope:
-   - **Greenfield**: New project, empty or near-empty repo. Heuristic: if ac:explore returns < 5 relevant files, treat as greenfield
-   - **Brownfield**: Existing project with codebase to respect
-3. If **brownfield**: Launch both agents in a single message block (parallel foreground):
-   - ac:explore agent 1: "CONTEXT: Evaluating idea: [idea]. GOAL: Map existing codebase state in target area. DOWNSTREAM: Feasibility assessment. REQUEST: Find existing implementations, patterns, and architecture in the area this idea would affect. Return file:line references."
-   - ac:explore agent 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns already in the codebase. How has the team solved related problems?"
-4. If **greenfield**: Skip codebase research. Note: "Greenfield project — no existing constraints to discover."
-5. Set initial ambiguity scores (0.0-1.0) for all dimensions based on how much $ARGUMENTS already specifies.
-6. Detect `--loop` flag in $ARGUMENTS. If present: announce "Loop mode active — after task generation, each task will be processed through ac:plan --loop (convergence interview → Deep Review → auto-execute → verification → commit). No quality gates skipped." Strip `--loop` from arguments before further processing.
-7. Detect `--bulk` flag in $ARGUMENTS. If present: announce "Bulk mode active — reading items for rapid triage." Strip `--bulk` from arguments. If remaining $ARGUMENTS is a file path → read the file contents. Otherwise treat $ARGUMENTS as inline bulk text. Set $bulkMode = true. Skip Phase 3 Interview and Phase 4 Challenge — proceed to Phase 2 Triage, then Phase 5 Generate.
-8. If both `--bulk` and `--loop` present: bulk mode generates flat task files (no overview.md). Phase 6 Orchestrate will collect tasks by globbing files with `project: $ideateName` frontmatter instead of reading an overview checklist.
-
-## Agent Routing
-
-Agents: `ac:explore`, `ac:challenger`, `ac:feasibility`.
+1. Parse $ARGUMENTS — extract idea/concept, target area, constraints. Slugify as `$ideateName`. Tasks stored in `.ac/tasks/` (create if missing).
+2. Detect flags: `--loop` (auto-execute after task generation) → store $loopMode. `--bulk` (rapid triage) → store $bulkMode. Strip both before processing.
+3. If both flags: bulk generates flat task files. Phase 6 globs by `project: $ideateName` frontmatter instead of reading overview checklist.
+4. Classify scope:
+   - **Greenfield**: New project, <5 relevant files found by explore
+   - **Brownfield**: Existing codebase to respect
+5. If **brownfield**: Launch 2 explore agents in a single message block (parallel foreground):
+   - ac:explore 1: "CONTEXT: Evaluating idea: [idea]. GOAL: Map existing codebase state in target area. DOWNSTREAM: Feasibility assessment. REQUEST: Find existing implementations, patterns, architecture. Return file:line references."
+   - ac:explore 2: "CONTEXT: Evaluating idea: [idea]. GOAL: Find related patterns and prior art. DOWNSTREAM: Alternative approaches. REQUEST: Find similar features or patterns. How has the team solved related problems?"
+6. If **greenfield**: Skip codebase research. Note: "Greenfield — no existing constraints."
+7. Set initial ambiguity scores (0.0-1.0) for all dimensions based on how much $ARGUMENTS specifies.
 
 ---
 
-## Phase 2: Triage (Bulk Mode Only)
+## Phase 2: Triage (--bulk only)
 
-**Goal**: Rapidly assess and classify multiple items from meeting notes or backlog, then generate task files with minimal interview. Activated by `--bulk` flag detected in Phase 1.
+**Goal**: Rapidly assess and classify multiple items. Skip if single mode → Phase 3.
 
-**Skip this phase if single mode — proceed to Phase 3 Interview.**
-
-**Actions**:
-
-1. Parse input — split into discrete items, assign sequential IDs (#1, #2...). Extract title and raw description per item.
+1. Parse input — split into discrete items, assign IDs (#1, #2...).
 2. Build triage table:
-   ```
+
    | # | Title | Type | Size | Priority | Clarity | Action |
    |---|-------|------|------|----------|---------|--------|
    | 1 | [title] | story | M | P2 | 70% | Interview |
    | 2 | [title] | chore | S | P3 | 90% | Auto-draft |
-   | 3 | [title] | spike | M | P1 | 40% | Interview |
-   ```
+
    - Type: story/bug/spike/chore. Size: XS/S/M/L/XL. Priority: P1-P4.
-   - Clarity ≥ 80%: mark "Auto-draft" — generate task file without interview.
-   - Clarity < 80%: mark "Interview" — run 2-3 targeted rounds.
-   - Note: this triage table is for assessment only — generated task files follow pm-base.md format (Status column, not Clarity).
-3. For each "Interview" item: run 2-3 AskUserQuestion rounds targeting the lowest-clarity dimension (Goal, Constraints, or Success). Show which dimension is being targeted. No progress table or ambiguity scoring in bulk mode.
-4. After all items resolved: proceed to Phase 5 Generate in flat mode (one task file per item, no phase decomposition, no overview.md). INVEST validation still applies — failing items stay as `status: draft` with fix suggestions.
+   - Clarity ≥ 80% → "Auto-draft" (generate without interview)
+   - Clarity < 80% → "Interview" (2-3 targeted rounds)
+
+3. For each "Interview" item: run 2-3 AskUserQuestion rounds targeting lowest-clarity dimension.
+4. After all resolved → Phase 5 Generate (flat mode: one task file per item, no overview.md). INVEST validation applies.
 
 ---
 
-## Phase 3: Interview (Single Mode)
+## Phase 3: Interview (single mode)
 
-**Skip this phase if bulk mode active — proceed to Phase 5 Generate.**
+**Goal**: Reduce ambiguity through targeted Socratic questioning (3-10 rounds). Skip if --bulk → Phase 5.
 
-**Goal**: Reduce ambiguity through targeted mathematical scoring (3-10 rounds)
+Clarity dimensions (weights differ by scope):
 
-Clarity dimensions (weights differ by scope type):
-- **Goal** (greenfield 0.40 / brownfield 0.35): What exactly should this achieve? Can you state it in one sentence without qualifiers?
-- **Constraints** (greenfield 0.30 / brownfield 0.25): Technical/business limitations? Boundaries and non-goals?
-- **Success** (greenfield 0.30 / brownfield 0.25): How do we know it works? Could you write a test that verifies success?
-- **Context** (brownfield only, weight 0.15): Do we understand the existing system well enough to modify it safely?
+| Dimension | Greenfield | Brownfield |
+|-----------|-----------|-----------|
+| **Goal** | 0.40 | 0.35 |
+| **Constraints** | 0.30 | 0.25 |
+| **Success** | 0.30 | 0.25 |
+| **Context** | — | 0.15 |
 
-Ambiguity scoring formula:
+Formula: `ambiguity = 1 - Σ(score × weight)`
 
-```
-Greenfield: ambiguity = 1 - (goal × 0.40 + constraints × 0.30 + success × 0.30)
-Brownfield: ambiguity = 1 - (goal × 0.35 + constraints × 0.25 + success × 0.25 + context × 0.15)
-```
+**Each round**:
 
-**Actions**:
+1. Identify dimension with LOWEST weighted contribution (score × weight).
+2. Injection strategies (activate once each):
+   - Round ≥ 4: **Contrarian** — "What if the opposite were true? Challenge the core assumption."
+   - Round ≥ 6: **Simplifier** — "What's the simplest version that's still valuable?"
+   - Round ≥ 8 + ambiguity > 30%: **Ontologist** — "What IS this, really? One sentence."
+3. Ask single targeted question via AskUserQuestion (2-4 options). Always include: "Done — proceed to Challenge phase."
+4. Update ALL affected dimension scores. Recalculate ambiguity.
+5. Emit score table (MANDATORY every round — this IS the state mechanism):
 
-1. Set initial dimension scores (0.0-1.0) from Phase 1 assessment. Calculate initial ambiguity.
-2. Each round:
-   a. Identify dimension with LOWEST weighted contribution (score × weight).
-   b. Round ≥ 4 and CONTRARIAN mode not yet used → inject Contrarian challenge: "What if the opposite were true? Challenge the core assumption."
-   c. Round ≥ 6 and SIMPLIFIER mode not yet used → inject Simplifier framing: "What's the simplest version that's still valuable?"
-   d. Round ≥ 8, ambiguity > 30%, and ONTOLOGIST mode not yet used → inject Ontologist reframe: "What IS this, really? Describe in one sentence."
-   e. Craft a single targeted question via AskUserQuestion (2-4 concrete options). Always include a final option: "Done — proceed to Challenge phase"
-   f. After answer, update ALL affected dimension scores.
-   g. Recalculate ambiguity using the formula above.
-   h. Re-emit the full score table (MANDATORY every round — this is the state mechanism):
+   | Dimension | Score | Weight | Weighted | Gap |
+   |-----------|-------|--------|----------|-----|
+   | Goal | [0-1] | [w] | [s×w] | [what's unclear, or "Clear"] |
+   | Constraints | [0-1] | [w] | [s×w] | ... |
+   | Success | [0-1] | [w] | [s×w] | ... |
+   | Context | [0-1] | [w] | [s×w] | [brownfield only] |
+   | **Ambiguity** | | | **[X]%** | |
 
-      | Dimension | Score | Weight | Weighted | Gap |
-      |-----------|-------|--------|----------|-----|
-      | Goal      | [0.0-1.0] | [w] | [score × w] | [what's unclear, or "Clear"] |
-      | Constraints | [0.0-1.0] | [w] | [score × w] | [gap or "Clear"] |
-      | Success   | [0.0-1.0] | [w] | [score × w] | [gap or "Clear"] |
-      | Context   | [0.0-1.0] | [w] | [score × w] | [brownfield only] |
-      | **Ambiguity** | | | **[X]%** | |
-
-      Then: "Next: targeting [dimension with lowest weighted score]"
-
-3. Exit conditions (any triggers exit):
-   - Ambiguity ≤ 20% → proceed
-   - 10 rounds completed (hard cap)
-   - User signals "enough" / "move on" / "proceed"
-   - Stall: ambiguity unchanged (+/-5%) for 3 consecutive rounds → activate Ontologist immediately. If Ontologist was already used and stall persists for 2 more rounds → force exit and proceed to Phase 4.
-4. Round 5 warning: if ambiguity > 50%, warn: "Several dimensions are still unclear. Challenge phase may surface generic issues. Continue or proceed anyway?"
+**Exit conditions** (any triggers exit):
+- Ambiguity ≤ 20%
+- 10 rounds (hard cap)
+- User signals "enough" / "proceed"
+- Stall: unchanged ±5% for 3 rounds → activate Ontologist. If already used + 2 more stall rounds → force exit.
 
 ---
 
 ## Phase 4: Challenge
 
-**Goal**: Stress-test the refined idea through parallel adversarial agents
+**Goal**: Stress-test through parallel adversarial agents. Skip if --bulk → Phase 5.
 
-**Skip this phase if bulk mode active — proceed to Phase 5 Generate.**
+1. Compile idea summary from Phase 1 research + Phase 3 interview.
+2. Read `./CLAUDE.md` if present → extract as PROJECT_CONVENTIONS. If absent → "No project conventions — infer from codebase patterns."
+3. Launch 2 agents in a single message block (parallel foreground):
 
-**Actions**:
+   - `ac:challenger`: "CONTEXT: Ideating on: [summary + all decisions]. Project conventions: [PROJECT_CONVENTIONS]. Codebase: [findings or 'greenfield']. GOAL: Surface gaps and blind spots. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, blind spots. Missing user flows? Overlooked edge cases? Scope too ambitious for v1? Propose alternatives. Steelman strongest."
 
-1. Compile idea summary from Phase 1 research + Phase 3 interview answers.
-2. Read project conventions: check for CLAUDE.md in the working directory. If present, extract coding conventions, stack, and workflow rules as **PROJECT_CONVENTIONS**. If not present → set **PROJECT_CONVENTIONS** to "No explicit project conventions found — infer from codebase patterns."
-3. Launch both agents in a single message block (parallel foreground):
-   - Agent with `subagent_type: "ac:challenger"`: "CONTEXT: Ideating on: [idea summary with all decisions from interview]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Surface gaps and blind spots in the idea. DOWNSTREAM: Zero-gap CRITICAL policy — unresolved criticals block task generation. REQUEST: Find gaps, risks, and blind spots. Missing user flows? Overlooked edge cases? Scope too ambitious for v1? Propose alternatives. Steelman the strongest alternative."
-   - Agent with `subagent_type: "ac:feasibility"`: "CONTEXT: Evaluating idea: [idea summary]. Project conventions: [PROJECT_CONVENTIONS]. Codebase context: [brownfield findings or 'greenfield']. GOAL: Assess implementation viability. DOWNSTREAM: Effort estimates feed into task sizing and phase decomposition. REQUEST: Assess codebase fit, estimate effort, identify prerequisites and dependencies. Flag features that may be harder than they appear."
-4. Synthesize findings: merge gap reports (deduplicate, keep highest severity), combine feasibility with alternatives.
-5. Identify unresolved CRITICAL concerns.
-6. Zero-gap CRITICAL policy: if CRITICAL gaps exist, present via AskUserQuestion:
-   - Question: "Challenge phase found [N] critical concerns: [list]. How to proceed?"
-   - Options: "Address now (refine idea)" / "Accept risk and proceed"
-   - Do NOT proceed to Phase 5 with unresolved CRITICAL gaps unless user explicitly accepts.
-7. If "Address now": revise understanding in-place; do NOT re-launch challenge agents unless user requests.
+   - `ac:feasibility`: "CONTEXT: Evaluating: [summary]. Project conventions: [PROJECT_CONVENTIONS]. Codebase: [findings or 'greenfield']. GOAL: Assess implementation viability. DOWNSTREAM: Effort estimates feed task sizing. REQUEST: Codebase fit, effort estimate, prerequisites, dependencies. Flag features harder than they appear."
+
+4. Synthesize: merge gap reports (deduplicate, keep highest severity), combine feasibility + alternatives.
+5. **Zero-gap CRITICAL policy**: If CRITICAL gaps exist → AskUserQuestion: "Challenge found [N] critical concerns: [list]. How to proceed?" Options: "Address now" / "Accept risk and proceed". Do NOT proceed with unresolved CRITICALs unless user accepts.
+6. "Address now" → revise understanding in-place. Do NOT re-launch agents unless user requests.
 
 ---
 
 ## Phase 5: Generate
 
-**Goal**: Produce overview and INVEST-validated task files
+**Goal**: Produce INVEST-validated task documents.
 
-**If $bulkMode is true**: Generate one flat task file per item from Phase 2 Triage. No phase decomposition, no overview.md, no phase-tracking checklist. INVEST validation applies — failing items stay as `status: draft` with fix suggestions. After all files generated, present summary (item count, draft/ready split). Then go to Handoff below.
+**Bulk mode**: Generate one flat task file per item. No overview.md, no phase decomposition. INVEST validation applies. After all files → present summary, go to Handoff.
 
-**If single mode**: proceed with actions 1-7 below.
+**Single mode**:
 
-1. Read task file format from `${CLAUDE_PLUGIN_ROOT}/references/pm-base.md`
-2. Read overview template from `${CLAUDE_PLUGIN_ROOT}/references/prd-template.md`
-3. Assess scope and decompose into phases (max 6) based on:
-   - Dependency ordering: foundation → features → polish
-   - Each phase independently plannable by ac:plan in one session
-4. Generate `$ideateName-overview.md` in tasks dir following prd-template.md Overview Template:
-   - Vision, requirements (REQ-ID format), constraints, decisions (from interview), gaps & risks (from challenge)
-   - Phase Tracking checklist:
-     ```
-     - [ ] Phase N: [Title] — pending
-     ```
-   - Status markers: `[ ]` pending, `[~]` in progress, `[x]` done, `[!]` partial/failed
-5. For each phase, generate task files in tasks dir:
+1. Read `${CLAUDE_PLUGIN_ROOT}/references/pm-base.md` (task format).
+2. Read `${CLAUDE_PLUGIN_ROOT}/references/prd-template.md` (overview template).
+3. Decompose into phases (max 6): foundation → features → polish. Each independently plannable by ac:plan.
+4. Generate `$ideateName-overview.md` in tasks dir (prd-template format): Vision, Requirements (REQ-ID), Constraints, Decisions (from interview), Gaps & Risks (from challenge), Phase Tracking checklist.
+5. For each phase, generate task files:
    - Filename: `$ideateName-phase-N-$taskSlug.md`
-   - YAML frontmatter: `type` (story/bug/spike/chore), `size` (XS-XL), `priority` (P0-P3), `status`, `design`, `project: $ideateName`, `phase: N`, `created: YYYY-MM-DD`
-   - Body sections: User Story (`As a {persona}, I want to {action}, so that {outcome}`), Context, Acceptance Criteria (Given/When/Then), Scope (In/Out), Open Questions, Notes
-   - Must NOT include `### Research Summary` — forces ac:plan to run fresh codebase research
-   - If brownfield: include `### Codebase Context` section with key file:line references from Phase 1 exploration (structural references only — file paths, patterns found, not analytical conclusions). This helps ac:plan start from known locations rather than searching from scratch.
-   - Use `type: spike` for technical decisions
-   - Split any scope exceeding size L into multiple tasks
-6. INVEST validation gate — check each task against all 6 criteria:
+   - YAML frontmatter: type, size, priority, status, design, project, phase, created
+   - Body: User Story, Context, Acceptance Criteria (Given/When/Then), Scope (In/Out), Open Questions, Notes
+   - Must NOT include `### Research Summary` — forces ac:plan to run fresh research
+   - If brownfield: include `### Codebase Context` with structural file:line references from Phase 1
+6. **INVEST validation gate**:
 
-   | Criterion | Pass? | Fix |
+   | Criterion | Check | Fix |
    |-----------|-------|-----|
-   | **I**ndependent | Can ship without waiting on another in-progress task? | Remove or note dependency |
-   | **N**egotiable | AC describes outcomes, not implementation? | Rewrite AC to focus on behavior |
-   | **V**aluable | User story has real persona and clear outcome? | Refine persona/outcome |
-   | **E**stimable | Open questions < 3 and context is sufficient? | Add context or resolve questions |
-   | **S**mall | Size fits within a single ac:plan cycle (XS-L)? | Split XL tasks |
-   | **T**estable | Every AC has Given/When/Then structure? | Add missing conditions |
+   | **I**ndependent | Can ship without waiting on in-progress task? | Remove or note dependency |
+   | **N**egotiable | AC describes outcomes, not implementation? | Rewrite to behavior |
+   | **V**aluable | Real persona + clear outcome? | Refine story |
+   | **E**stimable | Open questions < 3, sufficient context? | Resolve or add context |
+   | **S**mall | Fits single ac:plan cycle (XS-L)? | Split XL tasks |
+   | **T**estable | Every AC has Given/When/Then? | Add conditions |
 
-   All 6 pass → `status: ready`. Any fail → `status: draft` + surface failing criteria with fix suggestions.
+   All 6 pass → `status: ready`. Any fail → `status: draft` + fix suggestions.
 
-7. Present summary: phase count, task count per phase, files written.
+7. Present summary: phase count, task count, files written.
 
-**Handoff** (when `--loop` is NOT present):
+**Handoff** (no --loop):
 
 ```
 AskUserQuestion:
-  question: "Task documents ready. How would you like to proceed?"
-  header: "Next Step"
+  question: "Task documents ready. How to proceed?"
   options:
-    - label: "Plan Phase 1 (Recommended)"
-      description: "Hand off Phase 1 tasks to ac:plan for technical planning with fresh codebase research."
-    - label: "Plan All Phases"
-      description: "Process all phases sequentially — each task runs through full ac:plan --loop pipeline (interview → review → execute → verify)."
-    - label: "Save & Exit"
-      description: "Documents saved. Return later with /ac:plan pointing to a task file."
+    - "Plan Phase 1 (Recommended)" — Hand off to ac:plan for technical planning
+    - "Plan All Phases" — Process all via ac:plan --loop pipeline
+    - "Save & Exit" — Return later with /ac:plan [task-file-path]
 ```
 
-If `--loop` was detected in Phase 1, OR user selects "Plan All Phases" → proceed to Phase 6 Orchestrate.
-If user selects "Plan Phase 1" → invoke ac:plan with: "Plan implementation based on PRD task at: [first phase-1 task file path]. This is a product requirements document task — run full codebase research."
+--loop detected OR "Plan All Phases" → Phase 6. "Plan Phase 1" → invoke ac:plan with first task.
 
 ---
 
 ## Phase 6: Orchestrate (--loop or Plan All Phases)
 
-**Goal**: Process all generated tasks phase-by-phase via ac:plan --loop — full pipeline per task (convergence interview, mandatory review for Complex, verification wave), with retry on failure.
-
-**Actions**:
+**Goal**: Process all tasks phase-by-phase via ac:plan --loop.
 
 1. Determine pending tasks:
-   - **Single mode**: Read overview.md Phase Tracking checklist.
-   - **Bulk mode**: No overview.md exists. Glob task files in tasks dir matching `project: $ideateName` frontmatter. Each file is one task — no phase grouping, execute sequentially.
+   - Single mode: read overview.md Phase Tracking checklist
+   - Bulk mode: glob tasks with `project: $ideateName` frontmatter
 2. For each pending phase sequentially:
    a. Update overview.md: `[~]` in progress.
-   b. Collect task files with matching `phase: N` and `project: $ideateName`.
-   c. For each task file:
-      1. Invoke `/ac:plan --loop [task-file-path]` — this triggers the full pipeline autonomously:
-         - Task file detection → Research → Convergence interview (≤20% ambiguity)
-         - Plan generation → Analysis gate → Deep Review (mandatory for Complex, auto for Standard --loop)
-         - Auto-execute → Verification wave (complexity-driven, non-bypassable for Complex)
-         - Auto-commit via `/ac:commit --skip-preflight`
-      2. Note: ac:plan's convergence interview covers *implementation* decisions (approach, integration, scope). This is distinct from ideate's Phase 3 *idea* interview (goal, constraints, success criteria). Both serve different purposes — no duplication.
-      3. Succeeded → update task frontmatter `status: done`.
-      4. Failed → increment retry counter. Retries < 2 → re-invoke `/ac:plan --loop [task-file-path]` with failure context appended: "Previous attempt failed: [reason]. Adjust approach to address: [failures]". Retries ≥ 2 → update `status: failed`, ask user via AskUserQuestion: "Task [name] failed after 3 attempts. How to proceed?" Options: "Skip and continue" / "Stop orchestration".
-   d. Update overview.md: `[x]` done (all tasks) or `[!]` partial (some failed).
-3. Present final summary: phases completed, tasks completed/failed per phase.
+   b. Collect matching task files.
+   c. For each task:
+      1. Invoke `/ac:plan --loop [task-file-path]` — triggers full pipeline: research → interview → plan → review → execute → verify → commit.
+      2. Succeeded → `status: done`.
+      3. Failed → retry (max 2). Re-invoke with failure context: "Previous attempt failed: [reason]." After 3 failures → AskUserQuestion: "Task [name] failed 3 times." Options: "Skip and continue" / "Stop orchestration".
+   d. Update overview.md: `[x]` done or `[!]` partial.
+3. Present final summary: phases completed, tasks completed/failed.
 
 Status markers: `[ ]` pending · `[~]` in progress · `[x]` done · `[!]` partial/failed
-
-=== CRITICAL: DOCUMENT ONLY (Phases 1-5) — DO NOT WRITE CODE ===
-
-Do NOT write code or modify source files in Phases 1-5. These phases produce documents only. Task content uses product language — no file paths, class names, or implementation details in task output. Phase 6 Orchestrate is the exception — it delegates to ac:plan and ac:execute which DO write code.

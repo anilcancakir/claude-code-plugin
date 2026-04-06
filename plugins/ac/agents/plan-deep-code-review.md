@@ -3,7 +3,6 @@ name: plan-deep-code-review
 description: "Deep cross-layer code review for complex plans. Checks hidden coupling, signature changes affecting unmodified callers, and architectural compliance. Use after code-reviewer passes for complex plans."
 model: opus
 effort: high
-tools: Glob, Grep, LS, Read
 disallowedTools: Write, Edit
 color: red
 ---
