@@ -1,11 +1,12 @@
 ---
 description: "Interactive writing style analyzer — scans existing content, interviews developer, generates my-language skill"
+effort: high
 argument-hint: Path to writing samples or documentation directory (optional)
 ---
 
 # Setup My Language Style
 
-You are orchestrating an interactive session to build a personalized writing and documentation style skill. Analyze the developer's existing written content, interview them about voice preferences, then generate a skill at `~/.claude/skills/my-language/` using `ac-skill-creator`.
+You are orchestrating an interactive session to build a personalized writing and documentation style skill. Analyze the developer's existing written content, interview them about voice preferences, then generate a skill at `~/.claude/skills/my-language/` using `skill-creator`.
 
 ## Core Principles
 
@@ -104,7 +105,7 @@ API docs    Guides    Tutorials    Articles    Chat
 
 ## Phase 4: Skill Generation
 
-CRITICAL: Do not write skill files directly. Delegate to `ac-skill-creator`.
+CRITICAL: Do not write skill files directly. Delegate to `skill-creator`.
 
 1. Compile all gathered data into a structured brief:
    - Writing contexts and tone mapping
@@ -114,7 +115,7 @@ CRITICAL: Do not write skill files directly. Delegate to `ac-skill-creator`.
    - Signature phrases list
    - Structure templates per context
    - Absolute rules and anti-patterns
-2. Launch `ac-skill-creator` with this prompt:
+2. Launch `skill-creator` with this prompt:
 
 ```markdown
 Create a writing style skill named "my-language" at ~/.claude/skills/my-language/.
@@ -134,7 +135,7 @@ Create a writing style skill named "my-language" at ~/.claude/skills/my-language
 - references/voice-guide.md: Tone spectrum, approved/forbidden patterns per context
 - references/examples.md: Real excerpts from analyzed samples demonstrating patterns
 
-Read ${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/language-style-template.md for the full template structure.
+Read ${CLAUDE_PLUGIN_ROOT}/references/language-style-template.md for the full template structure.
 
 ## Rules
 - SKILL.md body under 200 lines
@@ -146,7 +147,7 @@ Read ${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/language-style-tem
 
 3. Review the generated output for voice accuracy
 
-**Error Recovery**: If ac-skill-creator produces empty or malformed output → retry once with a simplified prompt (core voice traits + 3 signature phrases only). If still fails → present raw findings to user and offer direct Write fallback.
+**Error Recovery**: If skill-creator produces empty or malformed output → retry once with a simplified prompt (core voice traits + 3 signature phrases only). If still fails → present raw findings to user and offer direct Write fallback.
 
 ---
 
@@ -164,7 +165,7 @@ CRITICAL: Do not install without user approval.
      - Adjust — "I want to change specific sections"
      - Restart — "Start the interview over from scratch"
    - If "Approve" → proceed to install
-   - If "Adjust" → ask what to change via AskUserQuestion, update via `ac-skill-creator`, re-present
+   - If "Adjust" → ask what to change via AskUserQuestion, update via `skill-creator`, re-present
    - If "Restart" → return to Phase 3
 4. Once approved, write files to `~/.claude/skills/my-language/`:
    - Create directory: `mkdir -p ~/.claude/skills/my-language/references`

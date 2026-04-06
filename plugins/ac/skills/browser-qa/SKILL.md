@@ -6,7 +6,7 @@ user-invocable: false
 
 # Browser QA — Testing Knowledge Base
 
-Browser-based QA testing via Playwright CLI (`playwright-cli`). This skill provides workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:browser-qa` command. Report format lives in `references/report-format.md` — this file distills orchestration knowledge and CLI-specific patterns.
+Browser-based QA testing via Playwright CLI (`playwright-cli`). This skill provides workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:browser-qa` command. Report format lives in `references/report-format.md`. Shared cross-backend patterns (knowledge system, test modes, parallel execution, evidence persistence) live in the plugin-level `../../references/qa-patterns.md` — read it for conventions shared with maestro-qa and flutter-qa. This file distills orchestration knowledge and CLI-specific patterns.
 
 ---
 

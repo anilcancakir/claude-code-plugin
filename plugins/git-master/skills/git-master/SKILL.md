@@ -1,7 +1,7 @@
 ---
 name: git-master
 description: "Git expert — atomic commits with style detection, rebase/squash, and history archaeology (blame, bisect, pickaxe). Use for git operations."
-when_to_use: "Use when the user asks to 'commit', 'rebase', 'squash', 'cherry-pick', 'blame', 'bisect', 'find who changed', 'split commits', 'amend', 'fixup', or mentions git history, merge conflicts, interactive rebase, commit messages, or atomic commits. Also trigger when reviewing git log or preparing a clean branch for PR."
+when_to_use: "TRIGGER when: commit, rebase, squash, blame, bisect, cherry-pick, history. DO NOT TRIGGER when: GitHub API."
 ---
 
 # Git Master

@@ -1,7 +1,7 @@
 ---
-name: ac-skill-creator
+name: skill-creator
 description: "Create or improve Claude Code extension components — skills, agents, commands, rules, CLAUDE.md. Use when building or optimizing prompts for Claude Code."
-when_to_use: "Use when the user wants to create, improve, or audit a Claude Code extension component — skills, agents, commands, rules, CLAUDE.md files. Trigger phrases: 'create a skill', 'create an agent', 'add a command', 'write a rule', 'build a plugin component', 'optimize my skill'."
+when_to_use: "TRIGGER when: creating skills, agents, commands, or CLAUDE.md. DO NOT TRIGGER: business logic."
 user-invocable: true
 ---
 
@@ -449,6 +449,14 @@ Default to Sonnet unless the task clearly needs Haiku speed or Opus depth.
 
 ---
 
+## References
+
+| Topic | File | When to read |
+|-------|------|-------------|
+| Prompt patterns | [prompt-patterns.md](references/prompt-patterns.md) | Before drafting any component — full pattern library |
+
+---
+
 ## Quality Checklist
 
 Before finalizing any component, verify:
@@ -468,23 +476,18 @@ Before finalizing any component, verify:
 
 **Style**
 10. CRITICAL/IMPORTANT inflation? Maximum 1-2 per file
-11. Nesting depth ≤ 1?
-12. Sentences under 25 words?
-13. No passive voice? "Files are analyzed" → "Analyze files"
-14. Imperative mood throughout? Not advisory ("you should")
-15. No hardcoded values? Paths, model IDs, usernames → remove
+11. Nesting depth ≤ 1? Sentences under 25 words?
+12. Imperative mood, no passive voice? "Files are analyzed" → "Analyze files"
+13. No hardcoded values? Paths, model IDs, usernames → remove
 
 **Progressive Disclosure**
-16. SKILL.md body <500 lines?
-17. References explicitly linked with "read this when" guidance?
-18. References one level deep only? No `ref → ref → ref` chains?
-19. Large references (>100 lines) have TOC?
-20. Scripts in `scripts/`, not inline code blocks?
+14. SKILL.md body <500 lines? Large references (>100 lines) have TOC?
+15. References explicitly linked with "read this when" guidance? One level deep only?
+16. Scripts in `scripts/`, not inline code blocks?
 
 **Invocation**
-21. `user-invocable` / `disable-model-invocation` set correctly per decision tree?
-22. `paths` field used if skill is file-type specific?
-23. `context: fork` considered for self-contained parallelizable skills?
-24. `allowed-tools` minimal? Only tools the skill actually needs?
+17. `user-invocable` / `disable-model-invocation` set correctly per decision tree?
+18. `paths` field used if file-type specific? `context: fork` if parallelizable?
+19. `allowed-tools` minimal? Only tools the skill actually needs?
 
 CRITICAL: Run this checklist on every component before presenting to user.

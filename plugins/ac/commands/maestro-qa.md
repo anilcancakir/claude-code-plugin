@@ -1,5 +1,6 @@
 ---
 description: "Mobile QA testing — ad-hoc tests, bug reproduction, plan verification, flow execution. Uses Maestro MCP."
+effort: medium
 argument-hint: "App description, bug doc path, plan path, flow path, or --recheck (e.g., 'test login flow', '--bug repro.md', '--plan .ac/plans/auth.md', '--flows .maestro/', '--recheck')"
 ---
 

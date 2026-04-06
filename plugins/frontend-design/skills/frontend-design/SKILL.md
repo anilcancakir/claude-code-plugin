@@ -1,7 +1,7 @@
 ---
 name: frontend-design
 description: "Production-grade UI for web and mobile — design systems, visual hierarchy, distinctive aesthetics. Use for frontend implementation and design decisions."
-when_to_use: "Use when the user asks to 'build a page', 'design a component', 'create a form', 'style the UI', 'improve the design', or mentions CSS, layout, typography, color palette, responsive design, dark mode, mobile UI, or design system. Also trigger when implementing any user-facing screen or component."
+when_to_use: "TRIGGER when: UI, pages, components, or design. DO NOT TRIGGER when: backend or non-visual."
 ---
 
 # Frontend Design

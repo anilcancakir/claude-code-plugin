@@ -287,7 +287,7 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 
 ## Agents
 
-`ac` includes 15 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
+`ac` includes 14 specialized agents. All are **read-only** — advisory agents never have write tools. Each agent runs as a fresh subagent with its own model, tools, and context.
 
 ### Search & Research
 
@@ -315,11 +315,10 @@ Failed agents escalate one tier before giving up (quick → Sonnet, mid → Opus
 | `ac:security-reviewer` | Sonnet | OWASP Top 10 scanner — severity x exploitability scoring. Optional |
 | `ac:code-simplifier` | Sonnet | Clarity pass — suggests simplifications preserving behavior. Opt-in |
 
-### Testing & Vision
+### Testing
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `ac:gemini-vision` | Sonnet | Multimodal analysis — video recordings, multi-image comparison via Gemini |
 | `ac:browser-qa` | Sonnet | Browser test executor — runs tests via Playwright CLI shell commands, captures screenshots + HTML + errors, returns structured verdicts |
 | `ac:maestro-qa` | Sonnet | Mobile test executor via Maestro MCP — runs tests on iOS/Android emulators |
 | `ac:flutter-qa` | Sonnet | Flutter test executor — runs widget/integration tests via flutter-skill MCP, captures screenshots + widget trees + logs, returns structured verdicts |
@@ -490,15 +489,6 @@ The **librarian** agent queries context7 for version-aware library docs before f
 claude mcp add context7 -- npx -y @upstash/context7-mcp
 ```
 
-### gemini-cli — Gemini Bridge
-
-Bridges Claude to Gemini's 1M token window and multimodal capabilities. Used by **gemini-vision** (visual analysis), **plan-review** (adversarial second-eye), and **librarian** (large context research).
-
-```bash
-npm install -g gemini-mcp-tool
-claude mcp add gemini-cli -- gemini-mcp-tool
-```
-
 ### skillsmp — Skill Marketplace
 
 Search, discover, and install AI coding skills from [SkillsMP](https://skillsmp.com).
@@ -564,12 +554,12 @@ plugins/ac/
 ├── commands/          # 14 user-invocable /ac:* commands (incl. browser-qa, maestro-qa, flutter-qa, work, progress)
 ├── agents/            # 15 read-only agent definitions (incl. browser-qa, maestro-qa, flutter-qa)
 ├── skills/
-│   ├── ac-skill-creator/
-│   │   ├── SKILL.md
-│   │   └── references/    # Templates for coding style, language style, CLAUDE.md, PRDs
+│   ├── skill-creator/
+│   │   └── SKILL.md
 │   └── browser-qa/
 │       ├── SKILL.md       # Browser QA workflow patterns, Playwright CLI routing, self-healing
 │       └── references/    # Report format and evidence schema
+├── references/        # Templates for coding style, language style, CLAUDE.md, PRDs
 ├── .claude-plugin/
 │   └── plugin.json
 └── README.md

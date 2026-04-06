@@ -2,6 +2,16 @@
 
 Common patterns shared across all three QA backends: browser-qa (Playwright CLI), maestro-qa (Maestro MCP), and flutter-qa (Flutter integration test runner). Backend-specific details live in each skill's own `SKILL.md` and `references/` files. This document is the single source of truth for cross-backend conventions.
 
+## Contents
+
+- [Knowledge System](#knowledge-system)
+- [Report Format](#report-format)
+- [Test Modes](#test-modes)
+- [Parallel Execution](#parallel-execution)
+- [Evidence Persistence](#evidence-persistence)
+- [State Persistence](#state-persistence)
+- [Agent Architecture](#agent-architecture)
+
 ---
 
 ## Knowledge System

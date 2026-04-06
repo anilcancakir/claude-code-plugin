@@ -1,7 +1,7 @@
 ---
 name: github-cli
 description: "GitHub CLI (gh) patterns — issues, PRs, releases, actions, gh api (REST + GraphQL), jq filtering, scripting. Use for GitHub operations."
-when_to_use: "Use when the user asks to 'create an issue', 'open a PR', 'check CI status', 'list releases', 'use gh', 'call GitHub API', or mentions pull requests, issues, GitHub releases, gh api, repository management, or GitHub automation. Also trigger when debugging CI failures via gh run view."
+when_to_use: "TRIGGER when: GitHub issues, PRs, CI, releases, gh api, repo management. DO NOT TRIGGER when: local git ops."
 ---
 
 # GitHub CLI Skill

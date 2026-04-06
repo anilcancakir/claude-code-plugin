@@ -1,5 +1,6 @@
 ---
 description: "Browser QA testing — ad-hoc tests, bug reproduction, plan verification. Uses Playwright CLI."
+effort: medium
 argument-hint: "URL, bug doc path, plan path, or --recheck (e.g., 'localhost:3000/register', '--bug repro.md', '--plan .ac/plans/auth.md', '--recheck')"
 ---
 

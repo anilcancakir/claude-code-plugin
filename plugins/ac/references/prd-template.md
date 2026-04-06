@@ -64,7 +64,7 @@ Priority: must / should / could. Scope: v1 / future / out-of-scope.
 
 Phases now map to task files with `phase:` frontmatter field. Each phase decomposes into N individual task files stored in the tasks directory.
 
-Generate task files following the format defined in `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/pm-base.md`. Key rules:
+Generate task files following the format defined in `${CLAUDE_PLUGIN_ROOT}/references/pm-base.md`. Key rules:
 
 - Filename: `$prdName-phase-N-$taskSlug.md` (e.g., `myapp-phase-1-setup-auth.md`)
 - Frontmatter must include `project: $prdName` and `phase: N` to link tasks back to the PRD

@@ -1,11 +1,12 @@
 ---
 description: Interactive coding style analyzer — scans existing projects, interviews the developer, generates a personalized my-coding skill
+effort: high
 argument-hint: Path to a representative project (optional)
 ---
 
 # Setup My Coding Style
 
-You are orchestrating an interactive session to build a personalized coding style skill. Analyze the developer's existing projects, interview them about preferences, then generate a skill at `~/.claude/skills/my-coding/` using `ac-skill-creator`.
+You are orchestrating an interactive session to build a personalized coding style skill. Analyze the developer's existing projects, interview them about preferences, then generate a skill at `~/.claude/skills/my-coding/` using `skill-creator`.
 
 ## Core Principles
 
@@ -97,9 +98,9 @@ You are orchestrating an interactive session to build a personalized coding styl
 
 ## Phase 4: Skill Generation
 
-**Goal**: Generate the `my-coding` skill via `ac-skill-creator`
+**Goal**: Generate the `my-coding` skill via `skill-creator`
 
-CRITICAL: Do not write skill files directly. Delegate to `ac-skill-creator`.
+CRITICAL: Do not write skill files directly. Delegate to `skill-creator`.
 
 1. Compile all gathered data into a structured brief:
    - Primary language(s) and framework(s)
@@ -109,7 +110,7 @@ CRITICAL: Do not write skill files directly. Delegate to `ac-skill-creator`.
    - Testing philosophy
    - Error handling patterns
    - Anti-patterns list
-2. Launch `ac-skill-creator` with this prompt:
+2. Launch `skill-creator` with this prompt:
 
 ```markdown
 Create a coding style skill named "my-coding" at ~/.claude/skills/my-coding/.
@@ -129,7 +130,7 @@ Create a coding style skill named "my-coding" at ~/.claude/skills/my-coding/.
   - Include: naming, directory structure, patterns, testing, tooling
 - references/anti-patterns.md: What to never do, with alternatives
 
-Read ${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/coding-style-template.md for the full template structure.
+Read ${CLAUDE_PLUGIN_ROOT}/references/coding-style-template.md for the full template structure.
 
 ## Rules
 - SKILL.md body under 300 lines
@@ -141,7 +142,7 @@ Read ${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/coding-style-templ
 
 3. Review the generated output for completeness and accuracy
 
-**Error Recovery**: If ac-skill-creator produces empty or malformed output → retry once with a simplified prompt (top 5 rules only). If still fails → present raw findings to user and offer direct Write fallback.
+**Error Recovery**: If skill-creator produces empty or malformed output → retry once with a simplified prompt (top 5 rules only). If still fails → present raw findings to user and offer direct Write fallback.
 
 ---
 
@@ -161,7 +162,7 @@ CRITICAL: Do not install without user approval.
      - Adjust — "I want to change specific sections"
      - Restart — "Start the interview over from scratch"
    - If "Approve" → proceed to install
-   - If "Adjust" → ask what to change via AskUserQuestion, update via `ac-skill-creator`, re-present
+   - If "Adjust" → ask what to change via AskUserQuestion, update via `skill-creator`, re-present
    - If "Restart" → return to Phase 3
 4. Once approved, write files to `~/.claude/skills/my-coding/`:
    - Create directory: `mkdir -p ~/.claude/skills/my-coding/references`

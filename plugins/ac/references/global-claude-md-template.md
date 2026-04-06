@@ -73,19 +73,46 @@ Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-tri
 - Delegation format: TASK, EXPECTED OUTCOME, MUST DO, MUST NOT DO, CONTEXT
 
 ### Verification
-- Run project's test suite after every logical unit. Per-unit linter advisory, Phase 5 authoritative. Complexity-driven: Simple (build+test), Standard (+code-reviewer+linter), Complex (+verifier)
-- Launch all verification agents in a single message block (foreground — CC waits for all automatically). All must complete before verdict.
+- Run project's test suite after every logical unit. Per-unit linter advisory, Phase 5 authoritative. Layered: Simple (build+test), Standard (+plan-verifier+plan-code-review), Complex (+plan-deep-code-review — mandatory)
+- Verification is sequential and gated — each layer must APPROVE before the next runs. Launch current-layer agent as foreground; proceed only on APPROVE.
 - 3-strike rule: 3 failures → stop, revert, ask user
 - Evidence required: tests pass + lint clean. No evidence = not complete
 - Auto commit+push after task completion via /ac:commit --skip-preflight
+```
+
+## Section: Agents (always include — reference table)
+
+```markdown
+## Agents
+
+| Agent | `subagent_type` | Role |
+|-------|-----------------|------|
+| `explore` | `"ac:explore"` | Codebase search — files, patterns, relationships |
+| `librarian` | `"ac:librarian"` | External docs — context7 MCP with WebSearch fallback |
+| `linter` | `"ac:linter"` | LSP diagnostics and symbol structure checks |
+| `plan-analysis` | `"ac:plan-analysis"` | Plan quality — pre-gen directives, post-gen gap/slop detection |
+| `plan-review` | `"ac:plan-review"` | Adversarial plan reviewer (OKAY/REJECT) |
+| `plan-verifier` | `"ac:plan-verifier"` | Post-execution plan compliance (APPROVE/REJECT) |
+| `plan-code-review` | `"ac:plan-code-review"` | 2-stage code reviewer — spec + quality (APPROVED/BLOCKED) |
+| `plan-deep-code-review` | `"ac:plan-deep-code-review"` | Cross-layer integration review (APPROVED/BLOCKED) |
+| `plan-worker` | `"ac:plan-worker"` | Plan step execution worker |
+| `challenger` | `"ac:challenger"` | Devil's advocate for proposals and architecture |
+| `feasibility` | `"ac:feasibility"` | Feasibility evaluator — fit, effort, dependencies |
+| `security-reviewer` | `"ac:security-reviewer"` | OWASP-aware security scanner |
+| `code-simplifier` | `"ac:code-simplifier"` | Simplification advisor — preserves behavior, read-only |
+| `browser-qa` | `"ac:browser-qa"` | Browser test executor via Playwright CLI |
+| `maestro-qa` | `"ac:maestro-qa"` | Mobile test executor via Maestro MCP |
+| `flutter-qa` | `"ac:flutter-qa"` | Flutter test executor via flutter-skill MCP |
+
+All agents are read-only advisory except `plan-worker` (execution). Always use `ac:` prefixed `subagent_type`.
 ```
 
 ## Section: Skills (if any skills detected)
 
 ```markdown
 ## Skills
-| Skill | Load When |
-|-------|-----------|
+| Skill | When |
+|-------|------|
 | `my-coding` | ANY code generation, review, refactor, implementation |
 | `my-language` | Writing documentation, guides, articles |
 | `github-cli:github-cli` | gh CLI, issues, PRs, releases, GitHub Actions |
@@ -94,7 +121,9 @@ Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-tri
 | `<additional-user-skill>` | <when to load — from frontmatter description> |
 ```
 
-Include only detected + user-approved skills. Never include `ac-skill-creator`. Omit if none.
+Include only detected + user-approved skills. Never include `skill-creator`. Omit if none.
+
+Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color). These are defined in each component's frontmatter file.
 
 ## Section: MCP (if MCP servers detected + user approved)
 
@@ -103,21 +132,10 @@ Include only detected + user-approved skills. Never include `ac-skill-creator`. 
 | Server | Capability |
 |--------|------------|
 | `context7` | Live framework docs — version-aware library reference |
-| `gemini-cli` | Gemini CLI bridge — multimodal, large context, brainstorm |
 | `<server>` | <one-line capability — infer from command/args> |
 ```
 
 Aggregate from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Only enabled. Omit if none.
-
-## Section: ast-grep (if `sg` CLI detected — `which sg`)
-
-```markdown
-## ast-grep (Structural Code Search)
-
-Use `sg` CLI for **structural** code queries — when Grep would over-match or miss AST-level nuance (e.g., "functions missing X", "calls with N+ args", "pattern A inside context B"). Full syntax → `ast-grep` skill, `references/rule_reference.md`.
-```
-
-Include only if `sg` is installed. 3 lines max — the `ast-grep` skill has full reference via progressive disclosure.
 
 ## Section: Rules (if interview produced rules)
 

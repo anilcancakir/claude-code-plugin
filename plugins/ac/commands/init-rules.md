@@ -1,5 +1,6 @@
 ---
 description: Auto-generate .claude/rules/ — path-scoped coding conventions from project analysis. Re-run after codebase changes to update rules while preserving manually added conventions.
+effort: medium
 argument-hint: update or enhance (optional)
 ---
 

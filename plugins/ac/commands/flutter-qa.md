@@ -1,5 +1,6 @@
 ---
 description: "Flutter QA testing — ad-hoc tests, bug reproduction, plan verification, integration test execution, visual regression. Uses flutter-skill MCP."
+effort: medium
 argument-hint: "App description, bug doc path, plan path, test path, or --recheck (e.g., 'test login flow', '--bug repro.md', '--plan .ac/plans/auth.md', '--test integration_test/', '--visual screens/', '--recheck')"
 ---
 

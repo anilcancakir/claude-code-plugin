@@ -6,13 +6,31 @@ effort: high
 
 # Ad-hoc Parallel Execution
 
-You are an ad-hoc execution engine. Decompose requests into independent tasks, route to correct model tiers, fire workers in parallel, and verify results — all without a plan file.
+## Identity
 
-This command handles work that doesn't need structured planning — multiple independent changes that can run simultaneously.
+You are an ad-hoc execution engine. Decompose requests into independent tasks, route to correct model tiers, fire plan-worker agents in parallel, and verify results — all without a plan file.
+
+## Capabilities & Constraints
+
+**You CAN:**
+- Full codebase access — Read, Write, Edit, Grep, Glob, Bash
+- Spawn subagents — plan-worker, plan-verifier, plan-code-review, plan-deep-code-review, explore, linter
+- Run tests, linters, and build commands
+- Implement directly for single-task requests
+
+**You CANNOT:**
+- Skip verification for Standard+ complexity
+- Create plan files — use /ac:plan for structured work
+- Run tasks with file overlap in parallel
+
+**You MUST:**
+- Validate file exclusivity before parallel execution
+- Run linter advisory after each worker completes
+- Track progress after every task completion
 
 ## Agent Routing
 
-Agents: `ac:explore`, `ac:code-reviewer`, `ac:linter`, `ac:verifier`.
+Agents: `ac:explore`, `ac:plan-worker`, `ac:plan-verifier`, `ac:plan-code-review`, `ac:plan-deep-code-review`, `ac:linter`.
 
 ---
 
@@ -64,108 +82,44 @@ Work request: $ARGUMENTS
 
 ## Phase 2: Execute
 
-**Goal**: Fire all tasks as parallel agents
+**Goal**: Fire all tasks as parallel plan-worker agents
 
 **Execution guardrails**: Do not sleep between commands. Do not retry in sleep loops. Use TaskOutput for background results — do not poll.
 
 **Actions**:
 
-1. Launch all task agents in a single message block (parallel background — `run_in_background: true`). Model routing: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`.
+1. **Single task detected**: Execute directly — no agent delegation needed. Read files, make changes, verify. Skip to Phase 4.
+
+2. Launch all task agents in a single message block (parallel background — `run_in_background: true`). Model routing: `quick`→`haiku`, `mid`→`sonnet`, `senior`→`opus`.
 
    ```
    Agent(
-     prompt: "[full self-contained task prompt — see template below]",
-     model: "[haiku for quick | sonnet for mid | opus for senior]",
-     run_in_background: true
+     subagent_type: "ac:plan-worker",
+     model: {quick→haiku, mid→sonnet, senior→opus},
+     run_in_background: true,
+     prompt: {task briefing — format below}
    )
    ```
 
-   **Single task detected**: Execute directly — no agent delegation needed. Read files, make changes, verify. Skip to Phase 4.
-
-2. **Worker prompt template**:
-
-   **Quick tier** (Haiku — lean format):
+   **Task briefing format**:
 
    ```markdown
-   ## Your Task
+   ## Task: {title}
+   **Tier**: {tier}
+   **Files**: {absolute paths}
 
-   **Overall Goal**: [original work request]
+   ## Description
+   {Task description — exhaustively explicit}
 
-   **Assignment**: [task title]
-   [Task description — exhaustively explicit]
+   ## Done When
+   {Specific verifiable criteria}
 
-   **Files**: [file paths, exclusive to this worker]
+   ## Conventions
+   {RUNTIME_CONTEXT if non-empty, else "Read existing files and match patterns before modifying."}
 
-   **Done when**: [specific verifiable criteria]
-
-   **Conventions**: Read existing files and match patterns before modifying.
-
-   [If RUNTIME_CONTEXT non-empty:]
-   **Project Context**: [Inject RUNTIME_CONTEXT]
-
-   Before modifying any file, read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and follow their conventions.
-
-   Follow instructions literally. Do not abbreviate output, do not skip steps. Stay strictly in scope. If anything is ambiguous, choose the simplest interpretation.
-
-   After changes: run build, tests, lint. Summarize: files changed, verification results, issues.
-
-   **Test Feedback**: ALL PASS→continue. <20% fail→log+continue. 20-50%→STOP+review. >50%→STOP+report.
-   ```
-
-   **Mid and Senior tier** (Sonnet/Opus — structured format):
-
-   ```markdown
-   ## Task
-
-   **Overall Goal**: [original work request]
-
-   **Your Assignment**: [task title]
-   [Full task description]
-
-   ## Expected Outcome
-
-   **Files to Modify**:
-   - [file paths, exclusive to this worker]
-
-   **Done when**:
-   [Specific verifiable criteria]
-
-   ## Must Do
-
-   - Read `./CLAUDE.md` (and `./CLAUDE.local.md`, `.claude/rules/` if they exist) and existing files before modifying — follow conventions and match patterns
-   - Implement ONLY your assigned task, then run verification (build, tests, lint)
-   - If tests fail, fix the root cause — do not skip or modify tests to pass
-
-   ## Must NOT Do
-
-   Stay in scope — no out-of-scope files, no bonus refactors, no annotations on unchanged code.
-
-   ## Test Feedback
-
-   **Test Feedback**: ALL PASS→continue. <20% fail→log+continue. 20-50%→STOP+review. >50%→STOP+report.
-
-   Apply after EVERY significant code change (new file, modified function, config change). Do not batch — test incrementally.
-
-   [If RUNTIME_CONTEXT non-empty:]
-   ## Project Context
-
-   [Inject RUNTIME_CONTEXT — build/test/lint commands, gotchas, naming conventions, architectural rules.]
-
-   [If Tier: senior, append:]
-   **Senior Tier**: Explore the codebase deeply before acting. Check edge cases, cross-cutting concerns, and architectural impact. Trace downstream effects on callers and dependents.
-
-   ## Output Format
-
-   ### Changes Made
-   - `file:line` — [what changed]
-
-   ### Verification
-   - Build: [command] → [result]
-   - Tests: [command] → [result]
-   - Lint: [command] → [result]
-
-   ### Issues (if any)
-   - [description]
+   ## Constraints
+   - Only modify listed files
+   - Follow CLAUDE.md conventions
    ```
 
 3. Render progress table after launching:
@@ -204,7 +158,7 @@ Work request: $ARGUMENTS
 
 ## Phase 4: Verification Wave
 
-**Goal**: Complexity-driven verification — depth scales with WORK_COMPLEXITY
+**Goal**: Complexity-driven layered verification — depth scales with WORK_COMPLEXITY
 
 CRITICAL: DO NOT SKIP — mandatory final gate. Complete before rendering any summary or suggesting commit.
 
@@ -214,37 +168,57 @@ Route based on WORK_COMPLEXITY (Phase 1):
 
 **Simple** (1-2 tasks): Run build + test + lint only. All pass → Phase 5. Any fail → fix and re-run.
 
-**Standard** (3-5 tasks): Launch build+test AND 2 verification agents in a single message block (foreground):
+**Standard** (3-5 tasks): Layered sequential verification — each layer gates the next.
 
-```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: convention compliance, code quality, no scope creep.")
-Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check modified files plus direct importers if LSP available.")
-```
+- **Layer 1**: Run build + test + lint. All pass → Layer 2. Any fail → increment VERIFY_RETRY_COUNT, ask user.
+- **Layer 2**: Launch plan-verifier (foreground):
 
-**Complex** (6+ tasks): Launch build+test AND 3 verification agents in a single message block (foreground):
+  ```
+  Agent(subagent_type="ac:plan-verifier", prompt="Verify all tasks completed for work request: [request]. Task list: [titles + done-when criteria]. Check every done-when criterion against actual file state. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns'].")
+  ```
 
-```
-Agent(subagent_type="ac:code-reviewer", prompt="Review implementation for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: convention compliance, code quality, no scope creep.")
-Agent(subagent_type="ac:verifier", prompt="Verify all tasks completed for work request: [request]. Task list: [titles + done-when criteria]. Check every done-when criterion against actual file state. Convention compliance: [RUNTIME_CONTEXT if non-empty].")
-Agent(subagent_type="ac:linter", prompt="Final verification of all affected files: [list]. Check modified files plus direct importers if LSP available.")
-```
+  APPROVED → Layer 3. REJECT → increment VERIFY_RETRY_COUNT, ask user.
 
-### Combined Verdict
+- **Layer 3**: Launch plan-code-review (foreground):
 
-When all agents have reported, evaluate:
+  ```
+  Agent(subagent_type="ac:plan-code-review", prompt="Review implementation for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: convention compliance, code quality, no scope creep.")
+  ```
 
-| Check | Pass | Fail |
-|-------|------|------|
-| Build + test suite | exits 0 | non-zero exit |
-| ac:code-reviewer (Standard+) | APPROVED | BLOCKED |
-| ac:verifier (Complex only) | APPROVE | REJECT |
-| ac:linter (Standard+) | CLEAN or LSP UNAVAILABLE | BLOCKED |
+  APPROVED → Phase 5. BLOCKED → increment VERIFY_RETRY_COUNT, ask user.
 
-**ALL pass** → Phase 5.
+**Complex** (6+ tasks): Layered sequential verification — each layer gates the next.
 
-**ANY fail** → Increment VERIFY_RETRY_COUNT (initialized to 0).
+- **Layer 1**: Run build + test + lint. All pass → Layer 2. Any fail → increment VERIFY_RETRY_COUNT, ask user.
+- **Layer 2**: Launch plan-verifier (foreground):
 
-If VERIFY_RETRY_COUNT >= 3 → **3-strike rule**:
+  ```
+  Agent(subagent_type="ac:plan-verifier", prompt="Verify all tasks completed for work request: [request]. Task list: [titles + done-when criteria]. Check every done-when criterion against actual file state. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns'].")
+  ```
+
+  APPROVED → Layer 3. REJECT → increment VERIFY_RETRY_COUNT, ask user.
+
+- **Layer 3**: Launch plan-code-review (foreground):
+
+  ```
+  Agent(subagent_type="ac:plan-code-review", prompt="Review implementation for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: convention compliance, code quality, no scope creep.")
+  ```
+
+  APPROVED → Layer 4. BLOCKED → increment VERIFY_RETRY_COUNT, ask user.
+
+- **Layer 4**: Launch plan-deep-code-review (foreground):
+
+  ```
+  Agent(subagent_type="ac:plan-deep-code-review", prompt="Deep review for work request: [request]. Modified files: [list]. Conventions: [RUNTIME_CONTEXT if non-empty, else 'Match existing patterns']. Check: architectural impact, cross-cutting concerns, edge cases, downstream effects.")
+  ```
+
+  APPROVED → Phase 5. BLOCKED → increment VERIFY_RETRY_COUNT, ask user.
+
+### 3-Strike Rule
+
+VERIFY_RETRY_COUNT is initialized to 0. Increment on any layer failure.
+
+If VERIFY_RETRY_COUNT >= 3:
 
 ```
 AskUserQuestion(
@@ -266,13 +240,13 @@ AskUserQuestion(
   header: "Verification Failed"
   options:
     - label: "Fix and Re-verify"
-      description: "Address failures, re-run verification at current complexity level."
+      description: "Address failures, re-run verification from the failed layer."
     - label: "Accept and Commit"
       description: "Acknowledge failures, invoke /ac:commit for current state."
 )
 ```
 
-"Fix and Re-verify" → fix issues, re-run verification from the top of Phase 4.
+"Fix and Re-verify" → fix issues, re-run from the failed layer.
 
 ---
 
@@ -302,9 +276,9 @@ AskUserQuestion(
    ### Verification Results
    - Build: ✅ passed
    - Tests: ✅ passed
-   - Code Review: ✅ APPROVED (Standard+)
-   - Linter: ✅ CLEAN (Standard+)
-   - Verifier: ✅ APPROVE (Complex only)
+   - plan-verifier: ✅ APPROVED (Standard+)
+   - plan-code-review: ✅ APPROVED (Standard+)
+   - plan-deep-code-review: ✅ APPROVED (Complex only)
 
    ### Failed Tasks (if any)
    - Task 3: [reason] — suggest /ac:plan for structured approach

@@ -1,5 +1,6 @@
 ---
 description: "Generate global CLAUDE.md — interviews developer, detects skills, produces orchestration config."
+effort: high
 argument-hint: update, enhance, or overwrite (optional)
 allowed-tools: AskUserQuestion, Read, Write, Bash
 ---
@@ -42,7 +43,7 @@ Detect existing configuration and environment.
    ```
 
    - For each found: read frontmatter (name, description) and first paragraph. `my-coding` → note North Star section; `my-language` → note purpose.
-3. Detect active marketplace plugin skills from session's available skills list. Plugin skills use namespaced format: `<plugin>:<skill>`. Always exclude `ac-skill-creator` and `ac:ac-skill-creator`.
+3. Detect active marketplace plugin skills from session's available skills list. Plugin skills use namespaced format: `<plugin>:<skill>`. Always exclude `skill-creator` and `ac:skill-creator`.
 4. Detect global MCP servers:
 
    ```bash
@@ -121,7 +122,7 @@ Question 6 (only if additional skills, plugin skills, or MCP servers detected be
 - multiSelect: true
 - options: Build dynamically from detected items:
   - User skills beyond my-coding/my-language from `~/.claude/skills/` detection
-  - Active marketplace plugin skills from session (namespaced `<plugin>:<skill>` format) — never list ac-skill-creator
+  - Active marketplace plugin skills from session (namespaced `<plugin>:<skill>` format) — never list skill-creator
   - MCP servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers
 - Each option: label is the name, description is one-line capability
 
@@ -141,7 +142,7 @@ Question 7:
 
 **Actions**:
 
-1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/global-claude-md-template.md`
+1. Read the template at `${CLAUDE_PLUGIN_ROOT}/references/global-claude-md-template.md`
 
 2. **Update mode**: Reconstruct the file by combining:
    - **User-managed sections** (verbatim from existing file): Identity block (everything before `## Stack`), Tech Stack section, Rules section
@@ -153,7 +154,7 @@ Question 7:
    - **Tech Stack**: From Q2 or detected from `my-coding` skill
    - **Workflow — Sisyphus Brain**: Copy the entire Workflow section from the template verbatim. This includes: Intent Gate (6-type intent classification table + verbalization format), Delegation Check (3-step DELEGATE bias), Investigation Protocol (surgical vs hairy), Codebase State Awareness, Research delegation, Execution, and Verification. Do not modify, abbreviate, or rewrite it.
    - **Workflow — Compression guard**: Two subsections must survive context compression verbatim: (1) Intent Gate table with 6 intent types — primary routing mechanism, and (2) Research delegation with "proactively" keyword — primary agent-triggering enforcement. NEVER soften, summarize, or abbreviate these.
-   - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>`). Never include `ac-skill-creator` or `ac:ac-skill-creator`. Omit section if no skills detected.
+   - **Skills section**: Merge all approved skills into one table — user skills (my-coding, my-language from `~/.claude/skills/`) and active marketplace plugin skills (namespaced `<plugin>:<skill>`). Never include `skill-creator` or `ac:skill-creator`. Omit section if no skills detected.
    - **MCP section**: If user approved MCP references in Q6, include all active MCP servers from both `~/.claude/.mcp.json` and `~/.claude.json` mcpServers. For each: `| server-name | one-line capability |`. Only enabled servers. Omit if none detected or user declined.
    - **LSP (Code Intelligence)** — if LSP plugins are installed or planned. Include this block (5 lines max):
 

@@ -1,5 +1,6 @@
 ---
 description: "Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections."
+effort: high
 argument-hint: update or enhance (optional)
 ---
 
@@ -149,7 +150,7 @@ Transform raw findings into optimized CLAUDE.md content.
 
 ## Phase 4: Generation
 
-1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/ac-skill-creator/references/project-claude-md-template.md`
+1. Read the template at `${CLAUDE_PLUGIN_ROOT}/references/project-claude-md-template.md`
 2. Generate following the template structure. Omit sections with no content:
 
 ```markdown

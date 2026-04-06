@@ -2,6 +2,16 @@
 
 Deep-dive reference for Maestro QA report structure, evidence schema, and persistence format.
 
+## Contents
+
+- [Verdict Definitions](#verdict-definitions)
+- [Severity Scale](#severity-scale)
+- [Evidence Schema](#evidence-schema)
+- [Report Markdown Template](#report-markdown-template)
+- [JSON Schema](#json-schema-testnamejson)
+- [Evidence Persistence](#evidence-persistence-acqa)
+- [Defect Taxonomy](#defect-taxonomy)
+
 ---
 
 ## Verdict Definitions

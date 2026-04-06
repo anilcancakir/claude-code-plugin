@@ -6,7 +6,7 @@ user-invocable: false
 
 # Flutter QA — Testing Knowledge Base
 
-Flutter app QA testing via flutter-skill MCP server. This skill provides workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:flutter-qa` command. Report format lives in `references/report-format.md` — this file distills orchestration knowledge and MCP-specific patterns.
+Flutter app QA testing via flutter-skill MCP server. This skill provides workflow patterns, token efficiency strategies, and self-healing patterns used by the `/ac:flutter-qa` command. Report format lives in `references/report-format.md`. Shared cross-backend patterns (knowledge system, test modes, parallel execution, evidence persistence) live in the plugin-level `../../references/qa-patterns.md` — read it for conventions shared with browser-qa and maestro-qa. This file distills orchestration knowledge and MCP-specific patterns.
 
 ---
 

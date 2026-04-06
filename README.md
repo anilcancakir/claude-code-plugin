@@ -47,8 +47,8 @@ After updating, sync your global config with new plugin features:
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── commands/            # 12 /ac:* commands (incl. browser-qa, work, progress)
-│   │   ├── agents/              # 14 read-only agents (incl. browser-qa)
-│   │   ├── skills/              # ac-skill-creator + browser-qa workflow
+│   │   ├── agents/              # 16 agents (incl. plan-worker, plan-deep-code-review, browser-qa)
+│   │   ├── skills/              # skill-creator + browser-qa workflow
 │   │   └── README.md
 │   ├── github-cli/              # GitHub CLI skill plugin
 │   │   ├── .claude-plugin/
