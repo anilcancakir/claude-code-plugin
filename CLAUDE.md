@@ -253,9 +253,11 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 
 ## Key Files
 
-- `plugins/ac/skills/skill-creator/references/skill-patterns.md` — Pattern library for writing Claude Code skills
 - `plugins/ac/skills/prompt-writer/SKILL.md` — Shared foundation for all creator skills — CC prompt writing principles
 - `plugins/ac/skills/prompt-writer/references/` — Frontmatter schemas, dedup guide, writing patterns (shared by all creators)
+- `plugins/ac/skills/claude-md-writer/SKILL.md` — CLAUDE.md authoring patterns, quality scoring, compression tactics
+- `plugins/ac/skills/claude-md-writer/references/` — Section patterns (global + project), CLAUDE.md-specific dedup guide
+- `plugins/ac/skills/skill-creator/references/skill-patterns.md` — Pattern library for writing Claude Code skills
 - `plugins/ac/agents/plan-worker.md` — Code implementation worker agent (kodizm 5-section format)
 - `plugins/ac/agents/plan-deep-code-review.md` — Deep cross-layer code review agent for complex plans
 - `plugins/ac/references/coding-style-template.md` — Template for `my-coding` skill generation
@@ -284,7 +286,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 
 - No test infrastructure — pure markdown plugin, verify manually via `claude plugin add ./`
 - Commands use `${CLAUDE_PLUGIN_ROOT}` for template paths — set by Claude Code at runtime to the plugin's actual directory
-- Commands delegate to `skill-creator` for file generation — they don't write files directly
+- Commands delegate to creator skills for file generation — they don't write files directly. CLAUDE.md commands (`init-claude-md`, `setup-global-claude-md`) reference `claude-md-writer` for authoring knowledge. `init-rules` references `rule-creator`. Component creators (`skill-creator`, `agent-creator`, `command-creator`) reference `prompt-writer` as shared foundation
 - Plugin-level `plugin.json` is minimal (3 fields) — version, category, tags live only in root `marketplace.json`
 - Plugin subagents receive CLAUDE.md automatically (via `userContext.claudeMd`). Only CC's built-in Explore/Plan agents have `omitClaudeMd: true` for token savings. ac's context pipeline adds plan-specific conventions (PLAN_CONVENTIONS) beyond what CLAUDE.md provides.
 - Global CLAUDE.md template directives (Intent Gate, Delegation Check, barriers, AskUserQuestion enforcement) load every message — don't repeat them in command prompts. Since subagents also receive CLAUDE.md, avoid re-injecting its content into agent prompts.

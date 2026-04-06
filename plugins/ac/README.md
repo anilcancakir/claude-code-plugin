@@ -137,7 +137,11 @@ claude mcp add skillsmp-mcp-server -- skillsmp-mcp-server
 
 ## Pure Markdown
 
-Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies. 15 agents, 12 commands, all text files you can read and modify.
+Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies. 15 agents, 12 commands, 9 skills, all text files you can read and modify.
+
+### Creator Skills Architecture
+
+Component creation uses a layered skill system — `prompt-writer` provides CC-optimal writing foundations, specialized creators (`skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `claude-md-writer`) add domain-specific patterns. Commands reference skills for authoring knowledge instead of embedding it inline.
 
 ## License
 
