@@ -6,11 +6,9 @@ argument-hint: update or enhance (optional)
 
 # Init Project CLAUDE.md
 
-Generate a project-level `./CLAUDE.md` for the active codebase. Injected into every Claude Code conversation as user-rules context.
+Generate a project-level `./CLAUDE.md` for the active codebase. Produces ONLY `./CLAUDE.md` and optionally `.claude/settings.json` hooks. Path-scoped conventions → suggest `/ac:init-rules`.
 
-> CLAUDE.md = project context, not rules management. Rules belong in `.claude/rules/*.md`. CLAUDE.md gives Claude the map — what the project is, how it builds, where things live. A developer's first-day briefing, not a policy manual.
-
-Do NOT create `.claude/rules/` files. This command produces ONLY `./CLAUDE.md` and optionally `.claude/settings.json` hooks. If path-scoped conventions are discovered, suggest: "Run `/ac:init-rules` to generate path-scoped rules for these."
+**Authoring knowledge**: Section patterns, quality scoring, dedup boundaries, and anti-slop rules live in the `claude-md-writer` skill. Read it before writing any section content. The template at `${CLAUDE_PLUGIN_ROOT}/references/project-claude-md-template.md` provides structural guidance.
 
 ## Section Ownership
 
@@ -19,23 +17,7 @@ Do NOT create `.claude/rules/` files. This command produces ONLY `./CLAUDE.md` a
 | **Auto-detected** | Commands, Architecture, Key Files, Testing, Skills & Extensions | Re-discovered and updated on every run |
 | **User-managed** | Mission/description, Code Style (custom conventions), Gotchas (manually added) | Preserved across updates, merged with new findings |
 
-On **update** mode: re-run discovery agents, update auto-detected sections, preserve user-managed sections, skip interview. On **enhance** mode: full discovery + interview, pre-fill from existing content.
-
-## Token Budget
-
-Target ≤2500 tokens (~100-120 lines). CLAUDE.md is injected into every conversation turn — every token costs every turn. Brevity is critical.
-
-## Anti-Slop Filter
-
-**NEVER include:**
-
-- Obvious instructions ("write tests", "use descriptive names", "handle errors")
-- Generic practices ("follow SOLID", "keep functions small", "use dependency injection")
-- File listings easily discoverable via Glob/LS
-- Setup/installation instructions — assume project already configured
-- Verbose explanations — one line per concept
-- Made-up sections ("Common Tasks", "Tips", "Support") not found in codebase
-- Anything already in global `~/.claude/CLAUDE.md`: workflow protocol, tool names (TodoWrite, Agent, Explore), delegation rules, 3-strike rule, complexity classification, identity, tech stack, coding rules (TDD, linter). The project CLAUDE.md is ADDITIVE — project-specific facts only
+**Modes**: `update` → re-discover, preserve user-managed, skip interview. `enhance` or no arg → full discovery + interview, pre-fill from existing.
 
 ---
 
@@ -130,69 +112,28 @@ Validate discoveries, gather developer input, decide references. **Skip entirely
 
 ## Phase 3: Synthesis
 
-Transform raw findings into optimized CLAUDE.md content.
+Transform raw findings into optimized CLAUDE.md content. Apply `claude-md-writer` skill's quality checklist and dedup boundaries throughout.
 
-1. **Update mode**: Reconstruct the file by combining:
-   - **User-managed sections** (verbatim from existing file): Mission/description, custom Code Style entries, manually added Gotchas
-   - **Auto-detected sections** (regenerated from discovery): Commands, Architecture, Key Files, Testing, Skills & Extensions
-   - Merge new Gotchas from discovery with existing user Gotchas (no duplicates)
+1. **Update mode**: Reconstruct by combining:
+   - **User-managed** (verbatim from existing): Mission, custom Code Style, manually added Gotchas
+   - **Auto-detected** (regenerated from discovery): Commands, Architecture, Key Files, Testing, Skills & Extensions
+   - Merge new Gotchas with existing (no duplicates)
 
 2. **Enhance/New mode**: Build sections from merged findings + interview answers
 
-3. Apply anti-slop filter (see top of this file)
-4. **Deduplication check**: Read `~/.claude/CLAUDE.md` if it exists. Remove any content that overlaps with global CLAUDE.md — the project file is ADDITIVE, not a replacement
-5. Incorporate context files selectively: README → non-obvious architecture only; GEMINI.md/AGENTS.md → conventions, anti-patterns, gotchas. Source code always overrides doc claims.
-6. Add user-approved references (skills, MCP servers)
-7. **Scope check**: Path-specific conventions (apply only to certain directories/file types) → do NOT include in CLAUDE.md. Collect and suggest in Phase 5: "Found [N] path-specific conventions. Run `/ac:init-rules` to generate scoped rules."
-8. Token budget check: ≤2500 tokens (~100-120 lines). If over limit, trim in order: Commands table examples → Gotchas entries → Architecture details. Never trim: Mission, Key Commands, Tech Stack. If still over budget after trimming → split into CLAUDE.md (critical) + CLAUDE.local.md (supplementary).
+3. **Deduplication**: Read `~/.claude/CLAUDE.md`. Remove any overlap — project file is ADDITIVE. Apply `claude-md-writer` skill's dedup decision tree (CC system → global → project → rules → my-coding boundaries)
+4. Incorporate context files selectively: README → non-obvious architecture only; source code overrides doc claims
+5. **Scope check**: Path-specific conventions → do NOT include. Collect and suggest in Phase 5: "Run `/ac:init-rules` to generate scoped rules."
+6. **Token budget**: ≤2500 tokens (~100-120 lines). Trim order: Commands examples → Gotchas → Architecture. Never trim: Mission, Key Commands. Over budget after trimming → split CLAUDE.md + CLAUDE.local.md
 
 ---
 
 ## Phase 4: Generation
 
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/references/project-claude-md-template.md`
-2. Generate following the template structure. Omit sections with no content:
-
-```markdown
-# CLAUDE.md
-
-This file provides guidance to Claude Code when working with code in this repository.
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `<command>` | <description> |
-
-## Architecture
-
-<high-level structure — annotated with non-obvious purpose only>
-
-## Key Files
-
-- `<path>` - <purpose>
-
-## Code Style
-
-- <project-specific imperative convention>
-
-## Testing
-
-- `<test command>` - <what it covers>
-- <testing pattern or convention>
-
-## Gotchas
-
-- <non-obvious quirk or common mistake>
-- <anti-pattern found in source>
-
-## Skills & Extensions
-
-- `<skill>` — <when to invoke>
-- MCP: `<server>` — <capability>
-```
-
-3. Validate: every command copy-paste executable, no section duplicates, no slop leaked, token count within budget.
+2. Read `claude-md-writer` skill for section authoring patterns — how to write effective Commands, Architecture, Code Style, Gotchas, etc. Apply quality scoring rubric
+3. Generate following the template structure. Omit sections with no content
+4. Validate: every command copy-paste executable, no section duplicates, no slop leaked, token count within budget. Apply `claude-md-writer` quality checklist
 
 ---
 

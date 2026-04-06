@@ -6,9 +6,9 @@ argument-hint: update, enhance, or overwrite (optional)
 
 # Setup Global CLAUDE.md
 
-Generate or update `~/.claude/CLAUDE.md`. This file is injected into every Claude Code conversation as user-rules. Goal: turn CC into a structured orchestrator that delegates to ac:explore (codebase search), ac:librarian (external docs), and ac:plan (structured planning).
+Generate or update `~/.claude/CLAUDE.md`. Injected into every CC conversation as user-rules — main session AND all plugin subagents.
 
-**Context propagation**: Global CLAUDE.md is loaded into the main CC session AND all plugin subagents (ac:explore, ac:librarian, ac:plan-worker, etc.). Only CC's built-in Explore/Plan agents omit it for token savings. This means every ac agent sees the workflow directives, skills table, and rules defined here.
+**Authoring knowledge**: Section patterns, quality scoring, compression tactics, and dedup boundaries live in the `claude-md-writer` skill. Read it before writing any section content. The template at `${CLAUDE_PLUGIN_ROOT}/references/global-claude-md-template.md` provides structural guidance and compression-critical anchors.
 
 ## Section Ownership
 
@@ -98,22 +98,14 @@ Present discovery findings first: detected skills, MCP servers, environment. The
    - Plugin-managed sections: regenerated from template with current detection data
    - Diff against existing — if no changes → announce "Already in sync." and stop
 
-3. **Enhance/New mode**: Build all sections from interview + detection:
-   - **Identity**: From Q1 communication style + expertise assumption
-   - **Tech Stack**: From Q2 or extracted from `my-coding` skill
-   - **Workflow**: Copy verbatim from template's Workflow section. Do NOT modify, abbreviate, or rewrite. The Intent Gate table and Research delegation patterns are compression-critical anchors
-   - **Skills table**: Merge user skills (`~/.claude/skills/`) + marketplace plugin skills (namespaced). Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer, claude-md-writer)
-   - **MCP table**: Enabled servers from detection. Omit section if none
-   - **LSP section**: Include if LSP plugins detected. Omit if none
-   - **Rules**: From Q3 + Q6. If `my-coding` has detailed rules → keep 3-5 rules here, add: "Detailed coding rules → `my-coding` skill."
+3. **Enhance/New mode**: Build all sections from interview + detection following template structure. Apply `claude-md-writer` skill's section authoring patterns for each section. Key rules:
+   - **Workflow**: Copy verbatim from template — compression-critical anchors, do NOT abbreviate
+   - **Skills table**: Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer, claude-md-writer)
+   - **Rules**: 3-5 rules max. If `my-coding` exists → defer: "Detailed coding rules → `my-coding` skill."
 
 4. Count lines — if over 120, trim Rules (defer to my-coding) and remove LSP section
 
-5. Verify before presenting:
-   - No CC system prompt duplication (tool usage, env details, search guidance)
-   - Only ac:explore, ac:librarian, ac:plan, ac:commit referenced — no internal agents/commands
-   - Every workflow directive uses CC tool names (`TodoWrite`, `AskUserQuestion`, `subagent_type`)
-   - No duplicate rules across sections
+5. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, only ac:explore/ac:librarian/ac:plan/ac:commit referenced
 
 ---
 

@@ -6,46 +6,9 @@ argument-hint: update or enhance (optional)
 
 # Init Project Rules
 
-You are generating `.claude/rules/*.md` files for the active codebase. These are path-scoped instructions auto-injected when matching files are read/written/edited.
+Generate `.claude/rules/*.md` files for the active codebase — path-scoped instructions auto-injected when matching files are touched.
 
-## Core Principle
-
-> **Rules hold "how to code HERE" — CLAUDE.md holds "what this project IS".**
->
-> Rules are ADDITIVE to CLAUDE.md, never duplicating it. They provide deep, domain-specific knowledge only relevant when touching files in that domain.
-
-## Context Layer Stack
-
-```
-Session context (every turn):
-├── ~/.claude/CLAUDE.md          ← always (global workflow, identity)
-├── ./CLAUDE.md                  ← always (project commands, architecture)
-└── .claude/rules/<name>.md      ← ON-DEMAND when matching file touched
-```
-
-CLAUDE.md and rules are visible SIMULTANEOUSLY. Any overlap = wasted tokens.
-
-## Two-Tier Rules
-
-| Tier | Scope | Lines | Example |
-|------|-------|-------|---------|
-| **Stack** | All files of a language | 10-20 | `flutter.md` → `lib/**/*.dart` |
-| **Domain** | Specific module | 15-40 | `database.md` → `lib/src/database/**/*.dart` |
-
-Stack and domain globs can overlap — stack provides general conventions, domain adds deep API knowledge. Both inject when a domain file is touched. This is intentional.
-
-## Anti-Slop & Dedup
-
-**NEVER include in rules:**
-
-- Anything in `~/.claude/CLAUDE.md`: workflow, TodoWrite, ac:plan, delegation, 3-strike, TDD process, linter rules
-- Anything in `./CLAUDE.md`: commands, architecture overview, project-wide gotchas
-- Anything in `~/.claude/skills/my-coding`: general coding standards
-- Generic advice: "write clean code", "use descriptive names", "handle errors"
-- Setup/installation steps
-- Content discoverable via Glob/LS
-
-**Rules = project-specific, path-specific, verifiable conventions only.**
+**Authoring knowledge**: Rule format, frontmatter, two-tier system, context layer stack, dedup checks, and anti-slop rules live in the `rule-creator` skill. Read it before writing any rule content. The `claude-md-writer` skill's dedup guide covers the project→rules boundary.
 
 ---
 
@@ -107,16 +70,7 @@ Decide which rules to create and their content.
    - Path glob(s)
    - Content outline
 
-3. **Deduplication Algorithm** — for each proposed rule, check against existing sources (project CLAUDE.md, global CLAUDE.md, my-coding skill):
-
-   1. **Exact match**: identical text in any source → **skip**
-   2. **Semantic overlap**: broader existing rule covers this case → **skip** (e.g., existing "use strict types" already covers "type all function parameters")
-   3. **Conflict**: proposed rule contradicts an existing rule → **flag for user decision** in Phase 3 (present both rules, ask which takes precedence)
-   4. **Complement**: proposed rule adds specificity to a broad rule → **keep** (e.g., existing "use strict types" + proposed "use backed enums for status fields")
-
-   Priority when conflicts arise: Project CLAUDE.md > my-coding skill > proposed rule (most specific scope wins).
-
-   - Compare across proposed rules → no rule-to-rule duplication
+3. **Deduplication**: Apply `rule-creator` skill's dedup check algorithm against existing sources (project CLAUDE.md, global CLAUDE.md, my-coding skill). For each proposed rule: exact match → skip, semantic overlap → skip, conflict → flag for user in Phase 3, complement → keep. Compare across proposed rules → no rule-to-rule duplication
 
 4. Present as table with type, path, score, key content after dedup
 
@@ -158,26 +112,13 @@ Get user approval on proposed rules.
 
 ## Phase 4: Generation
 
-1. For each approved rule, generate following format:
-
-   ```markdown
-   ---
-   path: "<glob>"
-   ---
-
-   # <Domain Name>
-
-   - <imperative convention>
-   - <API pattern with inline code if needed>
-   - <gotcha>
-   ```
-
-2. Content depth by tier: **Stack rules** (10-20 lines): import patterns, naming, general framework conventions. **Domain rules** (15-40 lines): short code examples, must-know method signatures, domain-specific gotchas.
-3. Create `.claude/rules/` directory if it doesn't exist.
+1. For each approved rule, generate following `rule-creator` skill's format: frontmatter with `path:` glob, flat bullet list in imperative mood. Apply anti-slop rules from the skill.
+2. Content depth by tier per `rule-creator`: Stack (10-20 lines), Domain (15-40 lines)
+3. Create `.claude/rules/` directory if it doesn't exist
 4. Write each file:
    - **New rule**: write directly
-   - **Existing rule (update/enhance)**: read → identify user-added lines → merge: keep user-added lines, update auto-detected patterns, append new discoveries → write
-5. Validate: no rule duplicates CLAUDE.md content, no rule-to-rule duplication, line count within limits.
+   - **Existing rule (update/enhance)**: read → identify user-added lines → merge: keep user-added, update auto-detected, append new → write
+5. Validate per `rule-creator` skill: no CLAUDE.md duplication, no rule-to-rule duplication, line count within tier limits
 
 ---
 
