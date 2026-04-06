@@ -4,7 +4,6 @@ description: "Adversarial plan reviewer — bias toward REJECT. Deep reference v
 model: opus
 effort: high
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 15
 color: red
 ---
 

@@ -4,7 +4,6 @@ description: "Plan reviewer — blockers-only, approval bias. Verifies reference
 model: sonnet
 effort: medium
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 10
 color: green
 ---
 

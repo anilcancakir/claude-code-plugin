@@ -4,7 +4,6 @@ description: "Code implementation worker. Executes a single plan step — reads 
 model: sonnet
 effort: medium
 disallowedTools: NotebookEdit
-maxTurns: 25
 color: green
 ---
 

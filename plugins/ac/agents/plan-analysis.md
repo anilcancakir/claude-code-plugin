@@ -4,7 +4,6 @@ description: "Pre-planning gap detector and post-planning quality auditor. Use b
 model: sonnet
 effort: medium
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 15
 color: yellow
 ---
 

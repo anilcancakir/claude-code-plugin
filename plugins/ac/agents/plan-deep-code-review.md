@@ -4,7 +4,6 @@ description: "Deep cross-layer code review for complex plans. Checks hidden coup
 model: opus
 effort: high
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 15
 color: red
 ---
 

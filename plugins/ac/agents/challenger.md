@@ -4,7 +4,6 @@ description: "Devil's advocate for proposals, ideas, and architecture decisions.
 model: opus
 effort: high
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 10
 color: red
 ---
 

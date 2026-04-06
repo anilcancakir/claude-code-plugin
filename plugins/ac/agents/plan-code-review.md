@@ -4,7 +4,6 @@ description: "2-stage code reviewer — spec compliance against plan criteria, t
 model: sonnet
 effort: medium
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 15
 color: yellow
 ---
 

@@ -4,7 +4,6 @@ description: "Post-execution plan compliance auditor. Verifies done-when criteri
 model: sonnet
 effort: medium
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 15
 color: green
 ---
 

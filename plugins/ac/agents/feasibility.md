@@ -4,7 +4,6 @@ description: "Feasibility evaluator — assesses codebase fit, effort, and depen
 model: sonnet
 effort: medium
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 10
 color: cyan
 ---
 
