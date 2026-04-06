@@ -33,7 +33,7 @@ Generate or update `~/.claude/CLAUDE.md`. This file is injected into every Claud
    ```
    For each: read frontmatter (name, description). Note `my-coding` and `my-language` presence.
 
-3. Detect marketplace plugin skills from session's available skills list. Namespaced `<plugin>:<skill>` format. Exclude creator skills: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `prompt-writer` (and their `ac:` prefixed variants).
+3. Detect marketplace plugin skills from session's available skills list. Namespaced `<plugin>:<skill>` format. Exclude creator skills: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `prompt-writer`, `claude-md-writer` (and their `ac:` prefixed variants).
 
 4. Detect global MCP servers — parse `mcpServers` from both files:
    ```bash
@@ -102,7 +102,7 @@ Present discovery findings first: detected skills, MCP servers, environment. The
    - **Identity**: From Q1 communication style + expertise assumption
    - **Tech Stack**: From Q2 or extracted from `my-coding` skill
    - **Workflow**: Copy verbatim from template's Workflow section. Do NOT modify, abbreviate, or rewrite. The Intent Gate table and Research delegation patterns are compression-critical anchors
-   - **Skills table**: Merge user skills (`~/.claude/skills/`) + marketplace plugin skills (namespaced). Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer)
+   - **Skills table**: Merge user skills (`~/.claude/skills/`) + marketplace plugin skills (namespaced). Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer, claude-md-writer)
    - **MCP table**: Enabled servers from detection. Omit section if none
    - **LSP section**: Include if LSP plugins detected. Omit if none
    - **Rules**: From Q3 + Q6. If `my-coding` has detailed rules → keep 3-5 rules here, add: "Detailed coding rules → `my-coding` skill."

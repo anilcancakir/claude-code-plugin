@@ -24,6 +24,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   │   │   ├── agent-creator/    # Agent creation + references/
 │   │   │   ├── command-creator/  # Command creation + references/
 │   │   │   ├── rule-creator/     # Rule creation (no references/)
+│   │   │   ├── claude-md-writer/ # CLAUDE.md authoring + references/
 │   │   │   ├── browser-qa/       # Skill + references/ for browser QA workflows
 │   │   │   ├── maestro-qa/       # Skill + references/ for mobile QA workflows
 │   │   │   └── flutter-qa/       # Skill + references/ for Flutter QA workflows
@@ -142,6 +143,7 @@ Model, effort, color, maxTurns, and tools are defined in each agent's frontmatte
 - `agent-creator` (Opus) — Create Claude Code agents following kodizm 5-section format. Has `references/` with agent templates. Uses `prompt-writer` as shared foundation
 - `command-creator` (Opus) — Create Claude Code commands with phase-based structure and agent delegation. Has `references/` with command templates. Uses `prompt-writer` as shared foundation
 - `rule-creator` (Sonnet) — Create path-scoped .claude/rules/ for coding conventions. Uses `prompt-writer` as shared foundation
+- `claude-md-writer` (Sonnet) — Write CC-optimal CLAUDE.md and CLAUDE.local.md files. Has `references/` with section patterns and dedup guide. Uses `prompt-writer` as shared foundation
 - `ac:browser-qa` skill (Sonnet, not user-invocable) — Browser QA workflow patterns and `playwright-cli` command routing. Has references/ for report format and evidence schema. Requires [Playwright CLI](https://github.com/microsoft/playwright-cli) (`npm install -g @playwright/cli@latest`)
 - `ac:maestro-qa` skill (Sonnet, not user-invocable) — Mobile QA workflow patterns and Maestro MCP tool routing. Has references/ for report format and evidence schema. Requires [Maestro CLI](https://maestro.mobile.dev/) (`brew install maestro`) + user-installed MCP server
 - `ac:flutter-qa` skill (Sonnet, not user-invocable) — Flutter QA workflow patterns and flutter-skill MCP tool routing. Has references/ for report format and evidence schema. Requires [flutter-skill](https://github.com/flutter-skill/flutter-skill) (`npm install -g flutter-skill`) + user-installed MCP server + `FlutterSkillBinding` in app
