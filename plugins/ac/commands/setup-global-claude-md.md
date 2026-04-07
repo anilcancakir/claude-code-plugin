@@ -57,8 +57,13 @@ If any detection fails → skip entry, continue. Note skipped items.
 
 Present discovery findings first: detected skills, MCP servers, environment. Then gather preferences via AskUserQuestion — skip questions already answered by detected skills.
 
-**Q0 — kodizm MCP token:**
-Check if `KODIZM_MCP_TOKEN` env var is set (`echo $KODIZM_MCP_TOKEN`). If empty, present informational message: "Export `KODIZM_MCP_TOKEN` in your shell profile (`~/.zshrc`). Get your token from kodizm.com. ac's librarian agent requires it for documentation lookups." Not blocking — continue regardless.
+**Q0 — kodizm MCP verification:**
+Test kodizm MCP connectivity: call `mcp__kodizm__resolve-library` with query "react".
+- Success (returns library ID) → kodizm MCP operational. Store MCP_STATUS = "operational".
+- Failure (error, timeout, tool not available) → Store MCP_STATUS = "unavailable". Present warning:
+  "kodizm MCP is not available. Configure your token via `/plugin` settings (ac plugin → kodizm_token).
+  ac:librarian requires kodizm MCP for documentation lookups."
+Not blocking — continue regardless.
 
 **Q1 — Communication style:**
 - question: "How should I communicate with you?"
@@ -142,6 +147,18 @@ Check if `KODIZM_MCP_TOKEN` env var is set (`echo $KODIZM_MCP_TOKEN`). If empty,
 5. **Auto-configure `~/.claude/settings.json`** — ac replaces CC's native tools and agents. Read existing settings, merge (preserve all existing keys), ensure these entries:
 
    **`permissions.deny`** — add to deny array (create if missing, append if exists, skip already-present):
+
+   Always deny (regardless of MCP_STATUS):
+   - `EnterPlanMode` — ac manages planning via `/ac:plan`. Native plan mode hijacks ac's 7-phase workflow.
+   - `Agent(Explore)` — ac:explore replaces CC's built-in Explore agent.
+   - `Agent(Plan)` — defense-in-depth alongside EnterPlanMode deny.
+
+   Only deny if MCP_STATUS = "operational":
+   - `WebSearch`, `WebFetch` — unreliable (hangs, timeouts). ac:librarian uses kodizm MCP instead.
+
+   If MCP_STATUS = "unavailable": skip `WebSearch`/`WebFetch` deny entries and warn: "WebSearch/WebFetch kept enabled — kodizm MCP unavailable as replacement."
+
+   Example deny array when MCP_STATUS = "operational":
    ```json
    {
      "permissions": {
@@ -156,33 +173,27 @@ Check if `KODIZM_MCP_TOKEN` env var is set (`echo $KODIZM_MCP_TOKEN`). If empty,
    }
    ```
 
-   Why each entry is blocked:
-   - `EnterPlanMode` — ac manages planning via `/ac:plan`. Native plan mode hijacks ac's 7-phase workflow.
-   - `WebSearch`, `WebFetch` — unreliable (hangs, timeouts). ac:librarian uses kodizm MCP instead.
-   - `Agent(Explore)` — ac:explore replaces CC's built-in Explore agent.
-   - `Agent(Plan)` — defense-in-depth alongside EnterPlanMode deny.
-
    **`hooks.PreToolUse`** — add entries (create array if missing, append, skip if matcher present):
+
+   Always add:
    ```json
    {
-     "hooks": {
-       "PreToolUse": [
-         {
-           "matcher": "EnterPlanMode",
-           "hooks": [{
-             "type": "command",
-             "command": "echo 'EnterPlanMode blocked — ac manages planning via /ac:plan.' >&2; exit 2"
-           }]
-         },
-         {
-           "matcher": "WebSearch|WebFetch",
-           "hooks": [{
-             "type": "command",
-             "command": "echo 'Web tools blocked — ac:librarian uses kodizm MCP.' >&2; exit 2"
-           }]
-         }
-       ]
-     }
+     "matcher": "EnterPlanMode",
+     "hooks": [{
+       "type": "command",
+       "command": "echo 'EnterPlanMode blocked — ac manages planning via /ac:plan.' >&2; exit 2"
+     }]
+   }
+   ```
+
+   Only add if MCP_STATUS = "operational":
+   ```json
+   {
+     "matcher": "WebSearch|WebFetch",
+     "hooks": [{
+       "type": "command",
+       "command": "echo 'Web tools blocked — ac:librarian uses kodizm MCP.' >&2; exit 2"
+     }]
    }
    ```
 

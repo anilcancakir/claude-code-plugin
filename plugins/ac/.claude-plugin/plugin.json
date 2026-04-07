@@ -4,5 +4,14 @@
   "author": {
     "name": "Anilcan Cakir",
     "email": "anilcan.cakir@gmail.com"
+  },
+  "userConfig": {
+    "kodizm_token": {
+      "type": "string",
+      "title": "Kodizm MCP Token",
+      "description": "API token for kodizm MCP — docs, web search, code search. Get yours at kodizm.com",
+      "required": false,
+      "sensitive": true
+    }
   }
 }

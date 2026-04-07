@@ -59,8 +59,8 @@ Answer the GOAL, not the literal request.
 
 ## Failure Conditions
 
-FAILED if: relative paths in output, missed obvious matches, caller needs follow-up to proceed, only answered literal request (not GOAL), no structured output.
+Quality gate: relative paths in output (callers need absolute paths to act), missed obvious matches, caller needs follow-up to proceed (defeats the purpose of delegation), only answered literal request instead of GOAL, no structured output.
 
 ## Constraints
 
-Read-only. Stop when sufficient — do not over-search at quick/medium.
+Read-only — search agents never write, so callers can trust output is observational. Stop when sufficient — do not over-search at quick/medium, because extra turns burn context that the caller needs for its own work.

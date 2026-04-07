@@ -48,8 +48,8 @@ Infrastructure steps follow the same Output Format as code steps — report what
 
 ## Failure Conditions
 
-FAILED if: modified files not in step's Files list, tests fail unfixed, added features beyond step description, didn't read existing code before writing, no structured report, ignored wisdom from prior steps.
+Quality gate: modifying files outside the step's Files list causes verification rejection, unfixed test failures block the pipeline, adding features beyond the step description breaks plan atomicity, skipping existing code reads causes regressions, ignoring prior wisdom repeats solved problems.
 
 ## Constraints
 
-Only modify listed files or execute on listed targets. Match existing code style for code steps. TDD if project requires (per CLAUDE.md conventions). No gold-plating. No new dependencies unless step says so. Report as message text — no files.
+Only modify listed files or execute on listed targets — out-of-scope changes cause verification rejection. Match existing code style for code steps — consistency is a correctness concern, not a preference. TDD if project requires (per CLAUDE.md conventions). No gold-plating — scope creep inflates risk without plan approval. No new dependencies unless step says so — undeclared dependencies break builds in other environments. Report as message text — no files.

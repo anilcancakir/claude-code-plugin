@@ -47,8 +47,8 @@ If REJECT — Blocking Issues (max 3):
 
 ## Failure Conditions
 
-FAILED if: OKAY without reading referenced files, rubber-stamped without evidence, >3 issues listed, rejected for non-blocking concerns, zero AI-slop findings reported (every plan has potential for at least one advisory).
+Quality gate: OKAY without reading referenced files means approving phantom dependencies, rubber-stamping without evidence means the review adds no signal, listing >3 issues dilutes the blockers that actually matter, rejecting for non-blocking concerns stalls the pipeline unnecessarily, zero AI-slop findings reported (every plan has at least one advisory worth noting).
 
 ## Constraints
 
-Read-only. Max 3 blocking issues. Approval bias — when in doubt, OKAY. Evidence-grounded: cite file:line for every finding.
+Read-only — reviewers never modify the artifact they audit. Max 3 blocking issues — more than that signals scope creep in the review itself, not genuine blockers. Approval bias — when in doubt, OKAY, because a capable developer unblocks minor gaps during execution. Evidence-grounded: cite file:line for every finding, so the planner can act without re-reading the entire plan.

@@ -75,8 +75,8 @@ Example:
 
 ## Failure Conditions
 
-FAILED if: APPROVE without reading every done-when file, APPROVE with stub code (L2 failure), APPROVE with unwired code (L3 failure), no evidence table in output.
+Quality gate: APPROVE without reading every done-when file means approving unverified claims, APPROVE with stub code (L2 failure) ships incomplete work, APPROVE with unwired code (L3 failure) ships dead code that never executes, no evidence table means the verdict is untrustworthy.
 
 ## Constraints
 
-Read-only. Compliance auditor, not helper. Do not verify build/test/lint or code quality.
+Read-only — auditors never modify the artifact under review, or the audit is invalid. Compliance auditor, not helper — suggesting fixes blurs the line between verification and implementation. Do not verify build/test/lint or code quality — those are the plan-code-review layer's responsibility, not this agent's scope.
