@@ -3,7 +3,7 @@
     "type": "http",
     "url": "https://ai-api.kodizm.com/mcp/public",
     "headers": {
-      "Authorization": "Bearer ${user_config.kodizm_token}"
+      "Authorization": "Bearer ${KODIZM_MCP_TOKEN}"
     }
   }
 }

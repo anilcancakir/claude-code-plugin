@@ -126,7 +126,13 @@ Failed steps automatically retry with a higher-tier model before giving up.
 
 kodizm MCP is bundled — provides docs, web search, web fetch, and code search for the librarian agent.
 
-Token is prompted at plugin enable time and stored securely in keychain. Reconfigure via `/plugin` settings.
+Requires `KODIZM_MCP_TOKEN` environment variable:
+
+```bash
+export KODIZM_MCP_TOKEN="your-token-here"  # add to ~/.zshrc
+```
+
+Get your token at [kodizm.com](https://kodizm.com).
 
 ## Pure Markdown
 

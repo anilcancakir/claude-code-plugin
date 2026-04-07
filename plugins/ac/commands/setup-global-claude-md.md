@@ -61,8 +61,8 @@ Present discovery findings first: detected skills, MCP servers, environment. The
 Test kodizm MCP connectivity: call `mcp__kodizm__resolve-library` with query "react".
 - Success (returns library ID) → kodizm MCP operational. Store MCP_STATUS = "operational".
 - Failure (error, timeout, tool not available) → Store MCP_STATUS = "unavailable". Present warning:
-  "kodizm MCP is not available. Configure your token via `/plugin` settings (ac plugin → kodizm_token).
-  ac:librarian requires kodizm MCP for documentation lookups."
+  "kodizm MCP is not available. Export `KODIZM_MCP_TOKEN` in your shell profile (`~/.zshrc`).
+  Get your token from kodizm.com. ac:librarian requires kodizm MCP for documentation lookups."
 Not blocking — continue regardless.
 
 **Q1 — Communication style:**
