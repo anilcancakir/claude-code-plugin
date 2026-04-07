@@ -85,22 +85,33 @@ Get user approval on proposed rules.
    | Rule | Type | Path Glob | Score | Key Points |
    |------|------|-----------|-------|------------|
 
-2. Use AskUserQuestion to get approval:
+2. Call AskUserQuestion — build parameters dynamically:
 
    Question 1 (always):
-   - question: "Proposed [N] rules ([M] stack, [K] domain). Select which to generate:"
-   - header: "Rules"
-   - multiSelect: true
-   - options: Build dynamically — one option per proposed rule, each showing type, path, line count estimate, top 3 conventions. Pre-select all.
+   ```json
+   {
+     "questions": [{
+       "question": "Proposed [N] rules ([M] stack, [K] domain). Select which to generate:",
+       "header": "Rules",
+       "multiSelect": true,
+       "options": "← Build dynamically: one option per proposed rule, label=rule name, description=type + path + top 3 conventions"
+     }]
+   }
+   ```
 
-   Question 2 (if existing rules found and not update mode):
-   - question: "Found existing rules: [list]. How to handle?"
-   - header: "Existing"
-   - options:
-     - Update with new findings — "Merge new discoveries into existing rules"
-     - Skip existing, only add new — "Keep existing rules unchanged"
-     - Replace all — "Regenerate all rules from scratch"
-   - In update mode: skip this question — default to "Update with new findings" while preserving user-added lines
+   Question 2 (if existing rules found and not update mode) — add to same `questions` array:
+   ```json
+   {
+     "question": "Found existing rules: [list]. How to handle?",
+     "header": "Existing",
+     "options": [
+       {"label": "Update with new findings (Recommended)", "description": "Merge new discoveries into existing rules."},
+       {"label": "Skip existing, only add new", "description": "Keep existing rules unchanged."},
+       {"label": "Replace all", "description": "Regenerate all rules from scratch."}
+     ]
+   }
+   ```
+   In update mode: skip Question 2 — default to "Update with new findings" while preserving user-added lines.
 
    Question 3 (optional):
    - question: "Any directories or conventions I missed?"

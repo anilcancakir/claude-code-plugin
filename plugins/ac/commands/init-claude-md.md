@@ -237,14 +237,21 @@ Do not install without user approval.
 1. Present generated CLAUDE.md with: token count / line count, sections included, sources used.
 2. If hooks generated in Phase 4b → also present: hook count and types, target `.claude/settings.json`, each hook's event/matcher/tool.
 3. If enhance mode → show diff against existing CLAUDE.md.
-4. Use AskUserQuestion for review:
-   - question: "Review the CLAUDE.md above. What needs adjustment?"
-   - header: "Review"
-   - options:
-     - Approve all — "Install CLAUDE.md and merge hooks into settings.json"
-     - Approve CLAUDE.md only — "Install CLAUDE.md, skip hooks"
-     - Adjust — "I want to change specific sections"
-     - Restart — "Start the interview over from scratch"
+4. Call AskUserQuestion with these exact parameters:
+   ```json
+   {
+     "questions": [{
+       "question": "Review the CLAUDE.md above. What needs adjustment?",
+       "header": "Review",
+       "options": [
+         {"label": "Approve all (Recommended)", "description": "Install CLAUDE.md and merge hooks into settings.json."},
+         {"label": "Approve CLAUDE.md only", "description": "Install CLAUDE.md, skip hooks."},
+         {"label": "Adjust", "description": "I want to change specific sections."},
+         {"label": "Restart", "description": "Start the interview over from scratch."}
+       ]
+     }]
+   }
+   ```
    - If "Approve all" → write CLAUDE.md + merge hooks into settings.json
    - If "Approve CLAUDE.md only" → write CLAUDE.md, skip hooks
    - If "Adjust" → ask what to change via AskUserQuestion, modify, re-present

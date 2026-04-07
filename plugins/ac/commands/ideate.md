@@ -147,13 +147,19 @@ Formula: `ambiguity = 1 - Σ(score × weight)`
 
 **Handoff** (no --loop):
 
-```
-AskUserQuestion:
-  question: "Task documents ready. How to proceed?"
-  options:
-    - "Plan Phase 1 (Recommended)" — Hand off to ac:plan for technical planning
-    - "Plan All Phases" — Process all via ac:plan --loop pipeline
-    - "Save & Exit" — Return later with /ac:plan [task-file-path]
+Call AskUserQuestion with these exact parameters:
+```json
+{
+  "questions": [{
+    "question": "Task documents ready. How to proceed?",
+    "header": "Next step",
+    "options": [
+      {"label": "Plan Phase 1 (Recommended)", "description": "Hand off to ac:plan for technical planning."},
+      {"label": "Plan All Phases", "description": "Process all via ac:plan --loop pipeline."},
+      {"label": "Save & Exit", "description": "Return later with /ac:plan [task-file-path]."}
+    ]
+  }]
+}
 ```
 
 --loop detected OR "Plan All Phases" → Phase 6. "Plan Phase 1" → invoke ac:plan with first task.

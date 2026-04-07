@@ -280,30 +280,32 @@ APPROVED → Phase 4. BLOCKED → fix, re-verify from Layer 3.
 
 After 3 total verification failures across all layers:
 
-```
-AskUserQuestion(
-  question: "Verification has failed 3 times. Pipeline halted per 3-strike rule."
-  header: "Verification Exhausted"
-  options:
-    - label: "Accept and Commit"
-      description: "Acknowledge failures, invoke /ac:commit for current state."
-    - label: "Stop and Investigate"
-      description: "Halt execution. Investigate the failing area manually."
-)
+Call AskUserQuestion with these exact parameters:
+```json
+{
+  "questions": [{
+    "question": "Verification has failed 3 times. Pipeline halted per 3-strike rule.",
+    "header": "Pipeline halted",
+    "options": [
+      {"label": "Accept and Commit", "description": "Acknowledge failures, invoke /ac:commit for current state."},
+      {"label": "Stop and Investigate", "description": "Halt execution. Investigate the failing area manually."}
+    ]
+  }]
+}
 ```
 
-If VERIFY_RETRY_COUNT < 3:
-
-```
-AskUserQuestion(
-  question: "Verification found issues (attempt N/3). How to proceed?"
-  header: "Verification Failed"
-  options:
-    - label: "Fix and Re-verify"
-      description: "Address failures, re-run verification."
-    - label: "Accept and Commit"
-      description: "Acknowledge failures, commit current state."
-)
+If VERIFY_RETRY_COUNT < 3 — call AskUserQuestion with these exact parameters:
+```json
+{
+  "questions": [{
+    "question": "Verification found issues (attempt N/3). How to proceed?",
+    "header": "Verification failed",
+    "options": [
+      {"label": "Fix and Re-verify (Recommended)", "description": "Address failures, re-run verification."},
+      {"label": "Accept and Commit", "description": "Acknowledge failures, commit current state."}
+    ]
+  }]
+}
 ```
 
 ---

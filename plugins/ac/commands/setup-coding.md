@@ -154,13 +154,20 @@ CRITICAL: Do not install without user approval.
 
 1. Present the generated `SKILL.md` to the developer
 2. Highlight key sections: North Star, Non-Negotiable Rules count, language coverage
-3. Use AskUserQuestion for review:
-   - question: "Review this skill. What needs adjustment?"
-   - header: "Review"
-   - options:
-     - Approve — "Install as shown"
-     - Adjust — "I want to change specific sections"
-     - Restart — "Start the interview over from scratch"
+3. Call AskUserQuestion with these exact parameters:
+   ```json
+   {
+     "questions": [{
+       "question": "Review this skill. What needs adjustment?",
+       "header": "Review",
+       "options": [
+         {"label": "Approve (Recommended)", "description": "Install as shown."},
+         {"label": "Adjust", "description": "I want to change specific sections."},
+         {"label": "Restart", "description": "Start the interview over from scratch."}
+       ]
+     }]
+   }
+   ```
    - If "Approve" → proceed to install
    - If "Adjust" → ask what to change via AskUserQuestion, update via `skill-creator`, re-present
    - If "Restart" → return to Phase 3

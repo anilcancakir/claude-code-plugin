@@ -113,14 +113,22 @@ Present discovery findings first: detected skills, MCP servers, environment. The
 
 1. Present generated CLAUDE.md with: line count, sections included, skills/MCP referenced
 2. Update mode → show diff (`- old` / `+ new`). No changes → already announced in Phase 3
-3. AskUserQuestion:
-   - question: "Review the CLAUDE.md above. What needs adjustment?"
-   - options:
-     - Approve — "Install as shown"
-     - Adjust — "I want to change specific sections"
-     - Restart — "Start the interview over"
-   - Adjust → ask what to change, update, re-present
-   - Restart → return to Phase 2
+3. Call AskUserQuestion with these exact parameters:
+   ```json
+   {
+     "questions": [{
+       "question": "Review the CLAUDE.md above. What needs adjustment?",
+       "header": "Review",
+       "options": [
+         {"label": "Approve (Recommended)", "description": "Install as shown."},
+         {"label": "Adjust", "description": "I want to change specific sections."},
+         {"label": "Restart", "description": "Start the interview over."}
+       ]
+     }]
+   }
+   ```
+   - "Adjust" → ask what to change, update, re-present
+   - "Restart" → return to Phase 2
 
 4. On approve:
    - Backup existing: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak` (if exists)

@@ -193,20 +193,23 @@ Check `<new-diagnostics>` context for files to be staged:
 **Preflight**: ✅ Lint passed, ✅ Tests passed
 ```
 
-2. Use AskUserQuestion for approval:
-   - question: "Review the commit plan above. Ready to commit?"
-   - header: "Commit"
-   - options:
-     - label: "Commit"
-       description: "Execute the commit plan as shown"
-     - label: "Adjust messages"
-       description: "I want to change the commit messages"
-     - label: "Adjust grouping"
-       description: "I want to change how files are grouped"
-     - label: "Cancel"
-       description: "Don't commit"
+2. Call AskUserQuestion with these exact parameters:
+   ```json
+   {
+     "questions": [{
+       "question": "Review the commit plan above. Ready to commit?",
+       "header": "Commit",
+       "options": [
+         {"label": "Commit (Recommended)", "description": "Execute the commit plan as shown."},
+         {"label": "Adjust messages", "description": "I want to change the commit messages."},
+         {"label": "Adjust grouping", "description": "I want to change how files are grouped."},
+         {"label": "Cancel", "description": "Don't commit."}
+       ]
+     }]
+   }
+   ```
 
-3. Commit → Phase 5. Adjust messages → revise and re-present. Adjust grouping → regroup and re-present. Cancel → stop.
+3. On answer: "Commit" → Phase 5. "Adjust messages" → revise and re-present. "Adjust grouping" → regroup and re-present. "Cancel" → stop.
 
 ---
 
@@ -238,14 +241,19 @@ git commit -m "<message>"
 
 **Auto mode (default)**: Push automatically — `git push` (or `git push -u origin <branch>` if no upstream). Skip to step 5.
 
-**Interactive mode**: If upstream exists, use AskUserQuestion:
-   - question: "Commits created. Push to remote?"
-   - header: "Push"
-   - options:
-     - label: "Push"
-       description: "Push commits to origin"
-     - label: "Don't push"
-       description: "Keep commits local for now"
+**Interactive mode**: If upstream exists, call AskUserQuestion:
+   ```json
+   {
+     "questions": [{
+       "question": "Commits created. Push to remote?",
+       "header": "Push",
+       "options": [
+         {"label": "Push (Recommended)", "description": "Push commits to origin."},
+         {"label": "Don't push", "description": "Keep commits local for now."}
+       ]
+     }]
+   }
+   ```
 
 4. If user selects "Push" (interactive only) → `git push` (or `git push -u origin <branch>` if no upstream)
 

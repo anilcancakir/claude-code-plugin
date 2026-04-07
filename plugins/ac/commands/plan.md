@@ -196,37 +196,40 @@ Merge findings from both. Either REJECT → fix cited issues, re-submit (max 2 i
 [Wave grouping]
 ```
 
-3. Next step (complexity-conditional):
+3. Next step — call AskUserQuestion tool (complexity-conditional):
 
-   **Simple**: Auto-execute — invoke ac:execute with plan path.
+   **Simple**: Auto-execute — invoke ac:execute with plan path. Skip AskUserQuestion.
 
-   **Standard**:
-   ```
-   AskUserQuestion(
-     question: "Plan ready. How to proceed?"
-     options:
-       - label: "Execute"
-         description: "Start execution with plan-worker agents."
-       - label: "Deep Review First"
-         description: "Run adversarial plan-deep-review (opus) before executing."
-       - label: "Adjust"
-         description: "Modify the plan before proceeding."
-   )
-   ```
-
-   **Complex** (deep review already done):
-   ```
-   AskUserQuestion(
-     question: "Plan reviewed and approved. How to proceed?"
-     options:
-       - label: "Execute"
-         description: "Start execution with plan-worker agents."
-       - label: "Adjust"
-         description: "Modify the plan before proceeding."
-   )
+   **Standard** — call AskUserQuestion with these exact parameters:
+   ```json
+   {
+     "questions": [{
+       "question": "Plan ready. How to proceed?",
+       "header": "Next step",
+       "options": [
+         {"label": "Execute (Recommended)", "description": "Start implementation with plan-worker agents."},
+         {"label": "Deep Review First", "description": "Run adversarial plan-deep-review (opus) before executing."},
+         {"label": "Adjust", "description": "Modify the plan before proceeding."}
+       ]
+     }]
+   }
    ```
 
-4. Execute selected → invoke ac:execute with plan path. Plan mode active → ExitPlanMode first.
+   **Complex** (deep review already done) — call AskUserQuestion with these exact parameters:
+   ```json
+   {
+     "questions": [{
+       "question": "Plan reviewed and approved. How to proceed?",
+       "header": "Next step",
+       "options": [
+         {"label": "Execute (Recommended)", "description": "Start implementation with plan-worker agents."},
+         {"label": "Adjust", "description": "Modify the plan before proceeding."}
+       ]
+     }]
+   }
+   ```
+
+4. On answer: "Execute" → ExitPlanMode first if plan mode active, then invoke ac:execute with plan path. "Deep Review First" → spawn plan-deep-review agent. "Adjust" → ask what to change, revise plan, re-deliver.
 
 ---
 
