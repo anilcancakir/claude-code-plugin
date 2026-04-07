@@ -62,7 +62,7 @@ If steps 1-2 match → delegate. Only reach step 3 for genuinely trivial work.
 ### Research
 Prefer delegating research to specialized agents — use them proactively before tools directly:
 - **ac:explore** (`subagent_type: "ac:explore"`) — internal codebase (files, patterns, relationships)
-- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API refs (context7 → WebSearch)
+- **ac:librarian** (`subagent_type: "ac:librarian"`) — external docs, API refs, code search (kodizm MCP)
 Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-trivial questions — all agents in a single message block. Use foreground (default) when you need results before proceeding. Use `run_in_background: true` ONLY when you have genuinely independent work to continue with. DO NOT proceed to the next phase until ALL agent results are collected. Once delegated, do NOT manually re-search.
 
 ### Investigation Protocol
@@ -100,11 +100,17 @@ Include only detected + user-approved skills. Never include creator skills (`ski
 ## MCP Servers
 | Server | Capability |
 |--------|------------|
-| `context7` | Live framework docs — version-aware library reference |
+| `kodizm` | Docs, web search, web fetch, code search — bundled with ac plugin |
 | `<server>` | <one-line capability — infer from command/args> |
+
+kodizm tool routing (for direct use and ac:librarian delegation):
+- `resolve-library` → `search-docs`: docs-first for any library/framework question
+- `web-search`: broader web when docs insufficient (issues, blogs, changelogs)
+- `web-fetch`: fetch specific URL content (official docs pages, GitHub READMEs)
+- `code-search`: find real-world usage examples in public repos
 ```
 
-Only enabled servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers. Omit if none.
+kodizm is bundled with ac plugin. Additional user-installed servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers.
 
 ## Section: LSP (if LSP plugins detected)
 
@@ -143,3 +149,4 @@ First two rules are always included — they ensure project-level override and w
 8. **Only reference these ac components**: ac:explore, ac:librarian, ac:plan, ac:commit. All other agents/commands are internal to those workflows
 9. **Section order**: Identity → Tech Stack → Workflow → Skills → MCP → LSP → Rules
 10. Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color)
+11. **kodizm MCP routing must survive compression**: tool names + when-to-use verbatim in MCP section — primary external knowledge trigger

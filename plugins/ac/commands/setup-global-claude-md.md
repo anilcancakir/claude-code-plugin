@@ -21,29 +21,31 @@ Generate or update `~/.claude/CLAUDE.md`. Injected into every CC conversation as
 
 ## Phase 1: Discovery
 
-1. Check `~/.claude/CLAUDE.md` existence → determine mode:
+1. Check `~/.claude/settings.json` → detect existing `permissions.deny` and `hooks.PreToolUse` entries. Store as EXISTING_SETTINGS for Phase 4 merge.
+
+2. Check `~/.claude/CLAUDE.md` existence → determine mode:
    - Exists + `$ARGUMENTS` = "update" → extract user-managed sections verbatim, skip Phase 2
    - Exists + `$ARGUMENTS` = "enhance" or no argument → pre-fill interview from existing content
    - Exists + `$ARGUMENTS` = "overwrite" → fresh generation
    - Not exists → fresh generation
 
-2. Detect global user skills:
+3. Detect global user skills:
    ```bash
    find ~/.claude/skills -name "SKILL.md" -maxdepth 3 2>/dev/null
    ```
    For each: read frontmatter (name, description). Note `my-coding` and `my-language` presence.
 
-3. Detect marketplace plugin skills from session's available skills list. Namespaced `<plugin>:<skill>` format. Exclude creator skills: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `prompt-writer`, `claude-md-writer` (and their `ac:` prefixed variants).
+4. Detect marketplace plugin skills from session's available skills list. Namespaced `<plugin>:<skill>` format. Exclude creator skills: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `prompt-writer`, `claude-md-writer` (and their `ac:` prefixed variants).
 
-4. Detect global MCP servers — parse `mcpServers` from both files:
+5. Detect global MCP servers — parse `mcpServers` from both files:
    ```bash
    cat ~/.claude/.mcp.json 2>/dev/null; cat ~/.claude.json 2>/dev/null
    ```
    For each server: name, infer capability from command/args, enabled status.
 
-5. Detect environment: `uname -ms`, `$SHELL`, installed runtimes (`node`, `php`, `dart`, `python3`, `go`, `docker`).
+6. Detect environment: `uname -ms`, `$SHELL`, installed runtimes (`node`, `php`, `dart`, `python3`, `go`, `docker`).
 
-6. Detect LSP plugins from session's available agent/plugin list — check for `*-lsp` plugins.
+7. Detect LSP plugins from session's available agent/plugin list — check for `*-lsp` plugins.
 
 If any detection fails → skip entry, continue. Note skipped items.
 
@@ -54,6 +56,9 @@ If any detection fails → skip entry, continue. Note skipped items.
 **Skip entirely in update mode** — user-managed sections preserved from existing file.
 
 Present discovery findings first: detected skills, MCP servers, environment. Then gather preferences via AskUserQuestion — skip questions already answered by detected skills.
+
+**Q0 — kodizm MCP token:**
+Check if `KODIZM_MCP_TOKEN` env var is set (`echo $KODIZM_MCP_TOKEN`). If empty, present informational message: "Export `KODIZM_MCP_TOKEN` in your shell profile (`~/.zshrc`). Get your token from kodizm.com. ac's librarian agent requires it for documentation lookups." Not blocking — continue regardless.
 
 **Q1 — Communication style:**
 - question: "How should I communicate with you?"
@@ -134,7 +139,57 @@ Present discovery findings first: detected skills, MCP servers, environment. The
    - Backup existing: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak` (if exists)
    - Write `~/.claude/CLAUDE.md`
 
-5. Confirm:
+5. **Auto-configure `~/.claude/settings.json`** — ac replaces CC's native tools and agents. Read existing settings, merge (preserve all existing keys), ensure these entries:
+
+   **`permissions.deny`** — add to deny array (create if missing, append if exists, skip already-present):
+   ```json
+   {
+     "permissions": {
+       "deny": [
+         "EnterPlanMode",
+         "WebSearch",
+         "WebFetch",
+         "Agent(Explore)",
+         "Agent(Plan)"
+       ]
+     }
+   }
+   ```
+
+   Why each entry is blocked:
+   - `EnterPlanMode` — ac manages planning via `/ac:plan`. Native plan mode hijacks ac's 7-phase workflow.
+   - `WebSearch`, `WebFetch` — unreliable (hangs, timeouts). ac:librarian uses kodizm MCP instead.
+   - `Agent(Explore)` — ac:explore replaces CC's built-in Explore agent.
+   - `Agent(Plan)` — defense-in-depth alongside EnterPlanMode deny.
+
+   **`hooks.PreToolUse`** — add entries (create array if missing, append, skip if matcher present):
+   ```json
+   {
+     "hooks": {
+       "PreToolUse": [
+         {
+           "matcher": "EnterPlanMode",
+           "hooks": [{
+             "type": "command",
+             "command": "echo 'EnterPlanMode blocked — ac manages planning via /ac:plan.' >&2; exit 2"
+           }]
+         },
+         {
+           "matcher": "WebSearch|WebFetch",
+           "hooks": [{
+             "type": "command",
+             "command": "echo 'Web tools blocked — ac:librarian uses kodizm MCP.' >&2; exit 2"
+           }]
+         }
+       ]
+     }
+   }
+   ```
+
+   Write merged settings back. Report what changed vs already configured.
+
+6. Confirm:
    - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md` — active in every CC session."
+   - "Settings updated: blocked tools/agents via `permissions.deny` + `PreToolUse` hooks." List which entries were newly added vs already configured.
    - If my-coding not detected → "Consider `/ac:setup-coding` for detailed coding rules."
    - If my-language not detected → "Consider `/ac:setup-language` for writing style."

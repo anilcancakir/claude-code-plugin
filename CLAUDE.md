@@ -15,7 +15,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` tur
 │   ├── ac/                       # Main plugin
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
-│   │   ├── .mcp.json             # MCP server configs (empty — MCP servers are user-installed)
+│   │   ├── .mcp.json             # MCP server configs (kodizm bundled)
 │   │   ├── commands/             # 12 user-invocable /ac:* commands
 │   │   ├── agents/               # 15 agent definitions (advisory: read-only, worker: write access)
 │   │   ├── skills/
@@ -116,7 +116,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | Agent | `subagent_type` | Role |
 |-------|-----------------|------|
 | `explore` | `"ac:explore"` | Codebase search specialist — files, patterns, relationships. Returns file:line references |
-| `librarian` | `"ac:librarian"` | External docs specialist — official docs via context7 MCP with WebSearch fallback |
+| `librarian` | `"ac:librarian"` | External docs specialist — docs, web search, code search via kodizm MCP (bundled) |
 | `linter` | `"ac:linter"` | LSP code intelligence verifier — diagnostics and symbol structure checks |
 | `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-gen directives (hidden intentions, AI-slop risks, unstated requirements). AI-slop detection in review phase handled by plan-review |
 | `plan-review` | `"ac:plan-review"` | Plan reviewer — blockers-only, approval bias, OKAY/REJECT verdict. Standard+ plans |
@@ -148,7 +148,7 @@ Model, effort, color, maxTurns, and tools are defined in each agent's frontmatte
 - `ac:maestro-qa` skill (Sonnet, not user-invocable) — Mobile QA workflow patterns and Maestro MCP tool routing. Has references/ for report format and evidence schema. Requires [Maestro CLI](https://maestro.mobile.dev/) (`brew install maestro`) + user-installed MCP server
 - `ac:flutter-qa` skill (Sonnet, not user-invocable) — Flutter QA workflow patterns and flutter-skill MCP tool routing. Has references/ for report format and evidence schema. Requires [flutter-skill](https://github.com/flutter-skill/flutter-skill) (`npm install -g flutter-skill`) + user-installed MCP server + `FlutterSkillBinding` in app
 - `qa-patterns` reference (`plugins/ac/references/qa-patterns.md`) — Shared QA patterns across browser-qa, maestro-qa, flutter-qa (knowledge system, report format, parallel execution, evidence persistence)
-- MCP: `context7` (user-installed) — Live documentation API via `@upstash/context7-mcp`
+- MCP: `kodizm` (bundled) — Docs, web search, web fetch, code search via remote MCP
 
 ### github-cli plugin
 - `github-cli` (Sonnet) — gh patterns for issues, PRs, releases, actions, gh api (REST + GraphQL), scripting
@@ -229,6 +229,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 
 ## Design Principles
 
+- **Anti-builtin**: ac replaces CC's native planning, web tools, and search agents — `EnterPlanMode`, `WebSearch`, `WebFetch`, `Agent(Explore)`, `Agent(Plan)` blocked via `permissions.deny` + `PreToolUse` hooks. Auto-configured by `/ac:setup-global-claude-md`. Commands include CRITICAL directives as defense-in-depth.
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
 - **Model routing**: Haiku (search/fast), Sonnet (execution/analysis), Opus (planning/architecture/creation). Workers get per-step model based on tier (quick→Haiku, mid→Sonnet, senior→Opus) with auto-escalation on failure
 - **Tier-aware plan verbosity**: Plan step descriptions scale with worker tier — quick (verbose: full commands, before/after state for Haiku), mid (standard: description + criteria for Sonnet), senior (lean: criteria + constraints for Opus). Reduces plan size ~50% without sacrificing worker success. Step type (`code`/`infra`) routes to appropriate briefing format.
@@ -241,7 +242,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **Layered verification**: Verification is sequential and gated — `plan-verifier` → `plan-code-review` → `plan-deep-code-review`. Each layer must APPROVE before the next runs. Depth scales with complexity: Simple (plan-verifier + linter), Standard (+plan-code-review), Complex (+plan-deep-code-review, mandatory — cannot be bypassed). Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification. 3-strike rule: 3 failures across all layers → halt pipeline.
 - **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode (Phase 3) to catch hidden intentions and AI-slop risks before plan writing. Review pipeline: Standard → plan-review only. Complex → plan-review + plan-deep-review.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
-- **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. All MCP servers are user-installed, not bundled (e.g., maestro MCP for mobile QA, flutter-skill MCP for Flutter QA)
+- **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. kodizm MCP is bundled with ac plugin. Other MCP servers (maestro, flutter-skill) remain user-installed.
 - **Tiered code search**: Grep (text) → LSP (semantic). Agents use LSP via code intelligence for structural queries when available.
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/`, flutter-qa state to `.ac/flutter-qa/`, visual regression baselines to `.ac/qa/baselines/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes

@@ -37,7 +37,7 @@ claude plugin add anilcancakir/claude-code-plugin
 /ac:init-rules
 ```
 
-After step 2, Claude Code knows how to route every request automatically. After step 3, it knows your project's architecture, commands, and conventions.
+Step 2 generates `~/.claude/CLAUDE.md` and auto-configures `~/.claude/settings.json` to block CC's native tools/agents (ac has its own). After step 3, it knows your project's architecture, commands, and conventions.
 
 **That's it.** Start talking naturally.
 
@@ -122,17 +122,13 @@ Failed steps automatically retry with a higher-tier model before giving up.
 | `dart-lsp` | Dart/Flutter language server |
 | `json-lsp` / `yaml-lsp` / `markdown-lsp` | Schema validation and diagnostics |
 
-## Optional: MCP Integrations
+## MCP
 
-Agents detect MCP servers at runtime. Install what you need:
+kodizm MCP is bundled — provides docs, web search, web fetch, and code search for the librarian agent.
 
 ```bash
-# Live docs for libraries/frameworks (used by librarian agent)
-claude mcp add context7 -- npx -y @upstash/context7-mcp
-
-# Skill marketplace
-npm install -g skillsmp-mcp-server
-claude mcp add skillsmp-mcp-server -- skillsmp-mcp-server
+# Required: set your token
+export KODIZM_MCP_TOKEN=<your-token>  # add to ~/.zshrc
 ```
 
 ## Pure Markdown

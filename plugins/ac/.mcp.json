@@ -1,1 +1,9 @@
-{}
+{
+  "kodizm": {
+    "type": "http",
+    "url": "https://ai-api.kodizm.com/mcp/public",
+    "headers": {
+      "Authorization": "Bearer ${KODIZM_MCP_TOKEN}"
+    }
+  }
+}

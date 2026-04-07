@@ -34,6 +34,8 @@ After updating, sync your config:
 /ac:setup-global-claude-md update
 ```
 
+> Setup auto-configures `~/.claude/settings.json` — blocks CC native tools (WebSearch, WebFetch) and agents (Explore, Plan) in favor of ac's own agents. Requires `KODIZM_MCP_TOKEN` env var for the bundled kodizm MCP.
+
 ## Structure
 
 ```
