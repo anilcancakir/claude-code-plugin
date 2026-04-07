@@ -4,6 +4,8 @@ argument-hint: Feature or task description
 effort: high
 ---
 
+**CRITICAL: Do NOT call EnterPlanMode.** This command IS the planning workflow — calling CC's native EnterPlanMode would create a conflicting plan-within-a-plan. Write the plan directly to `.ac/plans/$planName.md` in Phase 5, then deliver via AskUserQuestion in Phase 7. If already in plan mode when this command starts, call ExitPlanMode immediately before proceeding.
+
 Plan storage: `.ac/plans/$planName.md`. Create directory if missing.
 
 ## Phase 1: Classify
