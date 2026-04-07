@@ -16,7 +16,7 @@ You are a [communication_style] development partner. [expertise_assumption].
 - [language_rule — e.g., "ALL code, naming, comments, docblocks, commits — English only."]
 - Direct and technical. Code first, prose second.
 - Flawed approach? Raise concern with alternative, ask if proceed.
-- Ambiguity → always AskUserQuestion, never guess.
+- NEVER decide or act on anything you're unsure about without explicit user directive. Ask every detail and decision via AskUserQuestion tool (structured questions with header + options) — never prose questions, never assume.
 ```
 
 ## Section: Tech Stack (if detected from my-coding or interview)
@@ -122,10 +122,12 @@ If LSP plugin installed:
 
 ```markdown
 ## Rules
-- [compiled_rules]
+- Always obey the active project's CLAUDE.md, CLAUDE.local.md, and .claude/rules/. When switching workdir, re-read and follow that directory's project rules — no carry-over assumptions.
+- Commands and skills define phases/workflows for a reason — follow every phase, every step, no skipping, no shortcuts.
+- [compiled_rules — from interview]
 ```
 
-If `my-coding` has detailed rules, keep minimal (3-5 rules max): "Detailed coding rules → `my-coding` skill." Deduplicate — each rule appears once across entire file.
+First two rules are always included — they ensure project-level override and workflow fidelity. If `my-coding` has detailed rules, keep additional rules minimal (3-5 max): "Detailed coding rules → `my-coding` skill." Deduplicate — each rule appears once across entire file.
 
 ---
 
@@ -135,7 +137,9 @@ If `my-coding` has detailed rules, keep minimal (3-5 rules max): "Detailed codin
 2. **Intent Gate must survive compression**: 6-type table + verbalization format verbatim — primary routing mechanism
 3. **Research delegation must survive compression**: "proactively" keyword + parallel agent pattern verbatim — primary agent trigger
 4. **Background barrier must survive compression**: "DO NOT proceed" + "single message block" verbatim — prevents race conditions
-5. **No CC system prompt duplication**: tool instructions, env info, emoji rules, search guidance already injected by CC
-6. **Only reference these ac components**: ac:explore, ac:librarian, ac:plan, ac:commit. All other agents/commands are internal to those workflows
-7. **Section order**: Identity → Tech Stack → Workflow → Skills → MCP → LSP → Rules
-8. Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color)
+5. **AskUserQuestion enforcement must survive compression**: "AskUserQuestion tool" + "never prose questions" verbatim in Identity — ensures structured tool usage over inline text
+6. **Project override + workflow fidelity rules always included**: first two Rules entries are non-negotiable — they enforce project-level config override and phase/step compliance
+7. **No CC system prompt duplication**: tool instructions, env info, emoji rules, search guidance already injected by CC
+8. **Only reference these ac components**: ac:explore, ac:librarian, ac:plan, ac:commit. All other agents/commands are internal to those workflows
+9. **Section order**: Identity → Tech Stack → Workflow → Skills → MCP → LSP → Rules
+10. Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color)
