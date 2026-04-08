@@ -1,6 +1,6 @@
 {
   "name": "claude-code-plugin",
-  "version": "5.4.0",
+  "version": "5.4.1",
   "description": "Claude Code plugin marketplace — structured development workflows, specialized agents, model routing",
   "author": "Anilcan Cakir",
   "license": "MIT",
