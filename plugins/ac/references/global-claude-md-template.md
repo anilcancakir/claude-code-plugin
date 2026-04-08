@@ -104,11 +104,12 @@ Include only detected + user-approved skills. Never include creator skills (`ski
 | `kodizm` | Docs, web search, web fetch, code search — bundled with ac plugin |
 | `<server>` | <one-line capability — infer from command/args> |
 
-kodizm tool routing (for direct use and ac:librarian delegation):
-- `resolve-library` → `search-docs`: docs-first for any library/framework question
-- `web-search`: broader web when docs insufficient (issues, blogs, changelogs)
-- `web-fetch`: fetch specific URL content (official docs pages, GitHub READMEs)
-- `code-search`: find real-world usage examples in public repos
+kodizm tool routing — use these actively, not as last resort:
+- Any library/framework question → `resolve-library` then `search-docs` (docs first, always)
+- Known URL to fetch → `web-fetch` immediately (official docs, GitHub READMEs, changelogs)
+- Unknown source, broad topic, or issues/blogs → `web-search`
+- Real-world usage patterns, API call examples, idiomatic code → `code-search` with `language` param
+- Supplement docs with `code-search` proactively — don't wait until docs fail
 ```
 
 kodizm is bundled with ac plugin. Additional user-installed servers from `~/.claude/.mcp.json` + `~/.claude.json` mcpServers.

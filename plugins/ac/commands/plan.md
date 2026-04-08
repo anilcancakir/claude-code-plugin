@@ -31,11 +31,17 @@ Request: $ARGUMENTS
 
 | Intent | Standard | Complex |
 |--------|----------|---------|
-| **Build** | 1 explore: conventions, similar implementations, project structure | 2 explore (conventions + organization) + 1 librarian (official docs) + 1 challenger (stress-test approach) |
+| **Build** | 1 explore: conventions, similar implementations, project structure + 1 librarian: implementation patterns, code examples for key dependency | 2 explore (conventions + organization) + 1 librarian (official docs) + 1 challenger (stress-test approach) |
 | **Refactor** | 1 explore: all usages, call sites, type flow, risk | 2 explore (impact scope + test coverage) + 1 challenger (stress-test approach) |
-| **Mid-sized** | 1 explore: current implementation, callers, tests | 1 explore + 1 librarian (API docs, migration guides) + 1 challenger (stress-test approach) |
+| **Mid-sized** | 1 explore: current implementation, callers, tests + 1 librarian: API docs, real-world usage examples | 1 explore + 1 librarian (API docs, migration guides) + 1 challenger (stress-test approach) |
 | **Architecture** | 1 explore: module boundaries, dependency direction | 1 explore + 2 librarian (best practices + case studies) + 1 challenger (stress-test approach) |
 | **Research** | 1 explore: current state, limitations, TODOs | 1 explore + 2 librarian (API reference + OSS examples) + 1 challenger (stress-test approach) |
+
+**Librarian prompt guidance** — Brief librarian to trigger code-search alongside docs. Include the project stack language as a hint. Templates:
+
+- Build (new feature): `"Find implementation patterns and code examples for [feature/library] in [language from project stack]. Show real-world usage — constructor patterns, error handling, idiomatic API calls. Official docs + OSS examples."`
+- Mid-sized (extend/update): `"Find API docs and real-world usage examples for [API/library]. Include migration patterns if version changed. Code examples preferred over prose — show [language from project stack] idioms."`
+- Build (integration): `"Find integration patterns for [library A] with [library B] in [language from project stack]. Implementation examples, gotchas, and configuration options from public repos."`
 
 **Actions**:
 
@@ -316,7 +322,7 @@ Senior (lean — Opus explores deeply):
 
 | | Simple | Standard | Complex |
 |---|--------|----------|---------|
-| **Research** | Direct Read | 1 explore | 2-3 explore + librarian + challenger |
+| **Research** | Direct Read | 1 explore + librarian (Build/Mid-sized) | 2-3 explore + librarian + challenger |
 | **Pre-plan** | skip | plan-analysis | plan-analysis + feasibility |
 | **Interview** | 0-1 round | ≤3 rounds (auto-skip if clear) | ≤3 rounds (auto-skip if clear) |
 | **Review** | skip | plan-review (sonnet, enhanced) | plan-review (sonnet) + plan-deep-review (opus) |
