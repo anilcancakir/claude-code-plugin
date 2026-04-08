@@ -99,14 +99,14 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | Command | Description |
 |---------|-------------|
 | `/ac:plan` | Lead Developer — 7-phase planning: classify (intent + complexity) → research (explore + librarian agents) → pre-plan analysis (plan-analysis + feasibility + challenger for Complex) → interview (clearance check, max 3 rounds) → generate plan (tier assignment, wave rules, QA scenarios) → review (plan-review for Standard, +plan-deep-review for Complex) → deliver |
-| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, complexity-gated layered verification (Simple: plan-verifier + linter, Standard: +plan-code-review, Complex: +plan-deep-code-review), 3-strike rule |
+| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, complexity-gated layered verification (Simple: plan-verifier + linter, Standard: +plan-code-review, Complex: +plan-deep-code-review), 3-strike rule, workflow memory save |
 | `/ac:init-claude-md` | Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
 | `/ac:setup-language` | Interactive writing style analyzer — scans existing content, interviews developer, generates my-language skill |
 | `/ac:setup-global-claude-md` | Generate global CLAUDE.md — interviews developer, detects skills, produces orchestration config |
-| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available |
-| `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation. Supports `--bulk` and `--loop` |
+| `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits, workflow memory save for significant changes. Delegates to git-master when available |
+| `/ac:ideate` | Idea refinement — Socratic interview, ambiguity scoring, adversarial challenge, task generation, workflow memory save. Supports `--bulk` and `--loop` |
 | `/ac:browser-qa` | Browser QA testing — 4 modes (ad-hoc, bug-repro, plan-verify, recheck), parallel execution across up to 4 agents, knowledge sharing across waves. Auto-detects Playwright CLI. Flags: `--headed`, `--no-parallel`, `--no-evidence` |
 | `/ac:maestro-qa` | Mobile QA testing — 5 modes (ad-hoc, bug-repro, plan-verify, recheck, flow-run), MCP-driven via Maestro CLI, parallel execution across devices, knowledge sharing. Auto-detects Maestro MCP. Flags: `--no-parallel`, `--no-evidence`, `--platform` |
 | `/ac:flutter-qa` | Flutter QA testing — 6 modes (ad-hoc, bug-repro, plan-verify, recheck, test-run, visual-regression), MCP-driven via flutter-skill, parallel execution across sessions, knowledge sharing. Auto-detects flutter-skill MCP. Flags: `--no-parallel`, `--no-evidence`, `--platform`, `--uri` |
@@ -148,6 +148,7 @@ Model, effort, color, maxTurns, and tools are defined in each agent's frontmatte
 - `ac:maestro-qa` skill (Sonnet, not user-invocable) — Mobile QA workflow patterns and Maestro MCP tool routing. Has references/ for report format and evidence schema. Requires [Maestro CLI](https://maestro.mobile.dev/) (`brew install maestro`) + user-installed MCP server
 - `ac:flutter-qa` skill (Sonnet, not user-invocable) — Flutter QA workflow patterns and flutter-skill MCP tool routing. Has references/ for report format and evidence schema. Requires [flutter-skill](https://github.com/flutter-skill/flutter-skill) (`npm install -g flutter-skill`) + user-installed MCP server + `FlutterSkillBinding` in app
 - `qa-patterns` reference (`plugins/ac/references/qa-patterns.md`) — Shared QA patterns across browser-qa, maestro-qa, flutter-qa (knowledge system, report format, parallel execution, evidence persistence)
+- `memory-save` reference (`plugins/ac/references/memory-save.md`) — Workflow memory save directives for execute, commit, ideate, and investigation workflows
 - MCP: `kodizm` (bundled) — Docs, web search, web fetch, code search via remote MCP
 
 ### github-cli plugin
@@ -246,6 +247,7 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **Tiered code search**: Grep (text) → LSP (semantic). Agents use LSP via code intelligence for structural queries when available.
 - **Project-local storage**: Plans saved to `.ac/plans/`, tasks to `.ac/tasks/`, QA evidence to `.ac/qa/`, browser-qa state to `.ac/browser-qa/`, maestro-qa state to `.ac/maestro-qa/`, flutter-qa state to `.ac/flutter-qa/`, visual regression baselines to `.ac/qa/baselines/` in the working directory. Not gitignored by default — each project decides
 - **Auto commit+push**: Orchestrators (execute, ideate) invoke `/ac:commit` after task completion to commit and push changes
+- **Workflow memory save**: Execute, commit, ideate, and investigation workflows save up to 2 relevant memories (architecture decisions, root causes, codebase evolution) via CC's native memory system — no custom storage, no re-teaching CC memory mechanics. Directives in `references/memory-save.md`
 - **Global CLAUDE.md dedup boundary**: Command prompts must not duplicate directives already in the global CLAUDE.md template (Intent Gate, Delegation Check, Research delegation, Verification, AskUserQuestion enforcement, barrier semantics). These load every message. Commands specify WHAT to do (which agents, which prompts), not HOW CC should behave.
 - **Project context propagation**: Plugin subagents receive CLAUDE.md automatically (only CC's built-in Explore/Plan agents omit it via `omitClaudeMd: true`). ac's extraction pipeline adds plan-specific conventions beyond CLAUDE.md:
   - **Plan-time** (`plan.md`): Reads CLAUDE.md + CLAUDE.local.md + `.claude/rules/` + `my-coding` skill → extracts into `PROJECT_CONTEXT` → merges into plan's `### Conventions` section. This is a plan document section, not context injection — workers use it alongside their auto-loaded CLAUDE.md

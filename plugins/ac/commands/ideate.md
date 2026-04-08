@@ -164,6 +164,8 @@ Call AskUserQuestion with these exact parameters:
 }
 ```
 
+Read `${CLAUDE_PLUGIN_ROOT}/references/memory-save.md` Ideate section. Save up to 2 workflow memories capturing direction decisions or validated assumptions from this ideation. Show brief summary of what was saved, or skip silently if ideation was exploratory. This fires at ideation-completion — NOT after spawned execute/plan workflows.
+
 --loop detected OR "Plan All Phases" → Phase 6. "Plan Phase 1" → invoke ac:plan with first task.
 
 ---

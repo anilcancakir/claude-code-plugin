@@ -315,7 +315,8 @@ If VERIFY_RETRY_COUNT < 3 — call AskUserQuestion with these exact parameters:
 ## Phase 4: Deliver
 
 1. Invoke `/ac:commit --skip-preflight` to commit all changes.
-2. Generate dev report to `.ac/plans/{plan-name}.report.md`:
+2. Read `${CLAUDE_PLUGIN_ROOT}/references/memory-save.md` Execute section. Save up to 2 workflow memories capturing significant decisions or patterns from this plan execution. Show brief summary of what was saved, or skip silently if nothing warrants saving.
+3. Generate dev report to `.ac/plans/{plan-name}.report.md`:
 
 ```markdown
 ## Summary
@@ -336,7 +337,7 @@ If VERIFY_RETRY_COUNT < 3 — call AskUserQuestion with these exact parameters:
 - {Accumulated wisdom, non-obvious decisions, open questions}
 ```
 
-3. Render execution summary:
+4. Render execution summary:
 
 ```
 ## Execution Complete

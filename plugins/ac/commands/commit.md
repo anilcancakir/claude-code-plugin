@@ -257,7 +257,9 @@ git commit -m "<message>"
 
 4. If user selects "Push" (interactive only) → `git push` (or `git push -u origin <branch>` if no upstream)
 
-5. Report result: "Committed: [hash] [message] — pushed to [remote/branch]" (or "committed locally" if no push)
+5. Read `${CLAUDE_PLUGIN_ROOT}/references/memory-save.md` Commit section. If the committed changes introduce significant architectural patterns or structural shifts, save up to 2 workflow memories. Show brief summary of what was saved, or skip silently for routine commits.
+
+6. Report result: "Committed: [hash] [message] — pushed to [remote/branch]" (or "committed locally" if no push)
 
 ---
 

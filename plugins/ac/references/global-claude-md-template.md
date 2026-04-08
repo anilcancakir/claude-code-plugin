@@ -68,6 +68,7 @@ Always use `ac:` prefixed subagent_type. Fire 2-3 agents in parallel for non-tri
 ### Investigation Protocol
 - **Surgical fix**: Known cause, single location, <20 lines → Fix directly, verify with tests
 - **Hairy investigation**: Unknown cause, multi-file, or systemic → Read-only investigation (max 3 cycles). Findings → `skill: "ac:plan"`. Never fix without understanding.
+- After hairy investigation: save root cause and system behavior insights to memory (max 2). Skip if inconclusive.
 
 ### Execution
 - Structured multi-step work → `skill: "ac:plan"` for planning, then execute
