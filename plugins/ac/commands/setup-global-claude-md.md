@@ -115,7 +115,7 @@ Not blocking — continue regardless.
 
 4. Count lines — if over 120, trim Rules (defer to my-coding) and remove LSP section
 
-5. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, only ac:explore/ac:librarian/ac:plan/ac:commit referenced
+5. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, only ac:explore/ac:librarian/ac:plan/ac:commit referenced. No internal pipeline agents (plan-worker, plan-code-review, plan-deep-code-review, plan-deep-analysis, plan-deep-review) in generated output.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Guidance for `/ac:setup-global-claude-md`. Each section is conditional — include only if data available. Generated output must stay ≤120 lines.
 
-**Context propagation**: This file is loaded into the main CC session AND all plugin subagents (ac:explore, ac:librarian, ac:plan-worker, verification agents). Only CC's built-in Explore/Plan agents omit it for token savings (`omitClaudeMd: true`). Plan-specific conventions are still extracted into plans and injected separately.
+**Context propagation**: This file is loaded into the main CC session AND all plugin subagents (ac:explore, ac:librarian, ac:plan-worker, ac:plan-code-review, ac:plan-deep-code-review). Only CC's built-in Explore/Plan agents omit it for token savings (`omitClaudeMd: true`). Plan-specific conventions are still extracted into plans and injected separately.
 
 **Deduplication boundary**: CC system prompt already provides: tool usage instructions (Read/Grep/Glob/Bash details), environment info, emoji rules, agent spawning mechanics, output formatting. Never repeat these.
 
@@ -56,8 +56,8 @@ Before the first tool call, verbalize intent:
 Default Bias: DELEGATE. Before acting on any non-trivial task:
 1. **Specialized agent?** ac:explore or ac:librarian handles this? → Spawn it
 2. **Matching skill?** A loaded skill (my-coding, ac:plan, etc.) covers this? → Invoke it
-3. **SUPER SIMPLE?** Single file, <10 lines, zero ambiguity? → Execute directly
-If steps 1-2 match → delegate. Only reach step 3 for genuinely trivial work.
+3. **Trivial?** Single file, <10 lines, zero ambiguity? → Execute directly
+If steps 1-2 match → delegate. Only reach step 3 for genuinely trivial work. ac:plan handles Simple tasks efficiently (inline, no subagent overhead) so don't avoid it for small multi-step work.
 
 ### Research
 Prefer delegating research to specialized agents — use them proactively before tools directly:
