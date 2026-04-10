@@ -109,7 +109,7 @@ Direct task statement — what this command achieves for the user.
 1. Run verification agent (foreground):
 
    ```
-   Agent(subagent_type: "ac:plan-verifier", prompt: "Verify: [criteria]. Files: [list]. Check done-when conditions.")
+   Agent(subagent_type: "ac:plan-code-review", prompt: "Review implementation against plan at [plan-file-path]. Modified files: [list]. Plan conventions: [conventions].")
    ```
 
 2. APPROVE → report success. REJECT → fix specific failures, re-verify.
@@ -181,9 +181,9 @@ Scale command behavior by complexity tier. Use a lookup table to map complexity 
 
 | Tier | Trigger | Research agents | Workers | Verification |
 |------|---------|-----------------|---------|-------------|
-| **Simple** | 1-2 files, mechanical change | None (direct Read) | Direct implementation | plan-verifier + linter |
-| **Standard** | 1-3 modules, some design decisions | 1 explore | plan-worker (sonnet) | plan-verifier → plan-code-review |
-| **Complex** | Cross-cutting, architectural impact | 2 explore + 1 librarian | plan-worker (sonnet/opus) | plan-verifier → plan-code-review → plan-deep-code-review |
+| **Simple** | 1-2 files, mechanical change | None (direct Read) | Direct implementation | build + test + lint |
+| **Standard** | 1-3 modules, some design decisions | 1 explore | plan-worker (sonnet) | plan-code-review (3-stage) |
+| **Complex** | Cross-cutting, architectural impact | 2 explore + 1 librarian | plan-worker (sonnet/opus) | plan-deep-code-review (4-stage) |
 
 Determine tier in Phase 1 (Discovery). Announce: "[Tier] — proceeding with [N] agent(s)."
 
@@ -193,25 +193,28 @@ Determine tier in Phase 1 (Discovery). Announce: "[Tier] — proceeding with [N]
 
 ### Parallel Foreground (verification wave)
 
-All verification agents in one message block — CC waits for all:
+Single consolidated verification agent per complexity level:
 
 ```
-Agent(subagent_type: "ac:plan-verifier", prompt: "...")
-Agent(subagent_type: "ac:plan-code-review", prompt: "...")
+# Standard: 3-stage (compliance + spec + quality)
+Agent(subagent_type: "ac:plan-code-review", prompt: "Review implementation against plan at [path]. Modified files: [list].")
+
+# Complex: 4-stage (compliance + spec + quality + cross-layer)
+Agent(subagent_type: "ac:plan-deep-code-review", prompt: "Deep cross-layer review. Plan: [path]. Modified files: [list].")
 ```
 
-Do NOT advance until all report back.
+Do NOT advance until verification reports back.
 
 ### Sequential (dependency chain)
 
 When each agent needs the previous agent's output:
 
 ```
-# Phase A: Spawn plan-verifier. Wait for APPROVE verdict.
-Agent(subagent_type: "ac:plan-verifier", prompt: "...")
-
-# Phase B: Only if Phase A approved — spawn code review.
+# Phase A: Spawn verification. Wait for verdict.
 Agent(subagent_type: "ac:plan-code-review", prompt: "...")
+
+# Phase B: Only if Phase A approved — proceed to next phase.
+Agent(subagent_type: "ac:linter", prompt: "...")
 ```
 
 ### Background with Notification (independent work)

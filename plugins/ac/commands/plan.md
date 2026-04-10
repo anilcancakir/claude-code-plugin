@@ -19,23 +19,28 @@ Request: $ARGUMENTS
    - If `### Codebase Context` present (no Research Summary) → use as pre-seeded targets
 3. Classify intent: **Build** (create, add, implement) | **Refactor** (restructure, clean up) | **Mid-sized** (update, extend) | **Architecture** (design, structure) | **Research** (explore, evaluate)
 4. Estimate complexity: **Simple** (1-2 steps, single module, zero design decisions) | **Standard** (3-6 steps, 1-2 modules, some ambiguity) | **Complex** (7+ steps, cross-module, architectural impact)
-5. Announce: "[Intent] — [Complexity] estimated."
+5. **Simple bypass**: If complexity = Simple, announce "Simple task, executing directly." Skip Phases 2-7. Perform inline research (Read/Glob/Grep on known files), generate the implementation inline (no plan file, no agents), and execute directly. Return result to user.
+6. Announce: "[Intent] — [Complexity] estimated."
 
 ---
 
-## Phase 2: Research (complexity-gated)
+## Phase 2: Research (Standard and Complex only)
 
-**Simple**: Direct Read/Glob/Grep on known files. No agents.
+**Actions**:
 
-**Standard/Complex**: Launch research agents — all in a single message block (parallel foreground).
+1. Read `~/.claude/skills/my-coding/SKILL.md` → **MY_CODING_RULES**. If absent → empty.
+2. Read CLAUDE.md + CLAUDE.local.md + `.claude/rules/` → **PROJECT_CONTEXT** (max ~1K tokens). Prioritize: conventions > gotchas > build commands. Note: plugin subagents DO receive CLAUDE.md automatically (only built-in Explore/Plan omit it). PROJECT_CONTEXT is still needed for the plan document's `### Conventions` section — workers use it alongside CLAUDE.md for plan-specific rules.
+3. **Inline research first** (Standard): Use Grep/Glob/Read to find conventions, similar implementations, and project structure. Only spawn agents if inline research is insufficient (e.g., large codebase, unclear patterns, external docs needed).
+4. **Dynamic agent spawning** (Standard and Complex): Spawn explore/librarian agents based on actual research gaps — no fixed agent counts. Assess what is still unknown after inline research, then spawn the minimum agents needed to fill those gaps. All agents in a single message block (parallel foreground).
 
-| Intent | Standard | Complex |
-|--------|----------|---------|
-| **Build** | 1 explore: conventions, similar implementations, project structure + 1 librarian: implementation patterns, code examples for key dependency | 2 explore (conventions + organization) + 1 librarian (official docs) + 1 challenger (stress-test approach) |
-| **Refactor** | 1 explore: all usages, call sites, type flow, risk | 2 explore (impact scope + test coverage) + 1 challenger (stress-test approach) |
-| **Mid-sized** | 1 explore: current implementation, callers, tests + 1 librarian: API docs, real-world usage examples | 1 explore + 1 librarian (API docs, migration guides) + 1 challenger (stress-test approach) |
-| **Architecture** | 1 explore: module boundaries, dependency direction | 1 explore + 2 librarian (best practices + case studies) + 1 challenger (stress-test approach) |
-| **Research** | 1 explore: current state, limitations, TODOs | 1 explore + 2 librarian (API reference + OSS examples) + 1 challenger (stress-test approach) |
+   Agent injection — agents receive CLAUDE.md automatically. Inject focused constraints:
+   ```
+   FOCUS: Research with these conventions in mind (from project config):
+   [PROJECT_CONTEXT key conventions — max 5 rules]
+   Flag patterns that conflict with them.
+   ```
+
+   **Complex**: More likely to need multiple explore agents (conventions + organization + impact scope) and librarian agents (official docs + migration guides). Spawn based on actual need, not a fixed table.
 
 **Librarian prompt guidance** — Brief librarian to trigger code-search alongside docs. Include the project stack language as a hint. Templates:
 
@@ -43,26 +48,21 @@ Request: $ARGUMENTS
 - Mid-sized (extend/update): `"Find API docs and real-world usage examples for [API/library]. Include migration patterns if version changed. Code examples preferred over prose — show [language from project stack] idioms."`
 - Build (integration): `"Find integration patterns for [library A] with [library B] in [language from project stack]. Implementation examples, gotchas, and configuration options from public repos."`
 
-**Actions**:
-
-1. Read `~/.claude/skills/my-coding/SKILL.md` → **MY_CODING_RULES**. If absent → empty.
-2. Read CLAUDE.md + CLAUDE.local.md + `.claude/rules/` → **PROJECT_CONTEXT** (max ~1K tokens). Prioritize: conventions > gotchas > build commands. Note: plugin subagents DO receive CLAUDE.md automatically (only built-in Explore/Plan omit it). PROJECT_CONTEXT is still needed for the plan document's `### Conventions` section — workers use it alongside CLAUDE.md for plan-specific rules.
-3. Launch agents. Agents receive CLAUDE.md automatically — inject focused constraints to direct the search:
-   ```
-   FOCUS: Research with these conventions in mind (from project config):
-   [PROJECT_CONTEXT key conventions — max 5 rules]
-   Flag patterns that conflict with them.
-   ```
-4. Classify codebase state: **Disciplined** (consistent, tested → follow patterns) | **Transitional** (mixed → follow NEW direction) | **Legacy** (outdated → improve, don't copy) | **Chaotic** (no patterns → establish)
-5. Populate **Research Summary**: Key Files (file:line), Patterns Found, Dependencies, Codebase State.
+5. Classify codebase state: **Disciplined** (consistent, tested → follow patterns) | **Transitional** (mixed → follow NEW direction) | **Legacy** (outdated → improve, don't copy) | **Chaotic** (no patterns → establish)
+6. Populate **Research Summary**: Key Files (file:line), Patterns Found, Dependencies, Codebase State.
 
 ---
 
 ## Phase 3: Pre-Plan Analysis (complexity-gated)
 
-**Simple**: Skip.
+**Standard**: Skip-if-confident gate. Skip if ALL of:
+1. scope is single module
+2. no external dependencies introduced
+3. no architectural impact
+4. research found all relevant patterns and files
+5. no cross-cutting concerns (auth, logging, error handling, migrations)
 
-**Standard**: Spawn plan-analysis (pre-gen mode, foreground):
+If ANY condition fails → spawn plan-analysis (pre-gen mode, foreground):
 ```
 Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode.
 Request: [original request].
@@ -72,14 +72,16 @@ Return: MUST DO / MUST NOT directives and QUESTIONS if any.")
 ```
 Incorporate directives. Merge QUESTIONS into interview queue.
 
-**Complex**: Spawn 2 agents parallel (single message, foreground). Challenger already ran in Phase 2 — its findings are in research results.
-- **plan-analysis** — context sufficiency, hidden requirements, gaps, directives
-- **feasibility** — effort estimation, prerequisites, codebase fit
+**Complex**: Spawn plan-deep-analysis (foreground). Single agent consolidates gap detection, feasibility assessment, and adversarial challenge:
 ```
-Agent(subagent_type: "ac:plan-analysis", prompt: "Pre-generation mode. Request: [request]. Research: [summary]. Return directives.")
-Agent(subagent_type: "ac:feasibility", prompt: "Assess feasibility: [request]. Codebase area: [key files]. Report fit, effort, prerequisites.")
+Agent(subagent_type: "ac:plan-deep-analysis", prompt: "Pre-generation analysis.
+Request: [original request].
+Research findings: [Research Summary].
+Pass 1 — Gap Detection: hidden intentions, unstated requirements, context sufficiency, AI-slop risks.
+Pass 2 — Feasibility & Challenge: codebase fit, effort estimation, prerequisites, stress-test the proposed approach, surface alternatives.
+Return: MUST DO / MUST NOT directives, prerequisites for step ordering, risks, and QUESTIONS if any.")
 ```
-Synthesize: plan-analysis directives → plan constraints. Feasibility prerequisites → step ordering. Challenger findings from Phase 2 → addressed or noted as risks.
+Synthesize: directives → plan constraints. Prerequisites → step ordering. Risks → addressed or noted.
 
 ---
 
@@ -133,21 +135,11 @@ Assign per-step based on scope and required reasoning:
 | **mid** | 1-3 | sonnet | Standard implementation, business logic. **DEFAULT** | SWE-bench 80%, 200K context, $15/MTok. 98.5% of Opus coding at 1/5 cost. |
 | **senior** | 3+ | opus | Cross-layer, architecture, migration, complex edge cases | SWE-bench 81%, 200K context, GPQA 91% (+17pp over Sonnet). $75/MTok. Justified for deep reasoning. |
 
-**Quick-tier enrichment**: Compensate for Haiku's lower reasoning — write exhaustively explicit descriptions: exact file, exact change, before/after state. No ambiguity.
-
 **Codebase state escalation**: Chaotic or Legacy → all `quick` steps escalate to `mid`.
 
-### Tier-Aware Step Verbosity
+### Step Format
 
-Step descriptions scale with tier to minimize plan size while ensuring worker success:
-
-| Tier | Verbosity | What to Include | What to Omit |
-|------|-----------|-----------------|--------------|
-| **quick** | Verbose | Exact commands, before/after state, full config values. Haiku needs explicit instructions — no ambiguity. | Nothing — spell everything out. |
-| **mid** | Standard | Description, acceptance criteria, key values/parameters. Sonnet infers implementation from context. | Full command blocks, complete file contents, inline configs. |
-| **senior** | Lean | High-level description, acceptance criteria, constraints, architectural notes. Opus explores deeply before acting. | Step-by-step instructions, command syntax, implementation details. |
-
-Quick steps compensate for Haiku's lower reasoning. Mid and senior steps trust the model to read existing code and figure out implementation — this is what they're good at.
+All steps use consistent format regardless of tier. Tier determines the worker MODEL, not prompt verbosity. Every step includes: description + files + done-when + QA + must-not. No over-explaining for lower tiers, no under-specifying for higher tiers.
 
 ### Wave Rules
 
@@ -169,24 +161,27 @@ Quick steps compensate for Haiku's lower reasoning. Mid and senior steps trust t
 
 ## Phase 6: Review (complexity-gated)
 
-**Simple**: Skip — save plan directly.
+**Standard**: Skip-if-confident gate. Skip if ALL of:
+1. All file references verified (paths exist or are explicitly marked as new)
+2. Every step has concrete QA (command + expected result, not vague)
+3. Tiers match scope (no senior for single-file config, no quick for cross-module logic)
+4. No scope beyond original request (no bonus features, no extra abstractions)
 
-**Standard**: Spawn plan-review (foreground). plan-review now includes AI-slop detection (check 5).
+If ANY condition fails → spawn plan-review (foreground):
 ```
 Agent(subagent_type: "ac:plan-review", prompt: "Review plan: .ac/plans/[name].md. Check references, executability, QA scenarios, tier sanity, AI-slop patterns. Blockers-only — OKAY or REJECT.")
 ```
 REJECT → fix cited issues, re-submit (max 2 iterations). OKAY → proceed.
 
-**Complex** (mandatory): Spawn 2 agents parallel (single message, foreground):
+**Complex** (mandatory, no skip): Spawn plan-deep-review (foreground):
 ```
-Agent(subagent_type: "ac:plan-review", prompt: "Review plan: .ac/plans/[name].md. Check references, executability, QA scenarios, tier sanity, AI-slop patterns. Blockers-only — OKAY or REJECT.")
-Agent(subagent_type: "ac:plan-deep-review", prompt: "Adversarial review. Plan: .ac/plans/[name].md. Deep reference verification, AI-slop detection, cross-task dependencies, tier challenge. Earn approval.")
+Agent(subagent_type: "ac:plan-deep-review", prompt: "Adversarial review. Plan: .ac/plans/[name].md. Deep reference verification, AI-slop detection, cross-task dependencies, tier challenge. Earn approval. OKAY or REJECT.")
 ```
-Merge findings from both. Either REJECT → fix cited issues, re-submit (max 2 iterations). Both reviewers OKAY → proceed.
+REJECT → fix cited issues, re-submit (max 2 iterations). OKAY → proceed.
 
-**--deep-review on Standard**: When selected or $deepReview = true → add plan-deep-review (opus) to Standard review flow.
+**--deep-review on Standard**: When selected or $deepReview = true → spawn plan-deep-review (opus) instead of plan-review.
 
-**--loop + Complex**: Deep Review runs automatically (mandatory). Both OKAY → auto-execute. Any REJECT → halt, surface issues, offer Adjust / Execute Anyway.
+**--loop + Complex**: Deep Review runs automatically (mandatory). OKAY → auto-execute. REJECT → halt, surface issues, offer Adjust / Execute Anyway.
 
 ---
 
@@ -205,8 +200,6 @@ Merge findings from both. Either REJECT → fix cited issues, re-submit (max 2 i
 ```
 
 3. Next step — call AskUserQuestion tool (complexity-conditional):
-
-   **Simple**: Auto-execute — invoke ac:execute with plan path. Skip AskUserQuestion.
 
    **Standard** — call AskUserQuestion with these exact parameters:
    ```json
@@ -267,6 +260,7 @@ The Developer (ac:execute) parses this format. All sections required unless note
 - **Type**: code | infra
 - **Tier**: quick | mid | senior
 - **Files**: {absolute paths — or "N/A (server-side)" for infra steps}
+- **Description**: {what to do and why}
 - **Done when**:
   - {executable criterion — greppable, testable, or readable}
 - **QA**: {test command + expected result}
@@ -275,27 +269,10 @@ The Developer (ac:execute) parses this format. All sections required unless note
 **Step 2**: {title}
 - **Tier**: mid
 - **Files**: {paths — MUST NOT overlap with Step 1 within same wave}
+- **Description**: {what to do and why}
 - **Done when**: ...
 - **QA**: ...
-
-**Tier verbosity examples**:
-
-Quick (verbose — Haiku needs everything spelled out):
-- **Description**: Create PostgreSQL database `kodizm_ai` with user `kodizm_ai_user` on port 6543.
-- **Commands**:
-  ```bash
-  sudo -u postgres psql -p 6543 -c "CREATE DATABASE kodizm_ai OWNER kodizm_ai_user;"
-  ```
-- **Done when**: `psql -l | grep kodizm_ai` returns a row
-
-Mid (standard — Sonnet reads context):
-- **Description**: Create production .env for API based on .env.example. Key overrides: DB_PORT=6543, REDIS_DB=2, QUEUE=redis.
-- **Done when**: .env exists with correct values per .env.example
-
-Senior (lean — Opus explores deeply):
-- **Description**: Design and implement CI/CD workflow following existing deploy patterns.
-- **Constraints**: SSH deploy, zero-downtime, run migrations
-- **Done when**: Workflow deploys on push to master, runs full pipeline
+- **Must NOT**: ...
 
 ### Wave 2 (depends on Wave 1)
 
@@ -322,10 +299,9 @@ Senior (lean — Opus explores deeply):
 
 | | Simple | Standard | Complex |
 |---|--------|----------|---------|
-| **Research** | Direct Read | 1 explore + librarian (Build/Mid-sized) | 2-3 explore + librarian + challenger |
-| **Pre-plan** | skip | plan-analysis | plan-analysis + feasibility |
-| **Interview** | 0-1 round | ≤3 rounds (auto-skip if clear) | ≤3 rounds (auto-skip if clear) |
-| **Review** | skip | plan-review (sonnet, enhanced) | plan-review (sonnet) + plan-deep-review (opus) |
-| **Execution verification** | build + test | plan-verifier + plan-code-review | plan-verifier + plan-code-review + plan-deep-code-review |
+| **Research** | Inline (bypass) | Inline first, agents if needed | Dynamic agent spawning based on gaps |
+| **Pre-plan** | skip (bypass) | plan-analysis (skip-if-confident) | plan-deep-analysis (consolidated) |
+| **Interview** | skip (bypass) | ≤3 rounds (auto-skip if clear) | ≤3 rounds (auto-skip if clear) |
+| **Review** | skip (bypass) | plan-review (skip-if-confident) | plan-deep-review (mandatory) |
 
 Do not write code or modify source files. Only produce the plan.

@@ -98,8 +98,8 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 | Command | Description |
 |---------|-------------|
-| `/ac:plan` | Lead Developer — 7-phase planning: classify (intent + complexity) → research (explore + librarian agents) → pre-plan analysis (plan-analysis + feasibility + challenger for Complex) → interview (clearance check, max 3 rounds) → generate plan (tier assignment, wave rules, QA scenarios) → review (plan-review for Standard, +plan-deep-review for Complex) → deliver |
-| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, complexity-gated layered verification (Simple: plan-verifier + linter, Standard: +plan-code-review, Complex: +plan-deep-code-review), 3-strike rule, workflow memory save |
+| `/ac:plan` | Lead Developer — 7-phase planning: classify (intent + complexity) → research (dynamic agent count) → pre-plan analysis (plan-analysis for Standard, plan-deep-analysis for Complex, skip-if-confident) → interview (clearance check, max 3 rounds) → generate plan (tier assignment, wave rules, QA scenarios) → review (plan-review for Standard skip-if-confident, plan-deep-review for Complex mandatory) → deliver |
+| `/ac:execute` | Developer — execute approved plan with wave-by-wave parallel plan-worker agents (tier→model routing), wisdom accumulation across waves, per-step done-when verification with tier escalation retry, consolidated verification (Simple: build+test+lint, Standard: plan-code-review, Complex: plan-deep-code-review), 3-strike rule, workflow memory save |
 | `/ac:init-claude-md` | Generate or enhance project CLAUDE.md — auto-discovers codebase, interviews developer, preserves custom sections |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` from project analysis |
 | `/ac:setup-coding` | Analyze projects → interview → generate `my-coding` skill |
@@ -118,13 +118,13 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 | `explore` | `"ac:explore"` | Codebase search specialist — files, patterns, relationships. Returns file:line references |
 | `librarian` | `"ac:librarian"` | External docs specialist — docs, web search, code search via kodizm MCP (bundled) |
 | `linter` | `"ac:linter"` | LSP code intelligence verifier — diagnostics and symbol structure checks |
-| `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-gen directives (hidden intentions, AI-slop risks, unstated requirements). AI-slop detection in review phase handled by plan-review |
-| `plan-review` | `"ac:plan-review"` | Plan reviewer — blockers-only, approval bias, OKAY/REJECT verdict. Standard+ plans |
-| `plan-deep-review` | `"ac:plan-deep-review"` | Adversarial plan reviewer — bias toward REJECT, deep reference verification, AI-slop detection. Complex (mandatory) or Standard (opt-in) |
+| `plan-analysis` | `"ac:plan-analysis"` | Plan quality auditor — pre-gen directives (hidden intentions, AI-slop risks, unstated requirements). Standard plans |
+| `plan-deep-analysis` | `"ac:plan-deep-analysis"` | Consolidated Opus pre-plan agent for Complex plans — merges plan-analysis + challenger + feasibility into 3-pass analysis (analysis, challenge, feasibility) |
+| `plan-review` | `"ac:plan-review"` | Plan reviewer — blockers-only, approval bias, OKAY/REJECT verdict. Standard plans |
+| `plan-deep-review` | `"ac:plan-deep-review"` | Merged plan reviewer for Complex plans — combines blocker checks with adversarial deep review (2-pass: blockers then adversarial). Replaces separate plan-review + plan-deep-review |
 | `plan-worker` | `"ac:plan-worker"` | Plan step executor — executes single plan steps (code, server, infrastructure) with wisdom injection and structured verification output |
-| `plan-verifier` | `"ac:plan-verifier"` | Post-execution plan compliance auditor — L1/L2/L3 depth checks (APPROVE/REJECT) |
-| `plan-code-review` | `"ac:plan-code-review"` | 2-stage code reviewer — spec compliance, then quality (APPROVED/BLOCKED) |
-| `plan-deep-code-review` | `"ac:plan-deep-code-review"` | Deep cross-layer code review for complex plans — hidden coupling, caller impact, architectural compliance (APPROVED/BLOCKED) |
+| `plan-code-review` | `"ac:plan-code-review"` | 3-stage reviewer for Standard plans — compliance verification (L1/L2/L3), spec compliance, code quality. Replaces separate plan-verifier + plan-code-review |
+| `plan-deep-code-review` | `"ac:plan-deep-code-review"` | 4-stage deep reviewer for Complex plans — compliance, spec, quality, cross-layer integration. Replaces separate plan-verifier + plan-code-review + plan-deep-code-review |
 | `challenger` | `"ac:challenger"` | Devil's advocate — stress-tests ideas and proposals, finds gaps, steelmans alternatives. Used in ideation (Phase 4) and pre-plan analysis (Complex) |
 | `feasibility` | `"ac:feasibility"` | Feasibility evaluator — codebase fit, effort, dependencies. Used in ideation (Phase 4) and pre-plan analysis (Complex) |
 | `browser-qa` | `"ac:browser-qa"` | Browser test executor — Playwright CLI, captures evidence. Spawned by /ac:browser-qa |
@@ -133,7 +133,7 @@ All components are pure markdown with YAML frontmatter. No compiled code.
 
 Model, effort, color, maxTurns, and tools are defined in each agent's frontmatter file.
 
-15 agents total. Search agents have `maxTurns` to prevent runaway loops (explore: 20, librarian: 30, linter: 10). Execution/verification/review agents have no maxTurns — they must complete all work. Advisory agents use denylist `disallowedTools: Write, Edit, NotebookEdit`. Execution agent (`plan-worker`) denies only `NotebookEdit`. Denylist auto-includes MCP tools without explicit allowlisting. Exception: `linter` uses allowlist (`tools: LSP, Glob, Read`) for intentional LSP access. `Agent` is NOT denied — CC already prevents subagents from spawning subagents, making it redundant. Plan review has two tiers: `plan-review` (Sonnet, blockers-only, approval bias) for Standard+ plans, `plan-deep-review` (Opus, adversarial, bias toward REJECT) mandatory for Complex. Verification is layered/sequential: `plan-verifier` → `plan-code-review` → `plan-deep-code-review` — each layer gates the next, depth scales with plan complexity. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
+15 agents total. Search agents have `maxTurns` to prevent runaway loops (explore: 20, librarian: 30, linter: 10). Execution/verification/review agents have no maxTurns — they must complete all work. Advisory agents use denylist `disallowedTools: Write, Edit, NotebookEdit`. Execution agent (`plan-worker`) denies only `NotebookEdit`. Denylist auto-includes MCP tools without explicit allowlisting. Exception: `linter` uses allowlist (`tools: LSP, Glob, Read`) for intentional LSP access. `Agent` is NOT denied — CC already prevents subagents from spawning subagents, making it redundant. Plan review: `plan-review` (Sonnet, blockers-only) for Standard, `plan-deep-review` (Opus, merged blocker + adversarial) for Complex. Verification is consolidated: single agent per complexity level with multi-stage internal structure. `plan-code-review` (Sonnet, 3-stage) for Standard, `plan-deep-code-review` (Opus, 4-stage) for Complex. Always use the `ac:` prefixed `subagent_type` — builtin `Explore` and `explore` route to different agents.
 
 ## Skills & MCP
 
@@ -233,15 +233,16 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - **Anti-builtin**: ac replaces CC's native planning, web tools, and search agents — `EnterPlanMode`, `WebSearch`, `WebFetch`, `Agent(Explore)`, `Agent(Plan)` blocked via `permissions.deny` + `PreToolUse` hooks. Auto-configured by `/ac:setup-global-claude-md`. Commands include CRITICAL directives as defense-in-depth.
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
 - **Model routing**: Haiku (search/fast), Sonnet (execution/analysis), Opus (planning/architecture/creation). Workers get per-step model based on tier (quick→Haiku, mid→Sonnet, senior→Opus) with auto-escalation on failure
-- **Tier-aware plan verbosity**: Plan step descriptions scale with worker tier — quick (verbose: full commands, before/after state for Haiku), mid (standard: description + criteria for Sonnet), senior (lean: criteria + constraints for Opus). Reduces plan size ~50% without sacrificing worker success. Step type (`code`/`infra`) routes to appropriate briefing format.
+- **Consistent briefing format**: Single template for all tiers. Task (goal + assignment + criteria) + Context (conventions + wisdom + commands) + Constraints (scope + must-not). Model capability handles complexity difference, not prompt verbosity. Step type (`code`/`infra`) routes to appropriate briefing format.
 - **Agent model customization**: Explore (default Haiku) and Librarian (default Sonnet) — override via Claude Code's native `ANTHROPIC_DEFAULT_HAIKU_MODEL` / `ANTHROPIC_DEFAULT_SONNET_MODEL` env vars. Model profiles: `quality` (all Opus) / `balanced` (default — Haiku/Sonnet/Opus per frontmatter) / `budget` (Sonnet+Haiku only) — configure via env vars
 - **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → references/ on demand
 - **Read-only advisory**: Agents that advise never have write tools
 - **Plan-first**: All commands follow classify → research → interview → generate → review → install
 - **reliability-first**: Right model for right task — default Sonnet execution, Opus for planning/investigation/architecture
 - **Foreground-first agent synchronization**: Parallel agents that must all complete before proceeding use foreground (default) — CC waits for all automatically. Background (`run_in_background: true`) only for genuinely independent work; when all agents have reported, proceed. Verification agents are always foreground. All parallel Agent calls must be in a single message block.
-- **Layered verification**: Verification is sequential and gated — `plan-verifier` → `plan-code-review` → `plan-deep-code-review`. Each layer must APPROVE before the next runs. Depth scales with complexity: Simple (plan-verifier + linter), Standard (+plan-code-review), Complex (+plan-deep-code-review, mandatory — cannot be bypassed). Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification. 3-strike rule: 3 failures across all layers → halt pipeline.
-- **Pre-generation analysis**: Metis-inspired gap detection — plan-analysis agent runs in pre-generation mode (Phase 3) to catch hidden intentions and AI-slop risks before plan writing. Review pipeline: Standard → plan-review only. Complex → plan-review + plan-deep-review.
+- **Consolidated verification**: Single verification agent per complexity level with multi-stage internal structure. Simple: build+test+lint only (no verification agent). Standard: `plan-code-review` (3-stage: compliance, spec, quality). Complex: `plan-deep-code-review` (4-stage: compliance, spec, quality, cross-layer). Commit preflight skipped via `--skip-preflight` when invoked by execute post-verification. 3-strike rule: 3 failures → halt pipeline.
+- **Pre-generation analysis**: Metis-inspired gap detection. Standard: plan-analysis (Sonnet, skip-if-confident). Complex: plan-deep-analysis (Opus, merged analysis+challenge+feasibility, skip-if-confident). Review pipeline: Standard → plan-review (skip-if-confident). Complex → plan-deep-review (merged blocker+adversarial, mandatory).
+- **Token-efficient pipeline**: Skip-if-confident gates on advisory agents (plan-analysis, plan-review) using concrete criteria (single module, no external deps, no architectural impact, research found all patterns). Consolidated agents reduce subagent spawn overhead. Simple plans bypass planning pipeline entirely.
 - **Subagent-only architecture**: All agents use subagent model (fresh context, custom model/tools). Fork model (inherits parent context + prompt cache) is cheaper but requires `model: inherit` (breaks model routing) and `tools: ['*']` (breaks read-only advisory). Use fork only when child needs full parent context AND same model AND no tool restriction
 - **Conditional MCP routing**: Agents detect MCP tool availability at runtime — graceful fallback when tools not installed. kodizm MCP is bundled with ac plugin. Other MCP servers (maestro, flutter-skill) remain user-installed.
 - **Tiered code search**: Grep (text) → LSP (semantic). Agents use LSP via code intelligence for structural queries when available.
@@ -263,7 +264,8 @@ The `/ac:flutter-qa` command auto-detects MCP tools at runtime. No additional se
 - `plugins/ac/skills/claude-md-writer/references/` — Section patterns (global + project), CLAUDE.md-specific dedup guide
 - `plugins/ac/skills/skill-creator/references/skill-patterns.md` — Pattern library for writing Claude Code skills
 - `plugins/ac/agents/plan-worker.md` — Plan step executor (kodizm 5-section format)
-- `plugins/ac/agents/plan-deep-code-review.md` — Deep cross-layer code review agent for complex plans
+- `plugins/ac/agents/plan-deep-code-review.md` — 4-stage deep code review agent for complex plans
+- `plugins/ac/agents/plan-deep-analysis.md` — Consolidated Opus pre-plan agent for complex plans (analysis + challenge + feasibility)
 - `plugins/ac/references/coding-style-template.md` — Template for `my-coding` skill generation
 - `plugins/ac/references/language-style-template.md` — Template for `my-language` skill generation
 - `plugins/ac/references/global-claude-md-template.md` — Template for global CLAUDE.md generation

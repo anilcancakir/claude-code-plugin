@@ -17,7 +17,7 @@ Create Claude Code commands — user-invocable workflows that orchestrate agents
 Determine structure before drafting:
 
 - How many phases? Simple commands (1-2 phases) vs orchestration commands (5+ phases).
-- Which agents to delegate to? Research (ac:explore, ac:librarian), execution (ac:plan-worker), verification (ac:plan-verifier, ac:plan-code-review)?
+- Which agents to delegate to? Research (ac:explore, ac:librarian), execution (ac:plan-worker), verification (ac:plan-code-review for Standard, ac:plan-deep-code-review for Complex)?
 - Interactive (AskUserQuestion gates) or autonomous (runs end-to-end without prompts)?
 - What approval gates are needed before destructive or irreversible actions?
 
