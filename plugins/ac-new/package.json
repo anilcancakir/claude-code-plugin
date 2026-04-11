@@ -1,0 +1,24 @@
+{
+  "name": "ac-new",
+  "version": "0.1.0",
+  "description": "TypeScript + Liquid template engine for AI coding tool prompt rendering",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.ts",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "render:cc": "bun run src/cli.ts render --platform claude-code",
+    "render:oc": "bun run src/cli.ts render --platform opencode",
+    "render:ag": "bun run src/cli.ts render --platform antigravity",
+    "render:generic": "bun run src/cli.ts render --platform generic",
+    "render:all": "bun run render:cc && bun run render:oc && bun run render:ag && bun run render:generic",
+    "validate": "bun run src/cli.ts validate"
+  },
+  "dependencies": {
+    "liquidjs": "^10.19.0",
+    "yaml": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
