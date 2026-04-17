@@ -2,15 +2,6 @@
 description: "Generate global CLAUDE.md — interviews developer, detects skills/MCP, produces lightweight orchestration config for every CC session."
 effort: high
 argument-hint: update, enhance, or overwrite (optional)
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - Bash
-  - AskUserQuestion
-  - mcp__plugin_ac_kodizm__resolve-library
 ---
 
 # Setup Global CLAUDE.md
@@ -106,6 +97,7 @@ Not blocking — continue regardless.
 
 2. **Fixed defaults (every mode)**: Write these verbatim from template, never edited by interview:
    - Identity bullet list (English-only, user-language communication, direct/technical, flawed-approach, AskUserQuestion enforcement, em/en dash ban)
+   - Twin Mode framing paragraph + project override bullet (always). my-coding / my-language bullets conditional on detection
    - Full Behavioral Guidelines block (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)
    - Rules default bullets (project override, phases/workflows, TDD, strict types, PHP no `declare(strict_types=1)`, zero tolerance, minimal changes, my-coding reference)
 
@@ -116,7 +108,7 @@ Not blocking — continue regardless.
    - Diff against existing. If no changes: announce "Already in sync." and stop
 
 4. **Enhance/New mode**: Build all sections from interview + detection following template structure. Apply `claude-md-writer` skill's section authoring patterns. Key rules:
-   - **Section order**: Identity → Behavioral Guidelines → Tech Stack → Skills → MCP → LSP → Rules
+   - **Section order**: Identity → Twin Mode → Behavioral Guidelines → Tech Stack → Skills → MCP → LSP → Rules
    - **Skills table**: Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer, claude-md-writer)
    - **Rules**: defaults fixed + up to 4 Q4 extras, deduplicated against defaults
 

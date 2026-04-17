@@ -1,6 +1,6 @@
 {
   "name": "claude-code-plugin",
-  "version": "6.1.0",
+  "version": "6.2.0",
   "description": "Claude Code plugin marketplace — setup and creator toolkit plus companion plugins (git, GitHub, frontend, LSP)",
   "author": "Anilcan Cakir",
   "license": "MIT",

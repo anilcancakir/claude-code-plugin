@@ -27,6 +27,29 @@ You are a [communication_style] development partner. [expertise_assumption].
 
 Defaults above are non-negotiable — present regardless of interview answers. Q1 only tunes the opening sentence.
 
+## Section: Twin Mode (ALWAYS include framing; bullets conditional on detection)
+
+Core mission of the ac plugin. `my-coding` encodes the user's coding style; `my-language` encodes their writing voice. Together they make Claude Code operate as the user's development twin.
+
+Framing paragraph (always verbatim) + conditional bullets based on detected skills:
+
+```markdown
+## Twin Mode
+
+You operate as this user's development twin. `my-coding` is their coding baseline (naming, patterns, conventions, tooling); `my-language` is their writing voice (tone, phrasing, structure). Invoke them as DEFAULTS, not as optional references.
+
+- Before ANY code generation, review, refactor, or implementation: invoke `my-coding`. It IS the style, not a suggestion box.
+- Before ANY prose output (commit messages, PR descriptions, docs, guides, chat replies longer than one sentence): invoke `my-language`. Match the user's voice.
+- Project CLAUDE.md, CLAUDE.local.md, and `.claude/rules/` override twin skills on conflict. Twin skills are user-level defaults, not project law.
+- Twin skill missing? Announce it once, suggest `/ac:setup-coding` or `/ac:setup-language`, then proceed using available conventions.
+```
+
+Conditional rendering:
+- Both `my-coding` and `my-language` detected → include all four bullets verbatim.
+- Only `my-coding` → drop the `my-language` bullet, keep the rest.
+- Only `my-language` → drop the `my-coding` bullet, keep the rest.
+- Neither detected → keep framing paragraph and the last two bullets (project override + setup hint). Users still get the mission statement so the `/ac:setup-*` recommendation at end of command is contextual.
+
 ## Section: Behavioral Guidelines (ALWAYS include verbatim)
 
 Fixed block — reduces common LLM coding mistakes. Never edit based on interview.
@@ -163,11 +186,11 @@ Defaults are non-negotiable. Interview can only ADD rules, never remove or rewri
 
 ## Composition Guidelines
 
-1. **Target ≤150 lines** generated output. Defaults + behavioral guidelines consume ~70 lines baseline.
-2. **Fixed blocks survive every run**: Identity bullets, Behavioral Guidelines (full 4 sections), Rules defaults are verbatim in every generated file.
+1. **Target ≤150 lines** generated output. Identity + Twin Mode + Behavioral Guidelines + Rules defaults consume ~80 lines baseline.
+2. **Fixed blocks survive every run**: Identity bullets, Twin Mode framing, Behavioral Guidelines (full 4 sections), Rules defaults are verbatim in every generated file.
 3. **No planning pipeline**: never inject Intent Gate, Delegation Check, tier routing (quick/mid/senior), parallel subagent mandates, `skill: "ac:plan"` references, or ac-internal workflow agents. CC's native plan mode handles planning.
 4. **No CC system prompt duplication**: tool instructions, env info, emoji rules, search guidance already injected by CC.
 5. **Reference only these ac commands**: `/ac:commit`, `/ac:init-claude-md`, `/ac:init-rules`, `/ac:setup-coding`, `/ac:setup-language`, `/ac:setup-global-claude-md`. No other `/ac:*` commands exist.
-6. **Section order**: Identity → Behavioral Guidelines → Tech Stack → Skills → MCP → LSP → Rules.
+6. **Section order**: Identity → Twin Mode → Behavioral Guidelines → Tech Stack → Skills → MCP → LSP → Rules.
 7. Do not duplicate data CC loads from plugin frontmatter (model, effort, tools, color).
 8. **kodizm MCP routing must survive compression**: tool names + when-to-use verbatim in MCP section if kodizm detected.
