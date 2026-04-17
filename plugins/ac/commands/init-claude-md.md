@@ -23,22 +23,17 @@ Generate a project-level `./CLAUDE.md` for the active codebase. Produces ONLY `.
 
 ## Phase 1: Discovery
 
-Auto-discover project structure, commands, patterns, and existing context. Use ac:explore agents for all codebase research — do not Read, Glob, Grep, or Search directly. Source code findings always take priority over documentation claims.
+Auto-discover project structure, commands, patterns, and existing context. Use Glob, Grep, and Read directly in the main context — no subagents. Source code findings always take priority over documentation claims.
 
-1. Launch 3 ac:explore agents in a single message block (parallel foreground):
+1. **Commands + Build + Dev Tools** — Glob for `package.json`, `composer.json`, `Makefile`, `Cargo.toml`, `pyproject.toml`, `Dockerfile`, `.github/workflows/*.yml`, `.gitlab-ci.yml`. Read each to extract build/test/lint/dev/format/deploy commands. Glob for linter/formatter configs (`.eslintrc*`, `phpstan.neon`, `analysis_options.yaml`, `biome.json`, `.stylelintrc*`, `pylintrc`, `.golangci.yml`, `.prettierrc*`, `.editorconfig`, `rustfmt.toml`) and test runners (`phpunit.xml`, `jest.config.*`, `vitest.config.*`, `pytest.ini`). Assemble: commands table + dev tools table. Priority: actual scripts in config files over README claims.
 
-   ac:explore 1 — **Commands + Build + Dev Tools**:
-   "CONTEXT: Generating project CLAUDE.md. GOAL: Find all development commands AND dev tooling. REQUEST: Find package.json, composer.json, Makefile, Cargo.toml, pyproject.toml, Dockerfile. Extract build, test, lint, dev, format, deploy commands. Check CI configs (.github/workflows, .gitlab-ci.yml) for additional commands. Also detect: linter configs (.eslintrc, phpstan.neon, analysis_options.yaml, biome.json, .stylelintrc, pylintrc, .golangci.yml), formatter configs (.prettierrc, .editorconfig, rustfmt.toml), test runners (phpunit.xml, jest.config, vitest.config, pytest.ini). For each dev tool found: tool name, type (linter/formatter/test), command to run. Report as: commands table + dev tools table. PRIORITY: Actual scripts in config files over README claims."
+2. **Architecture + Entry Points** — Run `ls` at depth 2, skipping `vendor/`, `node_modules/`, `dist/`, `build/`. Identify entry points (`main.*`, `index.*`, bootstrap files) via Glob. Note non-obvious config files. Detect monorepo patterns (workspace roots, `packages/`, `apps/`). Assemble: annotated structure tree + key files with purpose.
 
-   ac:explore 2 — **Architecture + Entry Points**:
-   "CONTEXT: Generating project CLAUDE.md. GOAL: Map project structure for Claude Code context. REQUEST: Directory structure (depth 2, skip vendor/node_modules/dist). Entry points (main files, index files, bootstrap). Key config files (non-obvious ones only). Module boundaries and monorepo patterns. Report: annotated structure tree + key files with purpose."
+3. **Context Docs + Code Patterns** — Read `README.md`, `AGENTS.md`, `GEMINI.md` if they exist. Grep for `DO NOT|NEVER|DEPRECATED|TODO` across source. Extract conventions, architecture decisions, anti-patterns. Source code patterns override doc claims. Assemble: conventions list + gotchas list.
 
-   ac:explore 3 — **Context Docs + Code Patterns**:
-   "CONTEXT: Generating project CLAUDE.md. GOAL: Extract conventions and anti-patterns. REQUEST: Read README.md, GEMINI.md, root AGENTS.md if they exist — extract conventions, architecture decisions, anti-patterns. Find linter/formatter configs and infer code style rules. Find DO NOT/NEVER/DEPRECATED/TODO comments in source. PRIORITY: Source code patterns over documentation claims. Report: conventions list + gotchas list."
+   If any discovery returns empty → proceed with partial data. Note missing areas and ask targeted questions in Phase 2.
 
-   If any agent returns empty results → proceed with partial data. Note missing areas and ask targeted questions in Phase 2.
-
-2. While agents run, detect project config via Bash:
+4. Detect project config via Bash:
 
    ```bash
    ls -la CLAUDE.md .mcp.json 2>/dev/null
@@ -55,8 +50,7 @@ Auto-discover project structure, commands, patterns, and existing context. Use a
    - Collect existing hooks from settings.json (if any) — avoid duplicate proposals
    - Cross-reference file-detected items with session capabilities — check if specific MCP tools resolve, verify agent names appear in available agent list
 
-3. Collect all agent results
-4. Merge into discovery summary: commands table + architecture map + conventions + gotchas
+5. Merge into discovery summary: commands table + architecture map + conventions + gotchas
 
 ---
 

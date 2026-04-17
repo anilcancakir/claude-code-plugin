@@ -14,20 +14,15 @@ Generate `.claude/rules/*.md` files for the active codebase — path-scoped inst
 
 ## Phase 1: Discovery
 
-Detect tech stacks, score directories, extract conventions. Use ac:explore agents for all research — source code always takes priority over docs.
+Detect tech stacks, score directories, extract conventions. Use Glob, Grep, and Read directly in the main context — no subagents. Source code always takes priority over docs.
 
-1. Launch 3 ac:explore agents in a single message block (parallel foreground):
+1. **Tech Stack Detection** — Glob for `package.json`, `composer.json`, `pubspec.yaml`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `Gemfile`. Read each to extract framework, version, key dependencies. Detect monorepo roots (`workspaces` fields, `packages/`, `apps/`). Assemble: stack | framework | version | root path.
 
-   ac:explore 1 — **Tech Stack Detection**:
-   "CONTEXT: Generating .claude/rules/ for this project. GOAL: Detect all tech stacks. REQUEST: Find package.json, composer.json, pubspec.yaml, Cargo.toml, go.mod, pyproject.toml, Gemfile. For each: framework, version, key dependencies. Check monorepo (workspaces, packages/). Report: stack | framework | version | root path"
+2. **Directory Scoring** — Run `ls` at depth 2-3, skipping `vendor/`, `node_modules/`, `dist/`, `build/`, `.git/`. For each significant directory: count files and subdirs (via Glob), detect own entry point (`index.*`, `__init__.py`, service providers, barrel exports), detect distinct patterns (`contracts/`, `drivers/`, `concerns/`, `middleware/`, `migrations/`). Assemble: directory | file count | subdir count | has entry | has patterns | total score.
 
-   ac:explore 2 — **Directory Scoring**:
-   "CONTEXT: Deciding which directories need domain-level rule files. GOAL: Score directories by complexity. REQUEST: For each significant directory (depth 2-3, skip vendor/node_modules/dist/build/.git): count files + subdirs, check for own config/entry point (index.ts, **init**.py, service_provider.dart, barrel export), check for distinct patterns (contracts/, drivers/, concerns/, middleware/, migrations/). Report: directory | file count | subdir count | has entry | has patterns | total score"
+3. **Convention Extraction** — For each major directory, Read 3-5 source files and extract: import style, naming pattern, architectural pattern (facades, repos, controllers, middleware), API usage patterns, anti-patterns. Grep for `DO NOT|NEVER|DEPRECATED` comments. Read linter configs (`.eslintrc*`, `phpstan.neon`, `analysis_options.yaml`). Priority: source code over docs. Assemble: directory | conventions list | gotchas.
 
-   ac:explore 3 — **Convention Extraction**:
-   "CONTEXT: Finding real coding conventions for rule content. GOAL: Extract actual patterns per domain. REQUEST: For each major directory, examine 3-5 source files and extract: import style, naming pattern, architectural pattern (facades, repos, controllers, middleware), API usage patterns (key methods, common chaining), anti-patterns (DO NOT/NEVER/DEPRECATED comments), domain gotchas. Also check linter configs (eslintrc, phpstan, analysis_options). PRIORITY: Source code > docs. Report: directory | conventions list | gotchas"
-
-2. While agents run, gather dedup context:
+4. Gather dedup context via Bash:
 
    ```bash
    ls -la .claude/rules/ 2>/dev/null
@@ -40,8 +35,7 @@ Detect tech stacks, score directories, extract conventions. Use ac:explore agent
    - If existing rules found → read each rule file fully to identify user-added vs auto-generated content
    - If `$ARGUMENTS` is "update" → mark update mode — preserve user-added conventions in existing rules, only update auto-detected patterns
 
-3. Collect all agent results
-4. Merge into: stacks detected + directory scores + conventions per domain
+5. Merge into: stacks detected + directory scores + conventions per domain
 
 ---
 

@@ -1,20 +1,22 @@
 ---
-description: "Generate global CLAUDE.md — interviews developer, detects skills/MCP, produces orchestration config for every CC session."
+description: "Generate global CLAUDE.md — interviews developer, detects skills/MCP, produces lightweight orchestration config for every CC session."
 effort: high
 argument-hint: update, enhance, or overwrite (optional)
 ---
 
 # Setup Global CLAUDE.md
 
-Generate or update `~/.claude/CLAUDE.md`. Injected into every CC conversation as user-rules — main session AND all plugin subagents.
+Generate or update `~/.claude/CLAUDE.md`. Injected into every CC conversation as user-rules — main session AND plugin subagents.
 
-**Authoring knowledge**: Section patterns, quality scoring, compression tactics, and dedup boundaries live in the `claude-md-writer` skill. Read it before writing any section content. The template at `${CLAUDE_PLUGIN_ROOT}/references/global-claude-md-template.md` provides structural guidance and compression-critical anchors.
+**Authoring knowledge**: Section patterns, quality scoring, compression tactics, and dedup boundaries live in the `claude-md-writer` skill. Read it before writing any section content. The template at `${CLAUDE_PLUGIN_ROOT}/references/global-claude-md-template.md` provides structural guidance.
+
+**Scope**: This config is deliberately lightweight. It does NOT inject planning pipelines, Intent Gate, delegation directives, tier routing, or parallel subagent mandates. CC's native plan mode and default agent behavior stay in charge.
 
 ## Section Ownership
 
 | Type | Sections | Update Behavior |
 |------|----------|----------------|
-| **Plugin-managed** | Workflow, Skills, MCP, LSP | Regenerated from template every run |
+| **Plugin-managed** | Skills, MCP, LSP | Regenerated from template every run |
 | **User-managed** | Identity, Tech Stack, Rules | Preserved across updates. Changed only via interview |
 
 ---
@@ -61,8 +63,7 @@ Present discovery findings first: detected skills, MCP servers, environment. The
 Test kodizm MCP connectivity: call `mcp__kodizm__resolve-library` with query "react".
 - Success (returns library ID) → kodizm MCP operational. Store MCP_STATUS = "operational".
 - Failure (error, timeout, tool not available) → Store MCP_STATUS = "unavailable". Present warning:
-  "kodizm MCP is not available. Export `KODIZM_MCP_TOKEN` in your shell profile (`~/.zshrc`).
-  Get your token from kodizm.com. ac:librarian requires kodizm MCP for documentation lookups."
+  "kodizm MCP is not available. Export `KODIZM_MCP_TOKEN` in your shell profile (`~/.zshrc`). Get your token from kodizm.com."
 Not blocking — continue regardless.
 
 **Q1 — Communication style:**
@@ -79,21 +80,14 @@ Not blocking — continue regardless.
 **Q3 — Non-negotiable rules:**
 - question: "Which rules must NEVER be violated?"
 - multiSelect: true
-- options: TDD · English only · Strict types · Zero suppressions · Minimal changes (no bonus refactors)
+- options: TDD · English only · Strict types · Zero suppressions · Minimal changes (no bonus refactors) · No em dash / en dash
 
-**Q4 — Autonomy level:**
-- question: "How autonomous should I be?"
-- options:
-  - Plan-first (Recommended) — "Always plan non-trivial work before executing"
-  - Balanced — "Plan complex tasks, execute simple ones directly"
-  - High autonomy — "Execute and report, ask only when blocked"
-
-**Q5 — Extensions** (only if skills/MCP detected beyond my-coding/my-language):
+**Q4 — Extensions** (only if skills/MCP detected beyond my-coding/my-language):
 - question: "Found these global extensions. Include references in CLAUDE.md?"
 - multiSelect: true
 - options: dynamically built from detected skills + MCP servers (label = name, description = capability)
 
-**Q6 — Extra rules:**
+**Q5 — Extra rules:**
 - question: "Any additional rules, pet peeves, or preferences?"
 - options: No extras · (free text response)
 
@@ -109,20 +103,20 @@ Not blocking — continue regardless.
    - Diff against existing — if no changes → announce "Already in sync." and stop
 
 3. **Enhance/New mode**: Build all sections from interview + detection following template structure. Apply `claude-md-writer` skill's section authoring patterns for each section. Key rules:
-   - **Workflow**: Copy verbatim from template — compression-critical anchors, do NOT abbreviate
+   - **Section order**: Identity → Tech Stack → Skills → MCP → LSP → Rules. No Workflow section.
    - **Skills table**: Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer, claude-md-writer)
-   - **Rules**: 3-5 rules max. If `my-coding` exists → defer: "Detailed coding rules → `my-coding` skill."
+   - **Rules**: 4-6 rules max. If `my-coding` exists → defer: "Detailed coding rules live in the `my-coding` skill."
 
-4. Count lines — if over 120, trim Rules (defer to my-coding) and remove LSP section
+4. Count lines — if over 100, trim Rules (defer to my-coding) and drop LSP section.
 
-5. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, only ac:explore/ac:librarian/ac:plan/ac:commit referenced. No internal pipeline agents (plan-worker, plan-code-review, plan-deep-code-review, plan-deep-analysis, plan-deep-review) in generated output.
+5. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, no planning pipeline injection (Intent Gate, Delegation Check, tier routing, parallel subagent mandates, `skill: "ac:plan"` refs, internal pipeline agents). Only reference `/ac:commit`, `/ac:init-claude-md`, `/ac:init-rules`, `/ac:setup-coding`, `/ac:setup-language`, `/ac:setup-global-claude-md`.
 
 ---
 
 ## Phase 4: Review & Install
 
-1. Present generated CLAUDE.md with: line count, sections included, skills/MCP referenced
-2. Update mode → show diff (`- old` / `+ new`). No changes → already announced in Phase 3
+1. Present generated CLAUDE.md with: line count, sections included, skills/MCP referenced.
+2. Update mode → show diff (`- old` / `+ new`). No changes → already announced in Phase 3.
 3. Call AskUserQuestion with these exact parameters:
    ```json
    {
@@ -144,63 +138,42 @@ Not blocking — continue regardless.
    - Backup existing: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak` (if exists)
    - Write `~/.claude/CLAUDE.md`
 
-5. **Auto-configure `~/.claude/settings.json`** — ac replaces CC's native tools and agents. Read existing settings, merge (preserve all existing keys), ensure these entries:
-
-   **`permissions.deny`** — add to deny array (create if missing, append if exists, skip already-present):
-
-   Always deny (regardless of MCP_STATUS):
-   - `EnterPlanMode` — ac manages planning via `/ac:plan`. Native plan mode hijacks ac's 7-phase workflow.
-   - `Agent(Explore)` — ac:explore replaces CC's built-in Explore agent.
-   - `Agent(Plan)` — defense-in-depth alongside EnterPlanMode deny.
+5. **Auto-configure `~/.claude/settings.json`** — only restriction is blocking CC's native web tools when kodizm MCP is available as replacement. Nothing else is blocked. Read existing settings, merge (preserve all existing keys).
 
    Only deny if MCP_STATUS = "operational":
-   - `WebSearch`, `WebFetch` — unreliable (hangs, timeouts). ac:librarian uses kodizm MCP instead.
+   - `WebSearch`, `WebFetch` — replaced by kodizm MCP's `web-search`, `web-fetch`.
 
-   If MCP_STATUS = "unavailable": skip `WebSearch`/`WebFetch` deny entries and warn: "WebSearch/WebFetch kept enabled — kodizm MCP unavailable as replacement."
+   If MCP_STATUS = "unavailable": skip these entries and warn: "WebSearch/WebFetch kept enabled — kodizm MCP unavailable as replacement."
 
    Example deny array when MCP_STATUS = "operational":
    ```json
    {
      "permissions": {
        "deny": [
-         "EnterPlanMode",
          "WebSearch",
-         "WebFetch",
-         "Agent(Explore)",
-         "Agent(Plan)"
+         "WebFetch"
        ]
      }
    }
    ```
 
-   **`hooks.PreToolUse`** — add entries (create array if missing, append, skip if matcher present):
-
-   Always add:
-   ```json
-   {
-     "matcher": "EnterPlanMode",
-     "hooks": [{
-       "type": "command",
-       "command": "echo 'EnterPlanMode blocked — ac manages planning via /ac:plan.' >&2; exit 2"
-     }]
-   }
-   ```
-
-   Only add if MCP_STATUS = "operational":
+   Matching `hooks.PreToolUse` entry (only if MCP_STATUS = "operational"):
    ```json
    {
      "matcher": "WebSearch|WebFetch",
      "hooks": [{
        "type": "command",
-       "command": "echo 'Web tools blocked — ac:librarian uses kodizm MCP.' >&2; exit 2"
+       "command": "echo 'Web tools blocked — use kodizm MCP (web-search / web-fetch).' >&2; exit 2"
      }]
    }
    ```
+
+   Do NOT add deny entries or hooks for `EnterPlanMode`, `Agent(Explore)`, or `Agent(Plan)` — CC's native plan mode and built-in agents stay enabled. If prior runs installed these entries, remove them during this merge (they are obsolete).
 
    Write merged settings back. Report what changed vs already configured.
 
 6. Confirm:
    - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md` — active in every CC session."
-   - "Settings updated: blocked tools/agents via `permissions.deny` + `PreToolUse` hooks." List which entries were newly added vs already configured.
+   - Settings update summary: list new deny entries, new hooks, and any obsolete entries removed.
    - If my-coding not detected → "Consider `/ac:setup-coding` for detailed coding rules."
    - If my-language not detected → "Consider `/ac:setup-language` for writing style."

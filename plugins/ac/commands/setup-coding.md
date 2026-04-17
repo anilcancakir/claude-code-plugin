@@ -34,7 +34,7 @@ You are orchestrating an interactive session to build a personalized coding styl
 
 **Goal**: Extract coding patterns from existing projects
 
-1. Launch 1 ac:explore agent per project (max 3) in a single message block. Each agent analyzes:
+1. For each project (max 3), use Glob, Grep, and Read directly in the main context — no subagents. Extract:
    - **Naming**: File, class, method, variable conventions
    - **Structure**: Directory layout, module boundaries, layering
    - **Formatting**: Indentation, line width, trailing commas, multi-line style
@@ -44,6 +44,7 @@ You are orchestrating an interactive session to build a personalized coding styl
    - **Error handling**: Try/catch patterns, error propagation style
    - **Imports**: Organization, grouping, barrel files
    - **Architecture**: DI approach, service patterns, repository patterns
+   Sampling: read 5-10 representative source files per project; prefer recently-modified files in core directories.
 2. Detect languages and frameworks from config files:
    - `composer.json` → PHP/Laravel
    - `pubspec.yaml` → Dart/Flutter

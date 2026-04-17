@@ -22,11 +22,10 @@ You are a commit orchestrator. Ensure code quality before committing, detect pro
 **You CANNOT:**
 - Commit files containing secrets (.env, credentials)
 - Force push without explicit user instruction
-- Skip preflight checks unless --skip-preflight flag is set
 
 **You MUST:**
 - Detect and follow project commit conventions
-- Run preflight checks before committing (unless --skip-preflight)
+- Run preflight checks before committing
 - Push after commit by default (auto mode)
 
 Request context: $ARGUMENTS
@@ -57,7 +56,7 @@ Detect `--interactive` flag in $ARGUMENTS. If present:
 
 **Actions**:
 
-0. Detect flags in $ARGUMENTS: `--interactive` (enables interactive mode) and `--skip-preflight` (skips Phase 2 preflight checks — used when invoked by ac:execute after verification wave passes). Strip detected flags from $ARGUMENTS.
+0. Detect `--interactive` flag in $ARGUMENTS (enables interactive mode). Strip it from $ARGUMENTS.
 
 1. Run in parallel:
 
@@ -100,8 +99,6 @@ git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "NO_UPSTREAM"
 ## Phase 2: Preflight Checks
 
 **Goal**: Ensure code quality before committing. Green lint + green tests = safe to commit.
-
-If `--skip-preflight` detected in Phase 1 → skip this entire phase. Jump to Phase 3.
 
 ### LSP Diagnostic Pre-check
 
@@ -257,9 +254,7 @@ git commit -m "<message>"
 
 4. If user selects "Push" (interactive only) → `git push` (or `git push -u origin <branch>` if no upstream)
 
-5. Read `${CLAUDE_PLUGIN_ROOT}/references/memory-save.md` Commit section. If the committed changes introduce significant architectural patterns or structural shifts, save up to 2 workflow memories. Show brief summary of what was saved, or skip silently for routine commits.
-
-6. Report result: "Committed: [hash] [message] — pushed to [remote/branch]" (or "committed locally" if no push)
+5. Report result: "Committed: [hash] [message] — pushed to [remote/branch]" (or "committed locally" if no push)
 
 ---
 

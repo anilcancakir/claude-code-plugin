@@ -34,7 +34,7 @@ You are orchestrating an interactive session to build a personalized writing and
 
 ## Phase 2: Sample Analysis
 
-1. Launch 1 ac:explore agent per sample source (max 3) in a single message block. Each agent extracts:
+1. For each sample source (max 3), use Glob, Grep, and Read directly in the main context — no subagents. Extract:
    - **Voice traits**: Personal/formal, active/passive, sentence length average
    - **Opening patterns**: How sections/articles/docs begin
    - **Transition phrases**: Recurring connectors and segue patterns
