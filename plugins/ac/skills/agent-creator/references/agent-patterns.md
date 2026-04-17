@@ -14,12 +14,12 @@ Read-only agents that analyze, review, or advise. Never modify files.
 ---
 name: code-reviewer
 description: "Review code changes for correctness, style compliance, and potential bugs. Use after implementation before marking complete."
-model: sonnet
 effort: medium
-disallowedTools: Write, Edit, NotebookEdit
 color: yellow
 ---
 ```
+
+Read-only posture is declared in the Constraints section of the body, not in frontmatter.
 
 ```markdown
 ## Identity
@@ -73,10 +73,8 @@ Agents with write access that implement changes. Must verify their own work.
 ```yaml
 ---
 name: implementation-worker
-description: "Implement a single task step — read existing code, make changes, run tests, report results. Model overridden by orchestrator per step tier."
-model: sonnet
+description: "Implement a single task step — read existing code, make changes, run tests, report results."
 effort: medium
-disallowedTools: NotebookEdit
 color: green
 ---
 ```
@@ -121,15 +119,13 @@ Only modify listed files. Match existing code style. No gold-plating. No new dep
 
 ## Search Agent Template
 
-Fast, read-only agents for codebase lookups. Always have `maxTurns` to prevent runaway loops.
+Fast, read-only agents for codebase lookups. Always set `maxTurns` to prevent runaway loops.
 
 ```yaml
 ---
 name: codebase-search
 description: "Search codebase for files, patterns, and relationships. Use proactively for internal lookups — fire for any question involving 2+ modules."
-model: haiku
 effort: low
-disallowedTools: Write, Edit, NotebookEdit
 maxTurns: 20
 color: green
 ---
@@ -211,46 +207,37 @@ Default to `green` for execution agents and `yellow` for advisory agents when ro
 
 ## Frontmatter Patterns
 
-Quick reference for common agent configurations:
+Quick reference for common agent configurations. Do NOT declare `model`, `allowed-tools`, `disallowedTools`, or `tools` — CC ignores them at runtime for plugin components. Read-only posture belongs in the Constraints section of the body.
 
 **Advisory (read-only, standard review):**
 ```yaml
-model: sonnet
 effort: medium
-disallowedTools: Write, Edit, NotebookEdit
 color: yellow
 ```
 
 **Advisory (deep analysis, high-stakes):**
 ```yaml
-model: opus
 effort: high
-disallowedTools: Write, Edit, NotebookEdit
 color: red
 ```
 
 **Execution (standard worker):**
 ```yaml
-model: sonnet
 effort: medium
-disallowedTools: NotebookEdit
 color: green
 ```
 
 **Search (fast lookup):**
 ```yaml
-model: haiku
 effort: low
-disallowedTools: Write, Edit, NotebookEdit
 maxTurns: 20
 color: green
 ```
 
-**Strict allowlist (tool-locked):**
+**Strict tool-locked agent:**
 ```yaml
-model: haiku
 effort: low
-tools: LSP, Glob, Read
 maxTurns: 10
 color: yellow
 ```
+State the tool lockdown in the Constraints section (e.g., "Read-only. LSP + Glob + Read only."). Session permissions enforce it.

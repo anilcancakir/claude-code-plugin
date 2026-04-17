@@ -74,8 +74,7 @@ Read-only. No file writes. Deliver analysis and blueprint only.
 - Target: 40-80 lines body
 - Maximum: 120 lines body
 - Overflow: move detail to `references/`
-- Advisory agents: `disallowedTools: Write, Edit, NotebookEdit`
-- Execution agents: `disallowedTools: NotebookEdit` (minimum)
+- Read-only posture for advisory agents: state "Read-only. No file writes." in Constraints section (tool restriction must come from session permissions, not frontmatter)
 
 ---
 
@@ -236,8 +235,7 @@ No heading. No opening sentence. Start with first bullet.
 | "You should consider..." | "Use X" or "Extract Y" |
 | "Try to keep things clean" | "Methods under 30 lines. Extract helpers." |
 | Nested lists 3+ deep | Flatten to max 1 nesting level |
-| `allowed-tools` on agents | Use `disallowedTools` (denylist) |
-| `disallowedTools` on skills | Use `allowed-tools` (allowlist) |
+| `allowed-tools` / `disallowedTools` / `model` / `tools` in frontmatter | Remove — CC ignores these for plugin components. Declare read-only posture in agent Constraints section instead |
 | References without guidance | Add "read this when" trigger |
 | Agent body >120 lines | Move detail to `references/` |
 | CRITICAL on every section | Max 1-2 per file — inflation kills signal |

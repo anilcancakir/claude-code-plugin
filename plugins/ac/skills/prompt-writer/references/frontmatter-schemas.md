@@ -2,6 +2,8 @@
 
 Complete YAML frontmatter field reference for all Claude Code component types. Consult when writing or reviewing frontmatter for any component.
 
+**Ineffective fields (omit)**: `model`, `allowed-tools`, `disallowedTools`, `tools`. CC does not honor these at runtime for user-level plugin components; declaring them adds noise without effect. Tool access is governed by the session's permission settings, not per-component declarations.
+
 ## Contents
 
 - [Skill Frontmatter](#skill-frontmatter)
@@ -22,12 +24,7 @@ description: "Short summary"        # 250 char hard cap in listing, 1024 max sto
 when_to_use: "Detailed triggers"    # Extended trigger conditions for auto-invocation
 user-invocable: true                # true (default) = in / menu. false = Claude-only
 disable-model-invocation: false     # true = manual /name only, hidden from Claude
-model: sonnet                       # haiku | sonnet | opus
 effort: medium                      # low | medium | high | max
-allowed-tools:                      # Whitelist — skills use allowlist
-  - Read
-  - Glob
-  - Bash(gh:*)                      # Pattern matching supported
 context: inline                     # inline (default) or fork (isolated subagent)
 agent: Explore                      # Subagent type when context: fork
 argument-hint: "[issue-number]"     # Hint shown in autocomplete
@@ -73,14 +70,6 @@ git log --oneline -3
 
 Disable via `"disableSkillShellExecution": true` in settings.
 
-### Tool Control
-
-Skills use `allowed-tools` (whitelist). List only tools the skill actually needs.
-
-Pattern matching: `Bash(gh:*)` allows only `gh` commands. `Bash(npm:*)` allows only `npm`.
-
-Omit `allowed-tools` entirely for unrestricted access (default).
-
 ---
 
 ## Invocation Control Matrix
@@ -104,12 +93,7 @@ Omit `allowed-tools` entirely for unrestricted access (default).
 ---
 name: agent-name
 description: "What this agent specializes in"
-model: sonnet                       # haiku | sonnet | opus
 effort: medium                      # low | medium | high | max
-disallowedTools:                    # Denylist — agents use denylist
-  - Write
-  - Edit
-  - NotebookEdit
 maxTurns: 20                        # Turn limit (search agents only)
 color: green                        # UI display color
 skills:                             # Skills available to this agent
@@ -120,21 +104,9 @@ isolation: worktree                 # Run in git worktree
 ---
 ```
 
-### Tool Control
-
-Agents use `disallowedTools` (denylist) — NOT `allowed-tools`.
-
-Exception: strict tool-locked agents (e.g., linter) may use `tools:` allowlist for intentional lockdown.
-
-`disallowedTools` auto-includes MCP tools without explicit allowlisting.
-
-**Advisory agents** (read-only): `disallowedTools: Write, Edit, NotebookEdit`
-
-**Execution agents** (write access): `disallowedTools: NotebookEdit` (minimum)
-
 ### MCP Tool Format
 
-MCP tools follow `mcp__server__tool` naming. Denylist auto-blocks MCP unless explicitly allowed.
+MCP tools follow `mcp__server__tool` naming. Access governed by session permissions.
 
 ### Restricted Fields
 
@@ -153,16 +125,7 @@ Set `maxTurns` only for search agents with runaway risk (explore: 20, librarian:
 name: my-command
 description: "What this command does"
 argument-hint: "[feature description]"
-model: sonnet                       # Optional — commands can specify model
 effort: medium                      # low | medium | high | max
-allowed-tools:                      # Whitelist — commands use allowlist
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Agent
-  - Glob
-  - Grep
 user-invocable: true                # Commands are always user-invocable
 ---
 ```
@@ -170,10 +133,6 @@ user-invocable: true                # Commands are always user-invocable
 ### Template Paths
 
 Use `${CLAUDE_PLUGIN_ROOT}` for paths to templates and resources within the plugin directory.
-
-### Tool Control
-
-Commands use `allowed-tools` (whitelist) — same as skills, different from agents.
 
 ---
 
@@ -186,7 +145,7 @@ description: "Optional description"  # Informational only
 ---
 ```
 
-Rules support ONLY `path` and `description`. No model, tools, user-invocable, context, or agent fields.
+Rules support ONLY `path` and `description`. No tools, user-invocable, context, or agent fields.
 
 Rules are flat bullet lists scoped to file paths. No headings, no opening sentence.
 

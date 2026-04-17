@@ -2,7 +2,6 @@
 name: claude-md-writer
 description: "Write CC-optimal CLAUDE.md and CLAUDE.local.md files. Use when creating, reviewing, or improving any CLAUDE.md — global, project-level, or local. Covers section authoring, compression, dedup boundaries, and quality scoring."
 when_to_use: "TRIGGER when: 'write CLAUDE.md', 'improve CLAUDE.md', 'review CLAUDE.md', 'create project instructions', working with any CLAUDE.md or CLAUDE.local.md file. DO NOT TRIGGER: writing skills, agents, commands, or rules (use respective creator skills)."
-model: sonnet
 effort: medium
 ---
 

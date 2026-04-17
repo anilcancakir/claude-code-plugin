@@ -171,7 +171,6 @@ Run a skill in an isolated subagent — useful for contained, parallelizable wor
 name: pr-summary
 context: fork
 agent: Explore
-allowed-tools: Bash(gh *)
 ---
 
 Summarize this PR:
@@ -263,7 +262,7 @@ One level deep rule: CC reliably reads `SKILL.md → references/file.md`. Chains
 |---|---|
 | Description >250 chars without `when_to_use` | Split: short `description` + detailed `when_to_use` |
 | `user-invocable: true` on every skill | Omit — `true` is the default. Only set `false` for internal-only skills |
-| `allowed-tools` on agents | Use `disallowedTools` — agents use blacklist, skills use whitelist |
+| `allowed-tools` / `disallowedTools` / `model` in frontmatter | Remove — CC ignores these for plugin components |
 | References without "read this when" guidance | Always explain when the model should read each reference |
 | Deeply nested reference chains | Keep all references one level from SKILL.md |
 | Hardcoded file paths or usernames | Use `${CLAUDE_SKILL_DIR}` or `${CLAUDE_PLUGIN_ROOT}` variables |

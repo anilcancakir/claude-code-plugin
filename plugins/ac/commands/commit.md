@@ -1,7 +1,6 @@
 ---
 description: "Smart commit — preflight checks, convention detection, atomic commits. Delegates to git-master when available."
 argument-hint: Optional commit scope or message hint
-allowed-tools: AskUserQuestion, Bash, Grep, Read, Glob
 effort: low
 ---
 

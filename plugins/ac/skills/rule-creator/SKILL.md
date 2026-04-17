@@ -2,7 +2,6 @@
 name: rule-creator
 description: "Create path-scoped .claude/rules/ for Claude Code projects. Use when adding coding conventions, framework patterns, or domain-specific rules that auto-inject when matching files are touched."
 when_to_use: "TRIGGER when: 'create a rule', 'add a coding rule', 'add convention for', working with .claude/rules/. DO NOT TRIGGER: creating skills, agents, or commands. Note: /ac:init-rules auto-generates rules from analysis — this skill is for manual/custom rule creation."
-model: sonnet
 effort: medium
 ---
 

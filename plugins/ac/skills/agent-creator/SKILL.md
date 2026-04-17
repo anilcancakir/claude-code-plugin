@@ -1,8 +1,7 @@
 ---
 name: agent-creator
-description: "Create Claude Code agents with optimal structure, tool control, and output contracts. Use when building subagents, advisory agents, or execution workers for Claude Code plugins."
+description: "Create Claude Code agents with optimal structure and output contracts. Use when building subagents, advisory agents, or execution workers for Claude Code plugins."
 when_to_use: "TRIGGER when: 'create an agent', 'add a subagent', 'new agent for', building Claude Code plugin agents. DO NOT TRIGGER: creating skills, commands, or rules."
-model: opus
 effort: high
 ---
 
@@ -14,13 +13,13 @@ Create Claude Code agents that follow the kodizm 5-section format — Identity, 
 
 Determine the agent's role before drafting:
 
-| Type | Tool Control | Model | Key Traits |
-|------|-------------|-------|------------|
-| **Advisory** | `disallowedTools: Write, Edit, NotebookEdit` | sonnet/opus | Read-only, analyzes, reports findings |
-| **Execution** | `disallowedTools: NotebookEdit` | sonnet | Write access, implements changes, runs tests |
-| **Search** | `disallowedTools: Write, Edit, NotebookEdit` + `maxTurns` | haiku | Read-only, fast lookup, capped turns |
+| Type | Posture | Key Traits |
+|------|---------|------------|
+| **Advisory** | Read-only (declared in Constraints) | Analyzes, reports findings, never writes |
+| **Execution** | Write access | Implements changes, runs tests, verifies own work |
+| **Search** | Read-only + `maxTurns` cap | Fast lookup, bounded turns, structured references |
 
-If the agent's purpose spans types, default to the more restrictive — advisory over execution. Execution agents must justify write access.
+If the agent's purpose spans types, default to the more restrictive — advisory over execution. Execution agents must justify write access in their Identity.
 
 ### 2. Research Existing Agents
 
@@ -52,7 +51,7 @@ Follow the kodizm 5-section format from `references/agent-patterns.md`. Read it 
 | Execution | 10-30 | Numbered steps or strategy |
 | Output Format | 5-15 | Structured markdown template |
 | Failure Conditions | 3-8 | "FAILED if:" checklist |
-| Constraints | 2-5 | Scope, style, hard limits |
+| Constraints | 2-5 | Scope, style, hard limits, read-only posture if applicable |
 
 **Body size enforcement:**
 - Target: 40-80 lines
@@ -70,9 +69,7 @@ Verify all required fields before finalizing. Read `${CLAUDE_SKILL_DIR}/../promp
 |-------|--------|-------|
 | `name` | kebab-case | Unique within plugin |
 | `description` | ≤250 chars | Front-load key use case, "slightly pushy" |
-| `model` | haiku/sonnet/opus | Per routing guide below |
-| `effort` | low/medium/high | Match model tier |
-| `disallowedTools` | comma-separated | Denylist — see Tool Control below |
+| `effort` | low/medium/high | Match task complexity |
 | `color` | green/yellow/red/blue/cyan | See Color Guide in references |
 
 **Conditional fields:**
@@ -80,10 +77,11 @@ Verify all required fields before finalizing. Read `${CLAUDE_SKILL_DIR}/../promp
 | Field | When |
 |-------|------|
 | `maxTurns` | Search agents only (10-30 range) |
-| `tools` | Strict allowlist agents only (rare — e.g., LSP-locked) |
 | `skills` | Agent needs specific skill access |
 | `memory` | Agent uses persistent memory |
 | `isolation: worktree` | Agent needs isolated git worktree |
+
+**Ineffective — do not declare**: `model`, `allowed-tools`, `disallowedTools`, `tools`. CC ignores these for plugin-shipped agents. Tool access comes from session permissions; read-only posture is declared in the Constraints section of the body.
 
 ### 6. Review
 
@@ -91,39 +89,44 @@ Present draft to user. Verify before finalizing:
 
 - Output format defined with concrete template?
 - Failure conditions present and specific?
-- Constraints clear — scope, style, hard limits?
+- Constraints clear — scope, style, hard limits, read-only declaration if advisory?
 - No CC-auto-injected content repeated (identity preamble, tool lists, CLAUDE.md content)?
 - Description ≤250 chars and front-loaded?
 - Body within 40-120 line target?
+- No ineffective frontmatter (`model`, `allowed-tools`, `disallowedTools`, `tools`)?
 
 ---
 
-## Model Routing Guide
+## Posture Enforcement
 
-| Model | Use For | Effort |
-|-------|---------|--------|
-| **Haiku** | Search, simple lookups, fast exploration | low |
-| **Sonnet** | Standard execution, debugging, analysis, code review | medium |
-| **Opus** | Architecture, planning, deep review, complex analysis, creation | high |
+Since tool restrictions cannot be declared in frontmatter, the agent body must state its posture:
 
-Default to Sonnet unless the task clearly needs Haiku speed or Opus depth. Search agents always use Haiku. Advisory agents reviewing architecture or making high-stakes judgments use Opus.
+**Advisory (read-only)** — add to Constraints section:
+```markdown
+## Constraints
+
+Read-only. No file writes. Report findings only.
+```
+
+**Execution (writes)** — add to Constraints section:
+```markdown
+## Constraints
+
+Only modify listed files. Match existing style. Verify with tests after changes.
+```
+
+**Search (bounded)** — add to Constraints section plus `maxTurns` in frontmatter:
+```markdown
+## Constraints
+
+Read-only. Stop when sufficient. Max 3 search rounds for quick, 5 for thorough.
+```
 
 ---
 
-## Tool Control
+## Plugin Restrictions
 
-Agents use `disallowedTools` (denylist) — NOT `tools` (allowlist). Different from skills, which use `allowed-tools`.
-
-**Denylist rules:**
-- Denylist auto-includes all MCP tools without explicit listing
-- Advisory agents: `disallowedTools: Write, Edit, NotebookEdit` (minimum)
-- Execution agents: `disallowedTools: NotebookEdit` (minimum)
-- `Agent` tool is NOT denied — CC prevents subagent-to-subagent spawning natively
-- Add `Bash` to denylist for agents that must not execute commands (pure analysis)
-
-**Exception — strict allowlist:** Agents locked to specific tools (like a linter that only needs LSP) can use `tools:` allowlist instead. This is rare — default to denylist.
-
-**Plugin-shipped agents cannot use:** `hooks`, `mcpServers`, `permissionMode` (security restriction).
+Plugin-shipped agents cannot use: `hooks`, `mcpServers`, `permissionMode` in frontmatter (security restriction — enforced by CC at load time).
 
 ---
 

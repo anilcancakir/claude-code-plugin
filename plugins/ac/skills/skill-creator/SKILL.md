@@ -2,7 +2,6 @@
 name: skill-creator
 description: "Create Claude Code skills with progressive disclosure architecture. Use when building reusable workflow skills, domain-specific skills, or optimizing existing skills for Claude Code plugins."
 when_to_use: "TRIGGER when: 'create a skill', 'add a skill', 'new skill for', building Claude Code plugin skills. DO NOT TRIGGER: creating agents, commands, or rules."
-model: opus
 effort: high
 ---
 
@@ -55,7 +54,7 @@ CC does NOT auto-load `references/` files. The model never sees them unless SKIL
 
 **6. Frontmatter Validation**
 
-Read `${CLAUDE_SKILL_DIR}/../prompt-writer/references/frontmatter-schemas.md` for the complete skill frontmatter schema. Key fields: `name`, `description`, `when_to_use`, `user-invocable`, `disable-model-invocation`, `model`, `effort`, `allowed-tools`, `context`, `agent`, `argument-hint`, `arguments`, `paths`, `hooks`.
+Read `${CLAUDE_SKILL_DIR}/../prompt-writer/references/frontmatter-schemas.md` for the complete skill frontmatter schema. Key effective fields: `name`, `description`, `when_to_use`, `user-invocable`, `disable-model-invocation`, `effort`, `context`, `agent`, `argument-hint`, `arguments`, `paths`, `hooks`. Do NOT declare `model`, `allowed-tools`, `disallowedTools`, or `tools` — CC ignores them for plugin components.
 
 **7. Review**
 
@@ -104,7 +103,7 @@ Run before presenting any skill to the user.
 1. Description ≤250 chars, front-loaded with key use case?
 2. `when_to_use` present for auto-triggered skills?
 3. `user-invocable` / `disable-model-invocation` set correctly?
-4. `allowed-tools` minimal — only what the skill actually needs?
+4. No ineffective frontmatter declared (`model`, `allowed-tools`, `disallowedTools`, `tools`)?
 5. `paths` field used if file-type specific? `context: fork` if parallelizable?
 
 **Content**

@@ -2,7 +2,6 @@
 name: prompt-writer
 description: "Write CC-optimal prompts for skills, agents, commands, and rules. Use when creating or improving any Claude Code extension component, or when writing prompts that need to align with how CC models process instructions."
 when_to_use: "TRIGGER when: writing prompts for Claude Code components, creating skills/agents/commands/rules, optimizing existing component prompts. DO NOT TRIGGER: business logic, general coding, non-CC prompt work."
-model: opus
 effort: high
 ---
 

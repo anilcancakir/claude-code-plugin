@@ -13,11 +13,6 @@ Complete example (~60 lines) — adapt for your command's scope.
 description: "One-line action-oriented description. What does this command do?"
 argument-hint: "[required-input]"
 effort: medium
-allowed-tools:
-  - AskUserQuestion
-  - Agent
-  - Read
-  - Bash
 ---
 
 Direct task statement — what this command achieves for the user.

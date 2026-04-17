@@ -2,7 +2,6 @@
 name: command-creator
 description: "Create Claude Code commands with phase-based structure and agent delegation. Use when building /plugin:command slash commands for Claude Code plugins."
 when_to_use: "TRIGGER when: 'create a command', 'add a slash command', 'new /command for', building Claude Code plugin commands. DO NOT TRIGGER: creating skills, agents, or rules."
-model: opus
 effort: high
 ---
 
@@ -68,16 +67,11 @@ Rules:
 description: "Short, action-oriented. What does this command do? ≤250 chars."
 argument-hint: "[expected-input]"
 effort: low | medium | high
-allowed-tools:
-  - AskUserQuestion
-  - Agent
-  - Read
-  - Bash
 ---
 ```
 
 Notes:
-- Commands use `allowed-tools` (allowlist) — different from agents which use `disallowedTools`.
+- Do not declare `allowed-tools`, `disallowedTools`, or `model`. CC ignores them at runtime for user-level plugin components; tool access flows from session permissions.
 - Always include `AskUserQuestion` and `Agent` if the command interviews users or delegates to agents.
 - `effort` signals expected token budget: `low` (single task, <5 phases), `medium` (multi-agent, 5-7 phases), `high` (full orchestration, 7+ phases).
 - Do not add `model` to command frontmatter — commands inherit the session model. Only agents have model routing.
@@ -91,7 +85,7 @@ Present draft. Verify before finalizing:
 - Agent delegation clear? Each Agent call has TASK + EXPECTED OUTCOME + MUST DO + MUST NOT DO + CONTEXT.
 - Error handling covers: missing input, agent failure, no changes found, user cancellation.
 - `$ARGUMENTS` referenced at the right phase (usually Phase 1)?
-- Frontmatter `allowed-tools` matches every tool used in the body?
+- No ineffective frontmatter declared (`model`, `allowed-tools`, `disallowedTools`)?
 
 ---
 
