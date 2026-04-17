@@ -2,6 +2,15 @@
 description: "Generate global CLAUDE.md — interviews developer, detects skills/MCP, produces lightweight orchestration config for every CC session."
 effort: high
 argument-hint: update, enhance, or overwrite (optional)
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
+  - AskUserQuestion
+  - mcp__plugin_ac_kodizm__resolve-library
 ---
 
 # Setup Global CLAUDE.md
@@ -16,8 +25,11 @@ Generate or update `~/.claude/CLAUDE.md`. Injected into every CC conversation as
 
 | Type | Sections | Update Behavior |
 |------|----------|----------------|
+| **Fixed defaults** | Identity bullets, Behavioral Guidelines, Rules defaults | Always regenerated verbatim from template. Never preserved from existing file — users get the latest baseline every run |
 | **Plugin-managed** | Skills, MCP, LSP | Regenerated from template every run |
-| **User-managed** | Identity, Tech Stack, Rules | Preserved across updates. Changed only via interview |
+| **User-managed** | Identity opening line, Tech Stack, Rules extras | Preserved across updates. Changed only via interview |
+
+The Identity bullet list, full Behavioral Guidelines block, and Rules default block are non-negotiable baselines — they are rewritten verbatim on every `update`, `enhance`, and `overwrite` run. Interview (Q3/Q5) can only APPEND rules, never remove or rewrite defaults. Q1 only tunes the opening sentence of Identity.
 
 ---
 
@@ -26,8 +38,8 @@ Generate or update `~/.claude/CLAUDE.md`. Injected into every CC conversation as
 1. Check `~/.claude/settings.json` → detect existing `permissions.deny` and `hooks.PreToolUse` entries. Store as EXISTING_SETTINGS for Phase 4 merge.
 
 2. Check `~/.claude/CLAUDE.md` existence → determine mode:
-   - Exists + `$ARGUMENTS` = "update" → extract user-managed sections verbatim, skip Phase 2
-   - Exists + `$ARGUMENTS` = "enhance" or no argument → pre-fill interview from existing content
+   - Exists + `$ARGUMENTS` = "update" → extract user-managed sections (opening sentence, Tech Stack, Rules extras) verbatim, skip Phase 2. Fixed defaults and Behavioral Guidelines regenerate from template
+   - Exists + `$ARGUMENTS` = "enhance" or no argument → pre-fill interview from existing content. Fixed defaults still rewritten verbatim
    - Exists + `$ARGUMENTS` = "overwrite" → fresh generation
    - Not exists → fresh generation
 
@@ -77,19 +89,14 @@ Not blocking — continue regardless.
 - question: "What is your primary development stack?"
 - options: PHP/Laravel · Dart/Flutter · TypeScript/Node · Python · Multi-stack
 
-**Q3 — Non-negotiable rules:**
-- question: "Which rules must NEVER be violated?"
-- multiSelect: true
-- options: TDD · English only · Strict types · Zero suppressions · Minimal changes (no bonus refactors) · No em dash / en dash
-
-**Q4 — Extensions** (only if skills/MCP detected beyond my-coding/my-language):
+**Q3 — Extensions** (only if skills/MCP detected beyond my-coding/my-language):
 - question: "Found these global extensions. Include references in CLAUDE.md?"
 - multiSelect: true
 - options: dynamically built from detected skills + MCP servers (label = name, description = capability)
 
-**Q5 — Extra rules:**
-- question: "Any additional rules, pet peeves, or preferences?"
-- options: No extras · (free text response)
+**Q4 — Extra rules** (defaults already enforced: English-only code, no em/en dash, project override, phases/workflows, TDD, strict types, zero suppressions, zero linter warnings, minimal changes, PHP no `declare(strict_types=1)`, my-coding reference):
+- question: "Any ADDITIONAL rules, framework conventions, or team norms? Leave blank for defaults only."
+- options: No extras (Recommended) · (free text — one rule per line, max 4)
 
 ---
 
@@ -97,19 +104,25 @@ Not blocking — continue regardless.
 
 1. Read template at `${CLAUDE_PLUGIN_ROOT}/references/global-claude-md-template.md`
 
-2. **Update mode**: Combine:
-   - User-managed sections: verbatim from existing file (Identity, Tech Stack, Rules)
-   - Plugin-managed sections: regenerated from template with current detection data
-   - Diff against existing — if no changes → announce "Already in sync." and stop
+2. **Fixed defaults (every mode)**: Write these verbatim from template, never edited by interview:
+   - Identity bullet list (English-only, user-language communication, direct/technical, flawed-approach, AskUserQuestion enforcement, em/en dash ban)
+   - Full Behavioral Guidelines block (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)
+   - Rules default bullets (project override, phases/workflows, TDD, strict types, PHP no `declare(strict_types=1)`, zero tolerance, minimal changes, my-coding reference)
 
-3. **Enhance/New mode**: Build all sections from interview + detection following template structure. Apply `claude-md-writer` skill's section authoring patterns for each section. Key rules:
-   - **Section order**: Identity → Tech Stack → Skills → MCP → LSP → Rules. No Workflow section.
+3. **Update mode**: Combine:
+   - Fixed defaults: rewritten verbatim from template
+   - User-managed: opening sentence of Identity, Tech Stack, Rules extras — verbatim from existing file
+   - Plugin-managed (Skills/MCP/LSP): regenerated with current detection
+   - Diff against existing. If no changes: announce "Already in sync." and stop
+
+4. **Enhance/New mode**: Build all sections from interview + detection following template structure. Apply `claude-md-writer` skill's section authoring patterns. Key rules:
+   - **Section order**: Identity → Behavioral Guidelines → Tech Stack → Skills → MCP → LSP → Rules
    - **Skills table**: Exclude creator skills (skill-creator, agent-creator, command-creator, rule-creator, prompt-writer, claude-md-writer)
-   - **Rules**: 4-6 rules max. If `my-coding` exists → defer: "Detailed coding rules live in the `my-coding` skill."
+   - **Rules**: defaults fixed + up to 4 Q4 extras, deduplicated against defaults
 
-4. Count lines — if over 100, trim Rules (defer to my-coding) and drop LSP section.
+5. Count lines. If over 150, drop LSP section and trim Rules extras (never remove defaults or Behavioral Guidelines).
 
-5. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, no planning pipeline injection (Intent Gate, Delegation Check, tier routing, parallel subagent mandates, `skill: "ac:plan"` refs, internal pipeline agents). Only reference `/ac:commit`, `/ac:init-claude-md`, `/ac:init-rules`, `/ac:setup-coding`, `/ac:setup-language`, `/ac:setup-global-claude-md`.
+6. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, no planning pipeline injection (Intent Gate, Delegation Check, tier routing, parallel subagent mandates, `skill: "ac:plan"` refs, internal pipeline agents). Only reference `/ac:commit`, `/ac:init-claude-md`, `/ac:init-rules`, `/ac:setup-coding`, `/ac:setup-language`, `/ac:setup-global-claude-md`.
 
 ---
 
@@ -117,15 +130,17 @@ Not blocking — continue regardless.
 
 1. Present generated CLAUDE.md with: line count, sections included, skills/MCP referenced.
 2. Update mode → show diff (`- old` / `+ new`). No changes → already announced in Phase 3.
-3. Call AskUserQuestion with these exact parameters:
+3. **Compute settings.json diff** (do not write yet). Load EXISTING_SETTINGS from Phase 1. Build proposed merged settings per Phase 4.6 rules. Show planned additions, removals (obsolete `EnterPlanMode`/`Agent(Explore)`/`Agent(Plan)` entries from prior runs), and "no change" set.
+4. Call AskUserQuestion with these exact parameters:
    ```json
    {
      "questions": [{
-       "question": "Review the CLAUDE.md above. What needs adjustment?",
+       "question": "Review the CLAUDE.md and settings.json diff above. What needs adjustment?",
        "header": "Review",
        "options": [
-         {"label": "Approve (Recommended)", "description": "Install as shown."},
-         {"label": "Adjust", "description": "I want to change specific sections."},
+         {"label": "Approve both (Recommended)", "description": "Install CLAUDE.md and apply settings.json changes."},
+         {"label": "CLAUDE.md only", "description": "Install CLAUDE.md, skip settings.json changes."},
+         {"label": "Adjust", "description": "Change specific sections before installing."},
          {"label": "Restart", "description": "Start the interview over."}
        ]
      }]
@@ -133,12 +148,13 @@ Not blocking — continue regardless.
    ```
    - "Adjust" → ask what to change, update, re-present
    - "Restart" → return to Phase 2
+   - "CLAUDE.md only" → skip step 6 below
 
-4. On approve:
+5. On approve:
    - Backup existing: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak` (if exists)
    - Write `~/.claude/CLAUDE.md`
 
-5. **Auto-configure `~/.claude/settings.json`** — only restriction is blocking CC's native web tools when kodizm MCP is available as replacement. Nothing else is blocked. Read existing settings, merge (preserve all existing keys).
+6. **Apply `~/.claude/settings.json` changes** (only if user chose "Approve both") — only restriction is blocking CC's native web tools when kodizm MCP is available as replacement. Nothing else is blocked. Read existing settings, merge (preserve all existing keys).
 
    Only deny if MCP_STATUS = "operational":
    - `WebSearch`, `WebFetch` — replaced by kodizm MCP's `web-search`, `web-fetch`.
@@ -172,8 +188,8 @@ Not blocking — continue regardless.
 
    Write merged settings back. Report what changed vs already configured.
 
-6. Confirm:
+7. Confirm:
    - "Global CLAUDE.md installed at `~/.claude/CLAUDE.md` — active in every CC session."
-   - Settings update summary: list new deny entries, new hooks, and any obsolete entries removed.
+   - Settings update summary: list new deny entries, new hooks, and any obsolete entries removed (or "settings unchanged" if user chose CLAUDE.md only).
    - If my-coding not detected → "Consider `/ac:setup-coding` for detailed coding rules."
    - If my-language not detected → "Consider `/ac:setup-language` for writing style."

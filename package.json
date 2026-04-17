@@ -1,7 +1,7 @@
 {
   "name": "claude-code-plugin",
-  "version": "5.5.1",
-  "description": "Claude Code plugin marketplace — structured development workflows, specialized agents, model routing",
+  "version": "6.1.0",
+  "description": "Claude Code plugin marketplace — setup and creator toolkit plus companion plugins (git, GitHub, frontend, LSP)",
   "author": "Anilcan Cakir",
   "license": "MIT",
   "repository": {
@@ -11,11 +11,10 @@
   "keywords": [
     "claude-code",
     "claude-code-plugin",
-    "development-twin",
-    "reliability-first",
-    "model-routing",
-    "multi-agent",
-    "orchestration"
+    "setup",
+    "creator-skills",
+    "claude-md",
+    "kodizm-mcp"
   ],
   "files": [
     ".claude-plugin/",

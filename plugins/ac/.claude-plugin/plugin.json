@@ -1,6 +1,6 @@
 {
   "name": "ac",
-  "description": "Structured development partner for Claude Code — plans before coding, investigates bugs with Opus, delegates to specialized agents with customizable model routing.",
+  "description": "Claude Code setup + creator toolkit — /ac:setup-*, /ac:init-*, /ac:commit commands plus skill, agent, command, rule, and CLAUDE.md creator skills.",
   "author": {
     "name": "Anilcan Cakir",
     "email": "anilcan.cakir@gmail.com"
