@@ -1,8 +1,0 @@
-{
-  "name": "ac-new",
-  "description": "Multi-platform prompt renderer with Liquid templates",
-  "author": {
-    "name": "Anilcan Cakir",
-    "email": "anilcan.cakir@gmail.com"
-  }
-}

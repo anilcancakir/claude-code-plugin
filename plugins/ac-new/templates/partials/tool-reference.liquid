@@ -1,8 +1,0 @@
-{%- comment -%}Renders a tool name for the current platform.{%- endcomment -%}
-{%- if platform.id == "claude-code" -%}
-`{{ name | tool_name }}`
-{%- elsif platform.id == "opencode" -%}
-{{ name | tool_name }}
-{%- else -%}
-{{ name | tool_name }}
-{%- endif -%}
