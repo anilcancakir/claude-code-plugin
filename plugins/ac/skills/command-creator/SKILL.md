@@ -17,19 +17,16 @@ Create Claude Code commands — user-invocable workflows that orchestrate agents
 Determine structure before drafting:
 
 - How many phases? Simple commands (1-2 phases) vs orchestration commands (5+ phases).
-- Which agents to delegate to? Research (ac:explore, ac:librarian), execution (ac:plan-worker), verification (ac:plan-code-review for Standard, ac:plan-deep-code-review for Complex)?
+- Does the command need subagents, or can it run entirely in the main context with Read/Glob/Grep/Bash? Default to main context; only add Agent delegation when the work must run in a fresh context or with a different model.
 - Interactive (AskUserQuestion gates) or autonomous (runs end-to-end without prompts)?
 - What approval gates are needed before destructive or irreversible actions?
 
 **2. Research Existing Commands**
 
-Launch `ac:explore` to find similar commands in the target project:
+Use Glob + Read directly to find similar commands in the target project:
 
-```
-Agent(subagent_type: "ac:explore", prompt: "CONTEXT: Creating a new command. GOAL: Find existing command files and their structure. REQUEST: List all commands in commands/ directory. Return 2-3 representative examples with their phase structure, frontmatter, and agent delegation patterns.")
-```
-
-Read 2-3 existing commands (e.g., `plan.md`, `execute.md`, `commit.md`) to calibrate structure depth and phase naming conventions.
+- Glob `**/commands/*.md`, read 2-3 representative files
+- Note phase structure, frontmatter fields, and whether they use subagents or direct tools
 
 **3. Dedup Audit**
 
@@ -105,8 +102,8 @@ Present draft. Verify before finalizing:
 All agents in a single message block — CC waits automatically:
 
 ```
-Agent(subagent_type: "ac:explore", prompt: "...")
-Agent(subagent_type: "ac:librarian", prompt: "...")
+Agent(subagent_type: "<your-search-agent>", prompt: "...")
+Agent(subagent_type: "<your-analysis-agent>", prompt: "...")
 ```
 
 Use when results are needed before proceeding. Do NOT advance to the next phase until all agents complete.
@@ -114,8 +111,8 @@ Use when results are needed before proceeding. Do NOT advance to the next phase 
 ### Background (genuinely independent work)
 
 ```
-Agent(subagent_type: "ac:plan-worker", run_in_background: true, prompt: "...")
-Agent(subagent_type: "ac:plan-worker", run_in_background: true, prompt: "...")
+Agent(subagent_type: "<your-worker>", run_in_background: true, prompt: "...")
+Agent(subagent_type: "<your-worker>", run_in_background: true, prompt: "...")
 ```
 
 Use only when you have independent work to continue while agents run. Collect all completion notifications before the next phase.

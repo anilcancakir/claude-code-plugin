@@ -24,13 +24,11 @@ If the agent's purpose spans types, default to the more restrictive — advisory
 
 ### 2. Research Existing Agents
 
-Launch 1-2 `ac:explore` agents to find similar agents in the target project:
+Use Glob + Read directly to find similar agents in the target project:
 
-- Search for agents with overlapping responsibilities
+- Glob `**/agents/*.md` under the plugin root, scan frontmatter `description` for overlapping responsibilities
 - Read 2-3 closest matches to absorb naming, structure, and style
 - Check for naming conflicts — agent names must be unique within the plugin
-
-If the target project has no agents, read 2-3 agents from `plugins/ac/agents/` as reference implementations.
 
 ### 3. Dedup Audit
 

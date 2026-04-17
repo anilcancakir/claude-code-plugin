@@ -133,7 +133,7 @@ Insert before destructive or irreversible actions.
 Spawn agents with explicit type and prompt.
 
 ```markdown
-Agent(subagent_type: "ac:explore", prompt: "Find all service classes...")
+Agent(subagent_type: "<your-search-agent>", prompt: "Find all service classes...")
 ```
 
 Route to correct model: Haiku for search, Sonnet for execution, Opus for architecture.

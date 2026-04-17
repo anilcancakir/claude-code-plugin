@@ -25,11 +25,11 @@ Skip questions where the answer is obvious from context.
 
 **2. Explore Existing Patterns**
 
-Launch 1-2 `ac:explore` agents to find existing conventions in the target project:
+Use Glob + Read directly to find existing conventions in the target project:
 
-- Similar skills already defined
-- File structure and naming conventions
-- Technology stack
+- Glob `**/skills/**/SKILL.md` to list defined skills, read 2-3 closest matches
+- Sample the file structure and naming conventions via `ls`
+- Detect the technology stack from manifest files (`package.json`, `composer.json`, `pubspec.yaml`)
 
 **3. Dedup Audit**
 

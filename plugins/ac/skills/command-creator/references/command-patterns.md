@@ -43,7 +43,7 @@ Direct task statement — what this command achieves for the user.
 1. Launch research agents — all in a single message block (parallel foreground):
 
    ```
-   Agent(subagent_type: "ac:explore", prompt: "TASK: Find X in the codebase. EXPECTED OUTCOME: file:line references and pattern summary. MUST DO: Return concrete references. MUST NOT DO: Summarize without evidence. CONTEXT: [relevant state]")
+   Agent(subagent_type: "<your-search-agent>", prompt: "TASK: Find X in the codebase. EXPECTED OUTCOME: file:line references and pattern summary. MUST DO: Return concrete references. MUST NOT DO: Summarize without evidence. CONTEXT: [relevant state]")
    ```
 
 2. Wait for all agents to complete. Do NOT proceed until all report back.
@@ -88,7 +88,7 @@ Direct task statement — what this command achieves for the user.
 
    ```
    Agent(
-     subagent_type: "ac:plan-worker",
+     subagent_type: "<your-worker>",
      model: sonnet,
      run_in_background: true,
      prompt: "TASK: [specific task]. EXPECTED OUTCOME: [what to produce]. MUST DO: [constraints]. MUST NOT DO: [exclusions]. CONTEXT: [conventions, prior findings]"
@@ -109,11 +109,11 @@ Direct task statement — what this command achieves for the user.
 1. Run verification agent (foreground):
 
    ```
-   Agent(subagent_type: "ac:plan-code-review", prompt: "Review implementation against plan at [plan-file-path]. Modified files: [list]. Plan conventions: [conventions].")
+   Agent(subagent_type: "<your-review-agent>", prompt: "Review implementation against the plan at [plan-file-path]. Modified files: [list]. Conventions: [conventions].")
    ```
 
 2. APPROVE → report success. REJECT → fix specific failures, re-verify.
-3. Invoke `/ac:commit --skip-preflight` after verification passes.
+3. Invoke `/ac:commit` after verification passes.
 
 ---
 
@@ -182,8 +182,8 @@ Scale command behavior by complexity tier. Use a lookup table to map complexity 
 | Tier | Trigger | Research agents | Workers | Verification |
 |------|---------|-----------------|---------|-------------|
 | **Simple** | 1-2 files, mechanical change | None (direct Read) | Direct implementation | build + test + lint |
-| **Standard** | 1-3 modules, some design decisions | 1 explore | plan-worker (sonnet) | plan-code-review (3-stage) |
-| **Complex** | Cross-cutting, architectural impact | 2 explore + 1 librarian | plan-worker (sonnet/opus) | plan-deep-code-review (4-stage) |
+| **Standard** | 1-3 modules, some design decisions | 1 search agent | 1 worker (sonnet) | single review agent |
+| **Complex** | Cross-cutting, architectural impact | 2 search + 1 docs agent | workers (sonnet/opus) | deep review agent |
 
 Determine tier in Phase 1 (Discovery). Announce: "[Tier] — proceeding with [N] agent(s)."
 
@@ -196,11 +196,11 @@ Determine tier in Phase 1 (Discovery). Announce: "[Tier] — proceeding with [N]
 Single consolidated verification agent per complexity level:
 
 ```
-# Standard: 3-stage (compliance + spec + quality)
-Agent(subagent_type: "ac:plan-code-review", prompt: "Review implementation against plan at [path]. Modified files: [list].")
+# Standard verification
+Agent(subagent_type: "<your-review-agent>", prompt: "Review implementation against plan at [path]. Modified files: [list].")
 
-# Complex: 4-stage (compliance + spec + quality + cross-layer)
-Agent(subagent_type: "ac:plan-deep-code-review", prompt: "Deep cross-layer review. Plan: [path]. Modified files: [list].")
+# Deeper cross-layer review
+Agent(subagent_type: "<your-deep-review-agent>", prompt: "Deep cross-layer review. Plan: [path]. Modified files: [list].")
 ```
 
 Do NOT advance until verification reports back.
@@ -211,23 +211,23 @@ When each agent needs the previous agent's output:
 
 ```
 # Phase A: Spawn verification. Wait for verdict.
-Agent(subagent_type: "ac:plan-code-review", prompt: "...")
+Agent(subagent_type: "<your-review-agent>", prompt: "...")
 
 # Phase B: Only if Phase A approved — proceed to next phase.
-Agent(subagent_type: "ac:linter", prompt: "...")
+Agent(subagent_type: "<your-linter-agent>", prompt: "...")
 ```
 
 ### Background with Notification (independent work)
 
 ```
 Agent(
-  subagent_type: "ac:plan-worker",
+  subagent_type: "<your-worker>",
   model: sonnet,
   run_in_background: true,
   prompt: "TASK: Implement auth service. EXPECTED OUTCOME: AuthService class with login/logout methods. MUST DO: Follow existing service patterns. MUST NOT DO: Modify controllers. CONTEXT: Pattern reference at app/Services/UserService.php:14"
 )
 Agent(
-  subagent_type: "ac:plan-worker",
+  subagent_type: "<your-worker>",
   model: sonnet,
   run_in_background: true,
   prompt: "TASK: Add auth routes. EXPECTED OUTCOME: Routes registered in routes/api.php. MUST DO: Follow route naming convention. MUST NOT DO: Modify existing routes. CONTEXT: Existing routes at routes/api.php:45"
