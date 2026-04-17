@@ -4,7 +4,6 @@ description: "Codebase search specialist. Use proactively for internal lookups â
 model: haiku
 effort: low
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 20
 color: green
 ---
 

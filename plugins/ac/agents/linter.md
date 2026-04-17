@@ -4,7 +4,6 @@ description: LSP code intelligence verifier. Use after code changes to check dia
 model: haiku
 effort: low
 tools: LSP, Glob, Read
-maxTurns: 10
 color: yellow
 ---
 

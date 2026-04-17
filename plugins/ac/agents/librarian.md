@@ -4,7 +4,6 @@ description: "External documentation specialist. Use proactively for library, AP
 model: sonnet
 effort: medium
 disallowedTools: Write, Edit, NotebookEdit
-maxTurns: 30
 color: blue
 ---
 
