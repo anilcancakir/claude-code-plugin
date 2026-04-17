@@ -6,7 +6,7 @@ Claude Code plugins for structured development workflows.
 
 | Plugin | Description |
 |--------|-------------|
-| **[ac](plugins/ac/)** | Structured development partner — plans before coding, parallel execution with model routing, specialized agents, QA testing |
+| **[ac](plugins/ac/)** | Setup + creator toolkit — `/ac:setup-*`, `/ac:init-*`, `/ac:commit`, plus skill/agent/command/rule/CLAUDE.md creators |
 | **[github-cli](plugins/github-cli/)** | GitHub CLI skill — issues, PRs, releases, actions, `gh api` |
 | **[git-master](plugins/git-master/)** | Git expert — atomic commits, rebase, history archaeology |
 | **[github-actions](plugins/github-actions/)** | GitHub Actions workflow generator — CI/CD, releases, Docker, security hardening |
@@ -34,7 +34,7 @@ After updating, sync your config:
 /ac:setup-global-claude-md update
 ```
 
-> Setup auto-configures `~/.claude/settings.json` — blocks CC native tools (WebSearch, WebFetch) and agents (Explore, Plan) in favor of ac's own agents. Requires `KODIZM_MCP_TOKEN` env var for the bundled kodizm MCP — get your token at kodizm.com.
+> `/ac:setup-global-claude-md` only blocks `WebSearch` / `WebFetch` in `~/.claude/settings.json` when kodizm MCP is operational (so CC uses kodizm's web-search / web-fetch instead). CC's native plan mode and built-in agents stay enabled. Set `KODIZM_MCP_TOKEN` for the bundled kodizm MCP — get your token at kodizm.com.
 
 ## Structure
 
@@ -42,7 +42,7 @@ After updating, sync your config:
 ├── .claude-plugin/
 │   └── marketplace.json      # Plugin catalog
 ├── plugins/
-│   ├── ac/                   # Main plugin — 15 agents, 12 commands
+│   ├── ac/                   # Main plugin — 6 commands, 6 creator skills
 │   ├── github-cli/           # GitHub CLI skill
 │   ├── github-actions/       # GitHub Actions workflow generator
 │   ├── git-master/           # Git expert skill

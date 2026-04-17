@@ -1,21 +1,8 @@
 # ac
 
-**Claude Code that plans before it codes.**
+**Claude Code setup + creator toolkit.**
 
-Install `ac`, set it up once, then just talk. Say "add rate limiting" and it researches your codebase, asks the right questions, writes a plan, executes it with the right model for each step, verifies everything, and commits.
-
-```
-You: add Stripe webhook handler for subscription events
-ac:  [researches codebase] → [asks 3 questions] → [plans 4 steps] → [executes in parallel] → [verifies] → [commits]
-
-You: why did emails stop after the queue refactor?
-ac:  [investigates across 12 files] → [finds root cause] → [plans fix] → [executes] → [done]
-
-You: explain how the auth middleware works
-ac:  [spawns search agents] → [traces call chain] → [returns annotated explanation]
-```
-
-No slash commands needed. No manual routing. Just talk.
+`ac` is a lean plugin that helps you set up Claude Code the way you like it and build new Claude Code components (skills, agents, commands, rules, CLAUDE.md files). It does NOT override CC's native planning, agents, or `Task` tool. Use `/plan` (CC native), spawn CC's default agents, and let `ac` handle the paperwork.
 
 ## Install
 
@@ -26,90 +13,49 @@ claude plugin add anilcancakir/claude-code-plugin
 ## Setup (one-time)
 
 ```bash
-# 1. Teach it your coding style (scans your projects)
+# 1. Scan your projects and generate a personal coding style skill
 /ac:setup-coding
 
-# 2. Generate your brain file (the most important step)
+# 2. Scan your writing samples and generate a personal language skill
+/ac:setup-language
+
+# 3. Generate your global CLAUDE.md (loaded in every session)
 /ac:setup-global-claude-md
 
-# 3. Set up your project
+# 4. In each project: generate project CLAUDE.md and scoped rules
 /ac:init-claude-md
 /ac:init-rules
 ```
 
-Step 2 generates `~/.claude/CLAUDE.md` and auto-configures `~/.claude/settings.json` to block CC's native tools/agents (ac has its own). After step 3, it knows your project's architecture, commands, and conventions.
-
-**That's it.** Start talking naturally.
-
-## How It Works
-
-`ac` generates a `~/.claude/CLAUDE.md` that loads every session. It teaches Claude Code one simple rule: **classify intent, then delegate**.
-
-| You say | What happens |
-|---------|-------------|
-| "add X", "create Y" | Researches codebase → plans → executes with parallel agents → verifies → commits |
-| "why does X fail" | Hypothesis-driven investigation → root cause → fix plan |
-| "restructure X" | Plans refactor with dependency analysis → parallel execution |
-| "how does X work" | Spawns search agents → returns annotated explanation |
-| "fix X" (known cause) | Direct fix → verify with tests |
-
-### The Pipeline
-
-Every non-trivial task follows: **plan → execute → verify → commit**.
-
-```
-/ac:plan "add rate limiting"
-  ├── Research: agents scan codebase for existing patterns
-  ├── Interview: 2-3 targeted questions
-  └── Plan: steps with tier assignments
-
-/ac:execute rate-limiting
-  ├── Wave 1 (parallel): migration (Haiku) + middleware (Sonnet) + tests (Sonnet)
-  ├── Wave 2 (sequential): integration + edge cases (Opus)
-  ├── Verify: compliance audit + code review + linter
-  └── Commit
-```
-
-Three model tiers — the right model for each step:
-
-| Tier | Model | For |
-|------|-------|-----|
-| quick | Haiku | Config, migrations, boilerplate |
-| mid | Sonnet | Business logic, tests, standard work |
-| senior | Opus | Architecture, cross-layer, complex edge cases |
-
-Failed steps automatically retry with a higher-tier model before giving up.
+Re-run any command with `update` to sync after plugin updates, e.g. `/ac:setup-global-claude-md update`.
 
 ## Commands
 
-### Daily
-
 | Command | Purpose |
 |---------|---------|
-| `/ac:plan` | Research → interview → generate plan |
-| `/ac:execute` | Execute plan with parallel agents |
-| `/ac:commit` | Preflight checks → atomic commit → push |
-| `/ac:ideate` | Refine vague ideas into plannable tasks. `--bulk` for batch, `--loop` for autopilot |
+| `/ac:commit` | Preflight checks → atomic commit → push. Delegates to `git-master` if installed |
+| `/ac:init-claude-md` | Generate project CLAUDE.md from codebase discovery + interview |
+| `/ac:init-rules` | Generate path-scoped `.claude/rules/` from stack + directory analysis |
+| `/ac:setup-coding` | Scan projects, interview, generate `my-coding` skill |
+| `/ac:setup-language` | Scan writing samples, interview, generate `my-language` skill |
+| `/ac:setup-global-claude-md` | Generate global `~/.claude/CLAUDE.md` — tech stack, skill table, lightweight rules |
 
-### Testing
+Every command runs in the main context with Read / Glob / Grep / Bash. No hidden subagent orchestration.
 
-| Command | Purpose |
-|---------|---------|
-| `/ac:browser-qa` | Browser tests via [Playwright CLI](https://github.com/microsoft/playwright-cli) |
-| `/ac:maestro-qa` | Mobile tests via [Maestro](https://maestro.mobile.dev/) MCP |
-| `/ac:flutter-qa` | Flutter tests via [flutter-skill](https://github.com/flutter-skill/flutter-skill) MCP |
+## Creator Skills
 
-### Setup
+The `ac` plugin also ships creator skills for building new Claude Code components:
 
-| Command | Purpose |
-|---------|---------|
-| `/ac:setup-coding` | Scan projects → generate coding style skill |
-| `/ac:setup-language` | Scan writing → generate language style skill |
-| `/ac:setup-global-claude-md` | Generate global orchestration config |
-| `/ac:init-claude-md` | Generate project CLAUDE.md |
-| `/ac:init-rules` | Generate path-scoped `.claude/rules/` |
+| Skill | Purpose |
+|-------|---------|
+| `prompt-writer` | Shared foundation — CC-optimal prompt writing patterns |
+| `skill-creator` | Create skills with progressive disclosure architecture |
+| `agent-creator` | Create agents following the kodizm 5-section format |
+| `command-creator` | Create commands with phase-based structure |
+| `rule-creator` | Create path-scoped `.claude/rules/` files |
+| `claude-md-writer` | Write CC-optimal CLAUDE.md and CLAUDE.local.md files |
 
-> Run setup commands with `update` to sync after plugin updates: `/ac:setup-global-claude-md update`
+These are triggered by the setup/init commands above, or invoked directly when you need to author a new component.
 
 ## Companion Plugins
 
@@ -119,28 +65,23 @@ Failed steps automatically retry with a higher-tier model before giving up.
 | `github-actions` | GitHub Actions workflows — CI/CD, releases, Docker, security |
 | `git-master` | Atomic commits, rebase, history archaeology |
 | `frontend-design` | Design systems, hierarchy, color, mobile patterns |
-| `dart-lsp` | Dart/Flutter language server |
-| `json-lsp` / `yaml-lsp` / `markdown-lsp` | Schema validation and diagnostics |
+| `dart-lsp` / `json-lsp` / `yaml-lsp` / `markdown-lsp` | Language servers — go-to-definition, hover, diagnostics |
 
 ## MCP
 
-kodizm MCP is bundled — provides docs, web search, web fetch, and code search for the librarian agent.
+kodizm MCP is bundled — docs, web search, web fetch, code search. Creator skills use it to look up library documentation when generating components.
 
-Requires `KODIZM_MCP_TOKEN` environment variable:
+Requires `KODIZM_MCP_TOKEN`:
 
 ```bash
 export KODIZM_MCP_TOKEN="your-token-here"  # add to ~/.zshrc
 ```
 
-Get your token at [kodizm.com](https://kodizm.com).
+Get your token at [kodizm.com](https://kodizm.com). Without it, kodizm tools are unavailable but every command still functions.
 
 ## Pure Markdown
 
-Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies. 15 agents, 12 commands, 9 skills, all text files you can read and modify.
-
-### Creator Skills Architecture
-
-Component creation uses a layered skill system — `prompt-writer` provides CC-optimal writing foundations, specialized creators (`skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `claude-md-writer`) add domain-specific patterns. Commands reference skills for authoring knowledge instead of embedding it inline.
+Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies. 6 commands, 6 creator skills, all text files you can read and modify.
 
 ## License
 
