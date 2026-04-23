@@ -1,93 +1,76 @@
 ---
-description: Execute an approved plan end-to-end in the main agent. Auto-fix bugs, missing validation, and blocking issues silently. Ask only on architectural changes. Per-task atomic commits, Nyquist verify gate. Loop mode until done or verify-fail.
+description: Execute an approved plan end-to-end in the main agent. Auto-fix non-architectural deviations, ask on Rule 4. Per-task atomic commits via /ac:commit, Nyquist verify gate with one debug retry.
 argument-hint: "[.ac/plans/<slug>.md | <slug>/phase-N.md | <slug>/ for all phases] [--no-push] [--force]"
 effort: high
 ---
 
 # Execute
 
-Runs an approved plan to completion in the main agent. Loop mode: does not stop between tasks. Halts only on verify-fail (after one debug retry) or Rule 4 architectural deviation.
-
-**Delegations**: Invokes `my-coding` once before the first code change, `my-language` once before the first commit. No subagent spawns. Per-task atomic commits follow Conventional Commits.
+Run an approved plan to completion in the main agent. Loop mode: do not pause between Tasks. Halt only on verify-fail after one debug retry, or on Rule 4 architectural asks.
 
 ---
 
 ## Phase 1: Load
 
 1. Parse `$ARGUMENTS`:
-   - Path ending in `.md` → single-file plan or a specific Mode B phase file.
-   - Path ending in `/` or `<slug>/` → Mode A, execute all phases sequentially.
-   - Empty → Glob `.ac/plans/**/*.md`, filter `status: approved`, pick the most recent. If more than one, AskUserQuestion to pick.
-   - Includes `--force` token → allow re-running a `status: complete` plan. Strip before resolving path.
-   - Includes `--no-push` token → suppress per-task `git push` (still commits locally via `/ac:commit --interactive`). Strip before resolving path. Useful for offline work or protected branches.
+   - `.md` path: single-file plan or a specific Mode B phase file.
+   - Directory path (ends with `/` or `<slug>/`): Mode A, execute every approved phase sequentially.
+   - Empty: Glob `.ac/plans/**/*.md`, filter `status: approved`, pick the most recent. AskUserQuestion if more than one.
+   - Strip flags before resolving the path:
+     - `--force`: allow re-running a `status: complete` plan.
+     - `--no-push`: commit locally per Task but skip `git push`.
 
 2. Read the target. Validate frontmatter:
-   - `status: approved` or `status: executing` → proceed.
-   - `status: complete` without `--force` → refuse: `Plan already complete. Add --force to re-run.`
-   - `status: draft` → refuse: `Plan not approved. Run /ac:plan <slug> first.`
+   - `status: approved` or `status: executing`: proceed.
+   - `status: complete` without `--force`: refuse with `Plan already complete. Add --force to re-run.`
+   - `status: draft`: refuse with `Plan not approved. Run /ac:plan <slug> first.`
 
-3. Set `status: executing` in the target file (and in ROADMAP for Mode A).
+3. Set `status: executing` on the target (and on ROADMAP for Mode A).
 
-4. Mode A specifics: read `ROADMAP.md`, pick the first phase with `status: approved`. Make that phase file the current target. Record the ROADMAP path for Phase 4.
+4. Mode A: read ROADMAP, pick the first phase with `status: approved`, make its phase file the current target. Remember the ROADMAP path for Phase 4.
 
 ---
 
 ## Phase 2: Pre-invoke Twin Skills
 
-Once at the start of execution:
+Once at the start of execution, before the first code-writing tool call:
 
-1. `Skill("my-coding")`, so all code changes respect the user's coding baseline (no `declare(strict_types=1)`, 120-char max, TDD, clean imports, constructor DI, enums, etc.).
-2. `Skill("my-language")`, so commit messages and any prose output match the user's voice (Conventional Commits with scope, no em dash, WHY not WHAT).
-3. Both are silent no-ops if the skill is not installed.
+1. `Skill("my-coding")` for coding conventions.
+2. `Skill("my-language")` for commit and prose conventions.
 
-Re-invoke at Phase 4 phase boundaries (the SessionStart hook reminder noted post-compact skills may need re-loading).
+Both are silent no-ops when not installed. Re-invoke at Phase 4 phase boundaries in case compaction dropped them.
 
 ---
 
 ## Phase 3: Task Loop
 
-The heart of loop mode. Do not pause except on the explicit conditions listed.
+The core loop. Do not pause between Tasks except for Rule 4 asks or verify-fail after one retry.
 
-For each Task in the plan file, in declared order:
+For each Task in declared order, skip when already marked complete. Then:
 
-1. Skip if the Task is already marked complete (checkbox `[x]` in Done when, or `status: done` inline).
-2. Announce: `Task <N>: <title>`.
-3. Read the `Files` listed. Read immediate neighbors if obviously needed for context.
-4. Implement the `Action`. Handle deviations per rules:
+1. Announce `Task <N>: <title>`.
+2. Read the Task's `Files` and any immediate neighbors clearly needed for context.
+3. Implement the `Action`. Handle deviations per the rules below.
+4. Run `Verify`. On failure, one debug retry; on second failure, AskUserQuestion.
+5. On success, invoke `/ac:commit` for an atomic commit (and push unless `--no-push`).
+6. Continue.
 
-### Rule 1, auto-fix bugs silently, log in Deviations
+### Deviation Rules
 
+**Rule 1, auto-fix bugs silently, log in Deviations.**
 Applies to: broken behavior, logic errors, type errors, wrong imports, incorrect signatures, stale references.
+Log entry: `- Task <N> (Rule 1): <what was wrong> at <file:line>, fixed by <what you did>.`
 
-Action: fix inline. Append to the plan file's Deviations Log:
+**Rule 2, auto-add missing critical functionality silently, log.**
+Applies to: input validation on user-facing endpoints, error handling around external calls (DB, HTTP, filesystem), auth on protected routes, CSRF or CORS on state-changing endpoints, rate limiting where obviously warranted, indexes on columns used in WHERE or JOIN.
+Log entry: `- Task <N> (Rule 2): added <what> to <file>, rationale: <one-liner>.`
 
-```markdown
-- Task <N> (Rule 1): <what was wrong> at <file:line>, fixed by <what you did>.
-```
-
-### Rule 2, auto-add missing critical functionality silently, log
-
-Applies to: input validation on user-facing endpoints, error handling around external calls (DB, HTTP, filesystem), auth on protected routes, CSRF / CORS on state-changing endpoints, rate limiting where obviously warranted, indexes on columns used in WHERE or JOIN.
-
-Action: add inline. Log:
-
-```markdown
-- Task <N> (Rule 2): added <what> to <file>, rationale: <one-liner>.
-```
-
-### Rule 3, auto-fix blocking issues silently, log
-
+**Rule 3, auto-fix blocking issues silently, log.**
 Applies to: missing deps (append to `package.json`, `composer.json`, `pubspec.yaml`), build config errors, wrong imports, package name mismatches.
+Log entry: `- Task <N> (Rule 3): <fix> in <file>.`
 
-Action: fix inline. Log:
-
-```markdown
-- Task <N> (Rule 3): <fix> in <file>.
-```
-
-### Rule 4, ASK via AskUserQuestion, do not proceed until answered
-
-Applies to: new DB table, non-trivial schema change (rename, drop, type change), new service layer, library switch, breaking API change, scope expansion beyond the Task's listed Files (new file outside Files list).
+**Rule 4, ASK via AskUserQuestion, do not proceed until answered.**
+Applies to: new DB table, non-trivial schema change (rename, drop, type change), new service layer, library switch, breaking API change, scope expansion beyond the Task's listed Files.
 
 ```json
 {
@@ -96,75 +79,57 @@ Applies to: new DB table, non-trivial schema change (rename, drop, type change),
     "header": "Architecture",
     "multiSelect": false,
     "options": [
-      {"label": "Approve change", "description": "Öneriyle devam et, bu deviation'ı uygula."},
-      {"label": "Alternative approach", "description": "<ikinci seçenek özeti>"},
-      {"label": "Skip task", "description": "Bu task'ı atla, Open Questions'a düş, devam et."},
-      {"label": "Stop execution", "description": "Plan'ı pause et, status approved'a döner, elle tamamlanır."}
+      {"label": "Approve change", "description": "Apply the proposed deviation and continue with the Task."},
+      {"label": "Alternative approach", "description": "<summarize an alternative that avoids the architectural change>"},
+      {"label": "Skip task", "description": "Skip this Task, log in Open Questions, continue with the next Task."},
+      {"label": "Stop execution", "description": "Pause the plan (status returns to approved); leave the rest for manual completion."}
     ]
   }]
 }
 ```
 
-After the answer, log to Deviations:
+Log entry: `- Task <N> (Rule 4): asked <summary>, decision: <choice>, outcome: <what was done>.`
 
-```markdown
-- Task <N> (Rule 4): asked user <question>, decision: <choice>, outcome: <what was done>.
+### Verify Gate
+
+Run the Task's Verify command via Bash.
+
+- **Pass**: proceed to commit.
+- **First failure**: debug retry. Read the error output; locate the cause in the Task's files first, then immediate neighbors; apply the fix inline; re-run the same Verify. Use the Task's `Failure case` hint when present.
+- **Second failure**: AskUserQuestion.
+
+```json
+{
+  "questions": [{
+    "question": "Task <N> verify still failing: <error snippet>. What now?",
+    "header": "Verify Fail",
+    "multiSelect": false,
+    "options": [
+      {"label": "Retry once more", "description": "Deeper inspection, one more fix-and-verify cycle."},
+      {"label": "Skip this task", "description": "Skip the Task, append a note to Deviations Log, continue with the next Task."},
+      {"label": "Rollback", "description": "Revert this Task's git changes and pause the plan for manual resolution."},
+      {"label": "Show me the failure", "description": "Print the full failure output and stop for manual debug."}
+    ]
+  }]
+}
 ```
 
----
+### Commit
 
-5. Run the Task's `Verify` command via Bash:
+On Verify pass:
 
-   First attempt:
-   ```bash
-   <verify-command-from-task>
-   ```
+1. Mark the Task done in the plan file (checkbox on `Done when`, or append `(done <ISO date>)`).
+2. Invoke `/ac:commit` with a scope hint, for example: `/ac:commit <slug> task <N>, <imperative short description>`. `/ac:commit` handles preflight (lint, tests), convention detection, staging, atomic commit, and push by default.
+3. Preflight fail: if `/ac:commit` reports lint or test failure across the project (even though the Task's Verify passed), treat it as a verify-fail equivalent. Run the Verify-Fail AskUserQuestion above; do NOT advance until the tree is clean.
+4. `--no-push` variant: call `/ac:commit --interactive <slug> task <N>` so it commits but waits for manual push.
 
-   - **Pass** → go to step 6.
-   - **Fail** → debug retry:
-     - Read the error output, locate the cause (same Task's files first, then immediate neighbors).
-     - Apply the fix inline.
-     - Re-run the same Verify command. Max 1 debug retry.
-
-   Second failure (after 1 debug retry):
-
-   ```json
-   {
-     "questions": [{
-       "question": "Task <N> verify still failing: <error snippet>. What now?",
-       "header": "Verify Fail",
-       "multiSelect": false,
-       "options": [
-         {"label": "Retry once more", "description": "Hatayı daha ayrıntılı incele, tekrar dene."},
-         {"label": "Skip this task", "description": "Task'ı skip et, Deviations'a not düş, bir sonrakine geç."},
-         {"label": "Rollback", "description": "Bu task için yapılan git değişikliklerini geri al, planı pause et."},
-         {"label": "Show me the failure", "description": "Detayları göster, manuel debug için dur."}
-       ]
-     }]
-   }
-   ```
-
-6. On success:
-   - Mark the Task complete in the plan file. Update `Done when` with `[x]` prefix or append `(done <ISO date>)`.
-   - Atomic commit AND push via `/ac:commit`. Invoke it as a nested command call with a scope hint:
-
-     ```
-     /ac:commit <slug> task <N>, <imperative short description>
-     ```
-
-     `/ac:commit` handles: preflight checks (lint, tests), convention detection (Conventional Commits via `my-language`), staging, atomic commit, and push by default (auto mode). One task means one atomic commit pushed to the remote.
-
-   - **If `/ac:commit` preflight fails** (lint or tests broke project-wide even though the Task's Verify passed): treat this as a verification failure equivalent. Announce what preflight reported, then run the Verify-Fail AskUserQuestion flow from step 5 (retry, skip, rollback, show the failure). Do NOT proceed to the next Task until the tree is clean.
-
-   - **If the project does not want per-task pushes** (CLAUDE.md says so, or user passes `--no-push`): detect `--no-push` in `$ARGUMENTS` before Phase 3. If set, substitute the invocation with `/ac:commit --interactive <slug> task <N>` or inline `git commit` without push. Default is push-per-task.
-
-7. Continue to the next Task. DO NOT pause between tasks.
+Continue to the next Task without pausing.
 
 ---
 
-## Phase 4: Phase-boundary (Mode A only)
+## Phase 4: Phase Boundary (Mode A only)
 
-Triggered when Mode A finishes the last Task of the current phase.
+Triggered after the last Task of the current phase in Mode A.
 
 1. Append this phase to the plan directory's `SUMMARY.md`:
 
@@ -177,24 +142,22 @@ Triggered when Mode A finishes the last Task of the current phase.
    - Commits: <SHA range or count>
    ```
 
-2. Set the phase file's frontmatter `status: complete`.
-3. Update ROADMAP: this phase row becomes `status: complete`.
-4. Pick the next phase in ROADMAP with `status: approved`. If none: all phases done, go to Phase 5.
-5. Set that phase's `status: executing`. Re-invoke twin skills (Phase 2), then restart Phase 3 with the new phase file.
-6. Loop until no approved phases remain. Only halts on verify-fail or Rule 4.
+2. Set the phase file's `status: complete`.
+3. Update ROADMAP: mark this phase `status: complete`.
+4. Pick the next phase with `status: approved`. If none remain, go to Phase 5.
+5. Set the next phase's `status: executing`. Re-invoke twin skills (Phase 2), restart Phase 3 on the new phase file.
 
-Single-file and Mode B: skip Phase 4 entirely, go to Phase 5 after the last Task.
+Only halts on verify-fail or Rule 4. Single-file and Mode B plans skip Phase 4 entirely.
 
 ---
 
 ## Phase 5: Completion
 
-1. Set `status: complete` on the target plan file. For Mode A: also on ROADMAP (meta `status: complete`) and every phase file.
-
-2. Invoke `/ac:wisdom` logic inline (do not spawn a command runner, just do the work):
-   - Generate or append `SUMMARY.md` (Mode A: consolidate all phase summaries).
-   - Update `open-questions.md` with any deferred items raised during execute.
-
+1. Set `status: complete` on the target. Mode A: also on ROADMAP (meta `status: complete`) and every phase file.
+2. Run the wisdom step inline (no need to spawn `/ac:wisdom`):
+   - Append or consolidate `SUMMARY.md`.
+   - Update `open-questions.md` with anything deferred during execute.
+   - Memory Reflection (per `/ac:wisdom` Phase 4): evaluate whether the plan produced architectural decisions, codebase evolution, or validated external references worth saving to CC's auto-memory. Save at most 2; save 0 for routine work. Note each saved memory in the plan's Deviations Log so later `/ac:wisdom` runs do not double-save.
 3. Report:
 
    ```
@@ -204,20 +167,19 @@ Single-file and Mode B: skip Phase 4 entirely, go to Phase 5 after the last Task
    Rule 4 user asks: <N>
    Commits: <N>
    Open questions: <N>
+   Memories saved: <N>
    SUMMARY: <path>
    ```
 
 4. Suggest next step:
-   - Single / Mode A: `Plan closed. Review SUMMARY.md.`
+   - Single or Mode A: `Plan closed. Review SUMMARY.md.`
    - Mode B: `Next phase pending. Run /ac:plan <slug> to plan phase-0<N+1>.`
 
 ---
 
 ## Guards
 
-- NEVER spawn subagents via the `Agent` tool. Main agent only.
-- NEVER edit files outside declared Task Files. Scope expansion triggers Rule 4.
-- NEVER skip the Verify step. Nyquist rule is the completion gate.
-- NEVER use em or en dash in plan file edits, Deviations Log, commit messages, or SUMMARY.
-- NEVER auto-fix something that looks architectural. If unsure between Rule 2 (silent add) and Rule 4 (ask), ask.
-- If the user interrupts mid-loop or types `stop`, leave the plan at `status: executing`, announce the current Task, and exit cleanly.
+- Main agent runs the loop. Never spawn custom subagents, never call `Agent(Plan)`. The built-in `Agent(subagent_type: "Explore")` is allowed only when a Rule 4 investigation, a Verify-Fail debug retry, or a Task's `Failure case` clearly needs more than 3 directed queries (broad codebase survey). Prefer inline Read / Glob / Grep for narrow scans.
+- Never edit files outside declared Task Files; scope expansion is a Rule 4 trigger.
+- Never skip the Verify step; it is the Task completion gate.
+- If the user interrupts or says `stop`, leave `status: executing`, announce the current Task, exit cleanly.

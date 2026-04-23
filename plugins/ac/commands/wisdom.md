@@ -111,7 +111,34 @@ After appending:
 
 ---
 
-## Phase 4: Announce
+## Phase 4: Memory Reflection
+
+Evaluate whether the work warrants writing to Claude Code's auto-memory. CC already knows the memory system, types, and file layout; this phase decides WHAT (if anything) to save for future sessions.
+
+**Save when the plan produced**:
+- **Architectural decisions**: a new pattern introduced, a significant design choice made, a constraint discovered that future plans should respect. Memory type: `project` or `feedback`.
+- **Codebase evolution**: a new module, layer, or convention added that shifts how similar work should be approached next time. Memory type: `project`.
+- **Validated assumptions or external references**: facts about the system (infra endpoints, dashboards, external tracker IDs) confirmed during execution that would otherwise need re-discovery. Memory type: `reference` or `project`.
+
+**Skip when the plan was**:
+- Routine CRUD, straightforward bug fix, config tweak, dependency bump, cosmetic change.
+- Already entirely described by the code diff or git log; nothing Claude could not re-derive next session.
+
+**Limits**:
+- At most 2 memories per plan. Zero is normal for routine work.
+- Match each candidate against the memory-type definitions CC injects (user, feedback, project, reference); skip if it fits none.
+- Never duplicate memories that already exist. Scan the current MEMORY.md index before writing; update an existing entry instead of adding a redundant one.
+
+**Process**:
+1. Re-read the plan's Context, Tasks, Deviations Log, and SUMMARY.
+2. Nominate up to 2 candidates, each with a proposed memory type and a one-sentence "why saving this".
+3. Filter against the "skip when" list. If nothing survives, announce `No memory worth saving` and move on.
+4. For survivors: save them via CC's auto-memory flow (CC handles the file creation and MEMORY.md index update).
+5. Append a line to the `Deviations Log` noting each memory saved (so future runs of `/ac:wisdom` on this plan do not double-save).
+
+---
+
+## Phase 5: Announce
 
 Print to the user, concise:
 
@@ -119,15 +146,16 @@ Print to the user, concise:
 Wisdom generated for <slug>.
 SUMMARY: <path>
 Open questions: <N>  (see <path> or none)
+Memories saved: <N>  (0 is normal for routine work)
 ```
 
-Use `my-language` tone: direct, no marketing phrases, no trailing `Have a nice day` (this is docs-mode, not article-mode). Under 4 lines total.
+Use `my-language` tone: direct, no marketing phrases, no trailing `Have a nice day` (this is docs-mode, not article-mode). Under 5 lines total.
 
 ---
 
 ## Guards
 
-- NEVER re-run when called auto-invoked by `/ac:execute` if a SUMMARY already exists with a timestamp newer than the plan's `status: complete` timestamp. Announce `Already generated` and exit.
-- NEVER edit the plan file's body sections (Context, Tasks, etc.). Only SUMMARY and open-questions are writeable targets.
-- English only in generated artifacts.
-- NEVER use em dash or en dash in SUMMARY, open-questions, or the announcement.
+- Never re-run when auto-invoked by `/ac:execute` if a SUMMARY already exists with a timestamp newer than the plan's `status: complete` timestamp. Announce `Already generated` and exit.
+- Never edit the plan file's body sections (Context, Tasks, etc.). Only SUMMARY, open-questions, and the Deviations Log memory-note are writeable plan-side targets.
+- Memory reflection writes to CC's auto-memory path (handled by CC); this command decides WHAT to save, not WHERE. Do not hand-write paths under `~/.claude/projects/...`.
+- Respect the 2-memory cap per plan. Err on the side of saving nothing when uncertain.
