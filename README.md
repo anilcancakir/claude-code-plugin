@@ -6,15 +6,15 @@ Claude Code plugins for structured development workflows.
 
 | Plugin | Description |
 |--------|-------------|
-| **[ac](plugins/ac/)** | Setup + creator toolkit — `/ac:setup-*`, `/ac:init-*`, `/ac:commit`, plus skill/agent/command/rule/CLAUDE.md creators |
-| **[github-cli](plugins/github-cli/)** | GitHub CLI skill — issues, PRs, releases, actions, `gh api` |
-| **[git-master](plugins/git-master/)** | Git expert — atomic commits, rebase, history archaeology |
-| **[github-actions](plugins/github-actions/)** | GitHub Actions workflow generator — CI/CD, releases, Docker, security hardening |
-| **[frontend-design](plugins/frontend-design/)** | Frontend design — design systems, visual hierarchy, mobile patterns |
-| **[dart-lsp](plugins/dart-lsp/)** | Dart/Flutter language server — definitions, references, diagnostics |
-| **[json-lsp](plugins/json-lsp/)** | JSON language server — schema validation, hover |
-| **[yaml-lsp](plugins/yaml-lsp/)** | YAML language server — schema validation, diagnostics |
-| **[markdown-lsp](plugins/markdown-lsp/)** | Markdown language server — link navigation, document symbols |
+| **[ac](plugins/ac/)** | Main-agent planning trio (`/ac:plan`, `/ac:execute`, `/ac:wisdom`), setup + creator toolkit (`/ac:setup-*`, `/ac:init-*`, `/ac:commit`), skill/agent/command/rule/CLAUDE.md creators, SessionStart twin-skill hook |
+| **[github-cli](plugins/github-cli/)** | GitHub CLI skill: issues, PRs, releases, actions, `gh api` |
+| **[git-master](plugins/git-master/)** | Git expert: atomic commits, rebase, history archaeology |
+| **[github-actions](plugins/github-actions/)** | GitHub Actions workflow generator: CI/CD, releases, Docker, security hardening |
+| **[frontend-design](plugins/frontend-design/)** | Frontend design: design systems, visual hierarchy, mobile patterns |
+| **[dart-lsp](plugins/dart-lsp/)** | Dart/Flutter language server: definitions, references, diagnostics |
+| **[json-lsp](plugins/json-lsp/)** | JSON language server: schema validation, hover |
+| **[yaml-lsp](plugins/yaml-lsp/)** | YAML language server: schema validation, diagnostics |
+| **[markdown-lsp](plugins/markdown-lsp/)** | Markdown language server: link navigation, document symbols |
 
 ## Install
 
@@ -34,7 +34,13 @@ After updating, sync your config:
 /ac:setup-global-claude-md update
 ```
 
-> `/ac:setup-global-claude-md` only blocks `WebSearch` / `WebFetch` in `~/.claude/settings.json` when kodizm MCP is operational (so CC uses kodizm's web-search / web-fetch instead). CC's native plan mode and built-in agents stay enabled. Set `KODIZM_MCP_TOKEN` for the bundled kodizm MCP — get your token at kodizm.com.
+> `/ac:setup-global-claude-md` writes `~/.claude/settings.json` so the ac planning trio owns planning end-to-end:
+>
+> - Always denies `EnterPlanMode`, `ExitPlanMode`, `Agent(Plan)` (ac's `/ac:plan` replaces CC native plan mode; plans live in project-local `.ac/plans/`).
+> - Conditionally denies `WebSearch` / `WebFetch` when kodizm MCP is operational (so CC uses kodizm's `web-search` / `web-fetch` instead).
+> - Keeps `Agent(Explore)` allowed so users can still trigger read-only codebase surveys manually.
+>
+> Set `KODIZM_MCP_TOKEN` for the bundled kodizm MCP. Get your token at kodizm.com.
 
 ## Structure
 
@@ -42,7 +48,11 @@ After updating, sync your config:
 ├── .claude-plugin/
 │   └── marketplace.json      # Plugin catalog
 ├── plugins/
-│   ├── ac/                   # Main plugin — 6 commands, 6 creator skills
+│   ├── ac/                   # Main plugin: 9 commands, 6 creator skills, SessionStart hook
+│   │   ├── commands/         # plan, execute, wisdom, commit, init-*, setup-*
+│   │   ├── skills/           # prompt-writer, skill-creator, agent-creator, command-creator, rule-creator, claude-md-writer
+│   │   ├── hooks/            # SessionStart twin-skill reminder
+│   │   └── references/       # CLAUDE.md and style templates
 │   ├── github-cli/           # GitHub CLI skill
 │   ├── github-actions/       # GitHub Actions workflow generator
 │   ├── git-master/           # Git expert skill

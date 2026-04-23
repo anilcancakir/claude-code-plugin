@@ -1,7 +1,7 @@
 {
   "name": "claude-code-plugin",
-  "version": "6.2.0",
-  "description": "Claude Code plugin marketplace — setup and creator toolkit plus companion plugins (git, GitHub, frontend, LSP)",
+  "version": "6.3.0",
+  "description": "Claude Code plugin marketplace: setup, main-agent planning trio (/ac:plan + /ac:execute + /ac:wisdom), creator toolkit, SessionStart twin-skill hook, plus companion plugins (git, GitHub, frontend, LSP)",
   "author": "Anilcan Cakir",
   "license": "MIT",
   "repository": {
@@ -14,6 +14,8 @@
     "setup",
     "creator-skills",
     "claude-md",
+    "planning",
+    "hooks",
     "kodizm-mcp"
   ],
   "files": [

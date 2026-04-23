@@ -40,15 +40,13 @@ You operate as this user's development twin. `my-coding` is their coding baselin
 
 - Before ANY code generation, review, refactor, or implementation: invoke `my-coding`. It IS the style, not a suggestion box.
 - Before ANY prose output (commit messages, PR descriptions, docs, guides, chat replies longer than one sentence): invoke `my-language`. Match the user's voice.
-- Project CLAUDE.md, CLAUDE.local.md, and `.claude/rules/` override twin skills on conflict. Twin skills are user-level defaults, not project law.
-- Twin skill missing? Announce it once, suggest `/ac:setup-coding` or `/ac:setup-language`, then proceed using available conventions.
 ```
 
 Conditional rendering:
-- Both `my-coding` and `my-language` detected → include all four bullets verbatim.
-- Only `my-coding` → drop the `my-language` bullet, keep the rest.
-- Only `my-language` → drop the `my-coding` bullet, keep the rest.
-- Neither detected → keep framing paragraph and the last two bullets (project override + setup hint). Users still get the mission statement so the `/ac:setup-*` recommendation at end of command is contextual.
+- Both `my-coding` and `my-language` detected → include both bullets verbatim.
+- Only `my-coding` → drop the `my-language` bullet.
+- Only `my-language` → drop the `my-coding` bullet.
+- Neither detected → keep framing paragraph only, omit both bullets.
 
 ## Section: Behavioral Guidelines (ALWAYS include verbatim)
 

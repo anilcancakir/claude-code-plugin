@@ -97,7 +97,7 @@ Not blocking — continue regardless.
 
 2. **Fixed defaults (every mode)**: Write these verbatim from template, never edited by interview:
    - Identity bullet list (English-only, user-language communication, direct/technical, flawed-approach, AskUserQuestion enforcement, em/en dash ban)
-   - Twin Mode framing paragraph + project override bullet (always). my-coding / my-language bullets conditional on detection
+   - Twin Mode framing paragraph. my-coding / my-language bullets conditional on detection
    - Full Behavioral Guidelines block (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)
    - Rules default bullets (project override, phases/workflows, TDD, strict types, PHP no `declare(strict_types=1)`, zero tolerance, minimal changes, my-coding reference)
 
@@ -114,7 +114,7 @@ Not blocking — continue regardless.
 
 5. Count lines. If over 150, drop LSP section and trim Rules extras (never remove defaults or Behavioral Guidelines).
 
-6. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, no planning pipeline injection (Intent Gate, Delegation Check, tier routing, parallel subagent mandates, `skill: "ac:plan"` refs, internal pipeline agents). Only reference `/ac:commit`, `/ac:init-claude-md`, `/ac:init-rules`, `/ac:setup-coding`, `/ac:setup-language`, `/ac:setup-global-claude-md`.
+6. Apply `claude-md-writer` quality checklist: no CC system prompt duplication, no duplicate rules across sections, no planning pipeline injection (Intent Gate, Delegation Check, tier routing, parallel subagent mandates, internal pipeline agents). Only reference `/ac:plan`, `/ac:execute`, `/ac:wisdom`, `/ac:commit`, `/ac:init-claude-md`, `/ac:init-rules`, `/ac:setup-coding`, `/ac:setup-language`, `/ac:setup-global-claude-md`.
 
 ---
 
@@ -122,7 +122,7 @@ Not blocking — continue regardless.
 
 1. Present generated CLAUDE.md with: line count, sections included, skills/MCP referenced.
 2. Update mode → show diff (`- old` / `+ new`). No changes → already announced in Phase 3.
-3. **Compute settings.json diff** (do not write yet). Load EXISTING_SETTINGS from Phase 1. Build proposed merged settings per Phase 4.6 rules. Show planned additions, removals (obsolete `EnterPlanMode`/`Agent(Explore)`/`Agent(Plan)` entries from prior runs), and "no change" set.
+3. **Compute settings.json diff** (do not write yet). Load EXISTING_SETTINGS from Phase 1. Build proposed merged settings per Phase 4.6 rules. Show planned additions, removals (obsolete `Agent(Explore)` entries from older ac versions if present, since the current design allows user-driven Explore), and "no change" set.
 4. Call AskUserQuestion with these exact parameters:
    ```json
    {
@@ -146,18 +146,29 @@ Not blocking — continue regardless.
    - Backup existing: `cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak` (if exists)
    - Write `~/.claude/CLAUDE.md`
 
-6. **Apply `~/.claude/settings.json` changes** (only if user chose "Approve both") — only restriction is blocking CC's native web tools when kodizm MCP is available as replacement. Nothing else is blocked. Read existing settings, merge (preserve all existing keys).
+6. **Apply `~/.claude/settings.json` changes** (only if user chose "Approve both"). Read existing settings, merge (preserve all existing keys, never touch unrelated sections).
 
-   Only deny if MCP_STATUS = "operational":
-   - `WebSearch`, `WebFetch` — replaced by kodizm MCP's `web-search`, `web-fetch`.
+   **Always deny** (ac's `/ac:plan` / `/ac:execute` / `/ac:wisdom` trio replaces CC native planning):
+   - `EnterPlanMode`, `ExitPlanMode`: native plan mode hijacks the interview flow of `/ac:plan`, and writes plans to `~/.claude/plans/` instead of the project-local `.ac/plans/` convention.
+   - `Agent(Plan)`: defense in depth alongside the EnterPlanMode and ExitPlanMode deny; blocks the built-in Plan subagent.
 
-   If MCP_STATUS = "unavailable": skip these entries and warn: "WebSearch/WebFetch kept enabled — kodizm MCP unavailable as replacement."
+   **Keep allowed** (user-driven use of CC built-ins stays available):
+   - `Agent(Explore)`: user may still invoke it manually when they want a read-only codebase survey. ac's planning commands never spawn it, so no conflict.
 
-   Example deny array when MCP_STATUS = "operational":
+   **Conditionally deny** (only if `MCP_STATUS = "operational"` from Phase 2 Q0):
+   - `WebSearch`, `WebFetch`: replaced by kodizm MCP's `web-search` / `web-fetch`.
+
+   If `MCP_STATUS = "unavailable"`: skip these entries and warn: `WebSearch/WebFetch kept enabled, kodizm MCP unavailable as replacement.`
+
+   Example `permissions.deny` array (both MCP conditions combined when kodizm is operational):
+
    ```json
    {
      "permissions": {
        "deny": [
+         "EnterPlanMode",
+         "ExitPlanMode",
+         "Agent(Plan)",
          "WebSearch",
          "WebFetch"
        ]
@@ -165,18 +176,33 @@ Not blocking — continue regardless.
    }
    ```
 
-   Matching `hooks.PreToolUse` entry (only if MCP_STATUS = "operational"):
+   When `MCP_STATUS = "unavailable"`, the last two entries are omitted.
+
+   **PreToolUse hooks** — add matching entries so the user (and Claude) get a readable explanation when a blocked tool is attempted.
+
+   Always add:
+   ```json
+   {
+     "matcher": "EnterPlanMode|ExitPlanMode",
+     "hooks": [{
+       "type": "command",
+       "command": "echo 'Native plan mode blocked. Use /ac:plan (interview-driven, writes to .ac/plans/).' >&2; exit 2"
+     }]
+   }
+   ```
+
+   Only add if `MCP_STATUS = "operational"`:
    ```json
    {
      "matcher": "WebSearch|WebFetch",
      "hooks": [{
        "type": "command",
-       "command": "echo 'Web tools blocked — use kodizm MCP (web-search / web-fetch).' >&2; exit 2"
+       "command": "echo 'Web tools blocked. Use kodizm MCP (web-search / web-fetch).' >&2; exit 2"
      }]
    }
    ```
 
-   Do NOT add deny entries or hooks for `EnterPlanMode`, `Agent(Explore)`, or `Agent(Plan)` — CC's native plan mode and built-in agents stay enabled. If prior runs installed these entries, remove them during this merge (they are obsolete).
+   **Removal of obsolete entries**: if prior ac versions added `Agent(Explore)` to `permissions.deny` or a matching PreToolUse hook, strip them during this merge. The current design wants Agent(Explore) allowed.
 
    Write merged settings back. Report what changed vs already configured.
 

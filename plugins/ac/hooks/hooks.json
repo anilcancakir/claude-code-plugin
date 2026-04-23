@@ -1,0 +1,16 @@
+{
+  "description": "ac plugin hooks — nudge Claude to invoke the user's personal my-coding / my-language twin skills at session start. Silent skip if skills are not installed.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

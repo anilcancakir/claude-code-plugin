@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Mission
 
-This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` ships a small set of setup, init, and commit commands plus creator skills for building Claude Code extensions (skills, agents, commands, rules, CLAUDE.md files). Planning, execution, ideation, and QA pipelines have been removed: CC's native plan mode, default agents, and `Task` tool stay in charge. The marketplace structure allows additional plugins to be added independently.
+This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` ships a main-agent planning trio (`/ac:plan`, `/ac:execute`, `/ac:wisdom`) plus setup, init, and commit commands and creator skills for building Claude Code extensions (skills, agents, commands, rules, CLAUDE.md files). The planning trio runs entirely in the main agent (no subagent swarms, no tier routing); `/ac:setup-global-claude-md` blocks `EnterPlanMode`, `ExitPlanMode`, and `Agent(Plan)` in `~/.claude/settings.json` so the ac trio owns planning end-to-end. A `SessionStart` hook reminds Claude to invoke the user's personal `my-coding` and `my-language` twin skills before code or prose output. The marketplace structure allows additional plugins to be added independently.
 
 ## Architecture
 
@@ -12,11 +12,12 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` shi
 ├── .claude-plugin/
 │   └── marketplace.json          # Plugin catalog — all plugins registered here
 ├── plugins/
-│   ├── ac/                       # Main plugin — creator skills + setup/init commands
+│   ├── ac/                       # Main plugin: planning trio + creator skills + setup/init commands + SessionStart hook
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (kodizm bundled)
-│   │   ├── commands/             # 6 user-invocable /ac:* commands
+│   │   ├── commands/             # 9 user-invocable /ac:* commands (plan, execute, wisdom, commit, init-*, setup-*)
+│   │   ├── hooks/                # SessionStart twin-skill reminder (session-start.mjs + hooks.json)
 │   │   ├── skills/
 │   │   │   ├── prompt-writer/    # Shared CC prompt writing foundation + references/
 │   │   │   ├── skill-creator/    # Skill creation + references/
@@ -24,7 +25,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` shi
 │   │   │   ├── command-creator/  # Command creation + references/
 │   │   │   ├── rule-creator/     # Rule creation
 │   │   │   └── claude-md-writer/ # CLAUDE.md authoring + references/
-│   │   ├── references/           # Templates for setup/init commands
+│   │   ├── references/           # Templates for setup/init commands and CLAUDE.md generation
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── github-cli/               # GitHub CLI skill plugin
@@ -50,6 +51,9 @@ All components are pure markdown with YAML frontmatter. No compiled code (except
 
 | Command | Description |
 |---------|-------------|
+| `/ac:plan` | Interview-driven planning into `.ac/plans/<slug>.md`. Opus judges complexity; offers Mode A (plan all, execute continuously) / Mode B (plan-execute phase-by-phase) / single-file override. Nyquist rule: every Task needs automated Verify |
+| `/ac:execute` | Run an approved plan end-to-end in the main agent. Auto-fix bugs / missing validation / blocking issues silently; ask only on architectural deviations (Rule 4). Per-task atomic commits, max-2 Verify attempts per Task |
+| `/ac:wisdom` | Generate `SUMMARY.md` + `open-questions.md` for an executed plan. Auto-invoked by `/ac:execute` completion, callable standalone |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits, push. Delegates to git-master when available |
 | `/ac:init-claude-md` | Generate or enhance project CLAUDE.md — auto-discovers codebase via Read/Glob/Grep, interviews developer, preserves custom sections |
 | `/ac:init-rules` | Auto-generate `.claude/rules/` — path-scoped conventions from project analysis |
@@ -57,7 +61,7 @@ All components are pure markdown with YAML frontmatter. No compiled code (except
 | `/ac:setup-language` | Scan writing samples, interview developer, generate `my-language` skill |
 | `/ac:setup-global-claude-md` | Generate global CLAUDE.md — interview, detect skills/MCP, produce lightweight orchestration config |
 
-Commands run in the main context. None of them spawn subagents — the old `ac:explore`, `ac:librarian`, `plan-*`, and QA agents have been removed. CC's native `Task` tool is available if a command or user ever needs it.
+Commands run in the main context. None of them spawn subagents; the old `ac:explore`, `ac:librarian`, `plan-*`, and QA agents are gone for good. The new planning trio (`plan` / `execute` / `wisdom`) is main-agent-only by design. `/ac:execute` invokes `/ac:commit` after every successful Task so each atomic change lands on the remote with its own conventional commit. CC's native `Task` tool stays available if a future command needs it.
 
 ## Skills & MCP
 
@@ -81,27 +85,34 @@ Commands run in the main context. None of them spawn subagents — the old `ac:e
 
 ## Design Principles
 
-- **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`
-- **Lightweight orchestration**: The ac plugin does not override CC's native planning, agent dispatch, or web tools beyond optionally blocking `WebSearch` / `WebFetch` when kodizm MCP is configured. No Intent Gate, no Delegation Check, no tier routing, no parallel subagent mandates are injected into user sessions.
-- **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → `references/` on demand
+- **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`.
+- **Main-agent only planning**: `/ac:plan`, `/ac:execute`, `/ac:wisdom` run entirely in the main agent. No subagent swarms, no tier routing (haiku/sonnet/opus), no wave-based parallelism, no `Task` tool delegation. Opus 4.7 handles planning and execution.
+- **Ac owns planning**: `/ac:setup-global-claude-md` denies `EnterPlanMode`, `ExitPlanMode`, `Agent(Plan)` in `~/.claude/settings.json` so CC's native plan mode cannot hijack the ac interview flow. `Agent(Explore)` stays allowed for manual user invocation. `WebSearch` / `WebFetch` denied only when kodizm MCP is operational as a replacement.
+- **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → `references/` on demand.
 - **Creator skills stay generic**: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `claude-md-writer` produce components for any plugin. Examples use placeholder `<your-*>` subagent names rather than ac-internal agents.
-- **Direct tool access in commands**: init and setup commands discover the codebase with Read / Glob / Grep / Bash directly. No research subagents are spawned.
+- **Direct tool access in commands**: Init, setup, and planning commands discover the codebase with Read / Glob / Grep / Bash directly. No research subagents are spawned.
+- **Per-task atomic commits**: `/ac:execute` invokes `/ac:commit` after every Task whose Verify passed. Conventional Commits format with scope (via `my-language`), auto-push by default, `--no-push` opt-out for offline or protected branches.
+- **Nyquist rule**: Every Task in a plan file must declare an automated `Verify` command. If missing, `/ac:plan` adds a Wave 0 scaffold Task before it.
+- **Twin skill enforcement**: `SessionStart` hook at `plugins/ac/hooks/session-start.mjs` injects an `additionalContext` reminder so Claude invokes `Skill("my-coding")` and `Skill("my-language")` before any code or prose output. Fires on startup, resume, clear, and compact triggers. Silent no-op if the user has not installed the twin skills.
 - **Project override**: Always obey the active project's `CLAUDE.md`, `CLAUDE.local.md`, and `.claude/rules/`. When switching workdir, re-read and follow that directory's project rules.
 - **Conditional MCP**: kodizm MCP is bundled. If `KODIZM_MCP_TOKEN` is not set, kodizm tools are unavailable but commands still function.
 - **Plugin-level `plugin.json` is minimal** (name, description, author). Version, category, homepage, tags live only in `marketplace.json`.
 
 ## Key Files
 
-- `plugins/ac/skills/prompt-writer/SKILL.md` — Shared foundation for all creator skills — CC prompt writing principles
-- `plugins/ac/skills/prompt-writer/references/` — Frontmatter schemas, dedup guide, writing patterns (shared by all creators)
-- `plugins/ac/skills/claude-md-writer/SKILL.md` — CLAUDE.md authoring patterns, quality scoring, compression tactics
-- `plugins/ac/skills/claude-md-writer/references/` — Section patterns (global + project), CLAUDE.md-specific dedup guide
-- `plugins/ac/skills/skill-creator/references/skill-patterns.md` — Pattern library for writing Claude Code skills
-- `plugins/ac/skills/command-creator/references/command-patterns.md` — Phase templates, AskUserQuestion patterns, generic agent delegation examples
-- `plugins/ac/references/coding-style-template.md` — Template for `my-coding` skill generation
-- `plugins/ac/references/language-style-template.md` — Template for `my-language` skill generation
-- `plugins/ac/references/global-claude-md-template.md` — Template for global CLAUDE.md generation
-- `plugins/ac/references/project-claude-md-template.md` — Template for project CLAUDE.md generation
+- `plugins/ac/commands/plan.md`, `execute.md`, `wisdom.md`: Main-agent planning trio. Phase-based, AskUserQuestion-driven, per-task atomic commits via `/ac:commit`.
+- `plugins/ac/commands/setup-global-claude-md.md`: Generates `~/.claude/CLAUDE.md` and configures `~/.claude/settings.json` deny list for native plan mode tools.
+- `plugins/ac/hooks/hooks.json`, `plugins/ac/hooks/session-start.mjs`: SessionStart hook that injects Twin Mode reminder on startup, resume, clear, and compact triggers.
+- `plugins/ac/skills/prompt-writer/SKILL.md`: Shared foundation for all creator skills, CC prompt writing principles.
+- `plugins/ac/skills/prompt-writer/references/`: Frontmatter schemas, dedup guide, writing patterns (shared by all creators).
+- `plugins/ac/skills/claude-md-writer/SKILL.md`: CLAUDE.md authoring patterns, quality scoring, compression tactics.
+- `plugins/ac/skills/claude-md-writer/references/`: Section patterns (global + project), CLAUDE.md-specific dedup guide.
+- `plugins/ac/skills/skill-creator/references/skill-patterns.md`: Pattern library for writing Claude Code skills.
+- `plugins/ac/skills/command-creator/references/command-patterns.md`: Phase templates, AskUserQuestion patterns, generic agent delegation examples.
+- `plugins/ac/references/coding-style-template.md`: Template for `my-coding` skill generation.
+- `plugins/ac/references/language-style-template.md`: Template for `my-language` skill generation.
+- `plugins/ac/references/global-claude-md-template.md`: Template for global CLAUDE.md generation.
+- `plugins/ac/references/project-claude-md-template.md`: Template for project CLAUDE.md generation.
 
 ## Adding a New Plugin
 

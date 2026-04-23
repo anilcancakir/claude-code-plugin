@@ -33,6 +33,9 @@ Re-run any command with `update` to sync after plugin updates, e.g. `/ac:setup-g
 
 | Command | Purpose |
 |---------|---------|
+| `/ac:plan` | Interview-driven planning, writes `.ac/plans/<slug>.md`. Auto-detects Simple vs multi-phase (Mode A: plan-then-execute-all, Mode B: plan-and-execute per phase). Main agent only |
+| `/ac:execute` | Runs an approved plan end-to-end. Auto-fix bugs / missing validation / blocking issues. Asks only on architectural deviations. Per-task atomic commits + Nyquist verify gate |
+| `/ac:wisdom` | SUMMARY.md + open-questions.md generator. Auto-invoked at `/ac:execute` completion; callable standalone for re-summarization |
 | `/ac:commit` | Preflight checks → atomic commit → push. Delegates to `git-master` if installed |
 | `/ac:init-claude-md` | Generate project CLAUDE.md from codebase discovery + interview |
 | `/ac:init-rules` | Generate path-scoped `.claude/rules/` from stack + directory analysis |
@@ -40,7 +43,7 @@ Re-run any command with `update` to sync after plugin updates, e.g. `/ac:setup-g
 | `/ac:setup-language` | Scan writing samples, interview, generate `my-language` skill |
 | `/ac:setup-global-claude-md` | Generate global `~/.claude/CLAUDE.md` — tech stack, skill table, lightweight rules |
 
-Every command runs in the main context with Read / Glob / Grep / Bash. No hidden subagent orchestration.
+Every command runs in the main context with Read / Glob / Grep / Bash. No hidden subagent orchestration — the planning trio (`plan` / `execute` / `wisdom`) runs entirely in the main agent.
 
 ## Creator Skills
 
