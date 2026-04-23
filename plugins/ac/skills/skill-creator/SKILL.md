@@ -18,7 +18,7 @@ Gather requirements through focused questions. Limit to 3-4 AskUserQuestion call
 1. What should this skill enable?
 2. When should it trigger? (user phrases, file patterns, contexts)
 3. What tools does it need? (Read, Write, Edit, Bash, Agent, etc.)
-4. What model suits best? (Haiku for fast/search, Sonnet for standard, Opus for complex/architecture)
+4. Where should it run? (Skills loaded into the main session inherit the user's chosen model. Only specify a model when the skill ships an agent with its own override.)
 
 Skip questions where the answer is obvious from context.
 

@@ -51,7 +51,7 @@ All components are pure markdown with YAML frontmatter. No compiled code (except
 
 | Command | Description |
 |---------|-------------|
-| `/ac:plan` | Interview-driven planning into `.ac/plans/<slug>.md`. Opus judges complexity; offers Mode A (plan all, execute continuously) / Mode B (plan-execute phase-by-phase) / single-file override. Nyquist rule: every Task needs automated Verify |
+| `/ac:plan` | Interview-driven planning into `.ac/plans/<slug>.md`. Classifies Trivial / Simple / Complex; Complex offers Mode A (plan all, execute continuously) / Mode B (plan-execute phase-by-phase) / single-file (recommended). Nyquist rule: every Task needs automated Verify |
 | `/ac:execute` | Run an approved plan end-to-end in the main agent. Auto-fix bugs / missing validation / blocking issues silently; ask only on architectural deviations (Rule 4). Per-task atomic commits, max-2 Verify attempts per Task |
 | `/ac:wisdom` | Generate `SUMMARY.md` + `open-questions.md` for an executed plan. Auto-invoked by `/ac:execute` completion, callable standalone |
 | `/ac:commit` | Smart commit — preflight checks, convention detection, atomic commits, push. Delegates to git-master when available |
@@ -67,26 +67,26 @@ Commands run in the main context. None of them spawn subagents; the old `ac:expl
 
 ### ac plugin — creator skills
 
-- `prompt-writer` (Opus) — CC-optimal prompt writing foundation for all component creators. Has `references/` with dedup guide, frontmatter schemas, and writing patterns
-- `skill-creator` (Opus) — Create Claude Code skills with progressive disclosure architecture. Uses `prompt-writer` as shared foundation
-- `agent-creator` (Opus) — Create Claude Code agents following the kodizm 5-section format. Uses `prompt-writer` as shared foundation
-- `command-creator` (Opus) — Create Claude Code commands with phase-based structure. Uses `prompt-writer` as shared foundation
-- `rule-creator` (Sonnet) — Create path-scoped `.claude/rules/` for coding conventions. Uses `prompt-writer` as shared foundation
-- `claude-md-writer` (Sonnet) — Write CC-optimal CLAUDE.md and CLAUDE.local.md files. Has `references/` with section patterns and dedup guide. Uses `prompt-writer` as shared foundation
+- `prompt-writer` — CC-optimal prompt writing foundation for all component creators. Has `references/` with dedup guide, frontmatter schemas, and writing patterns
+- `skill-creator` — Create Claude Code skills with progressive disclosure architecture. Uses `prompt-writer` as shared foundation
+- `agent-creator` — Create Claude Code agents following the kodizm 5-section format. Uses `prompt-writer` as shared foundation
+- `command-creator` — Create Claude Code commands with phase-based structure. Uses `prompt-writer` as shared foundation
+- `rule-creator` — Create path-scoped `.claude/rules/` for coding conventions. Uses `prompt-writer` as shared foundation
+- `claude-md-writer` — Write CC-optimal CLAUDE.md and CLAUDE.local.md files. Has `references/` with section patterns and dedup guide. Uses `prompt-writer` as shared foundation
 - MCP: `kodizm` (bundled) — Docs, web search, web fetch, code search via remote MCP. Used by creator skills for external documentation lookups.
 
 ### Companion plugins
 
-- `github-cli` (Sonnet) — gh patterns for issues, PRs, releases, actions, gh api
-- `github-actions` (Sonnet) — GitHub Actions workflow generator — CI/CD, releases, Docker builds, security hardening
-- `git-master` (Sonnet) — Atomic commits with style detection, rebase/squash, history archaeology
-- `frontend-design` (Sonnet) — Production-grade UI for web and mobile with design systems and visual hierarchy
+- `github-cli` — gh patterns for issues, PRs, releases, actions, gh api
+- `github-actions` — GitHub Actions workflow generator: CI/CD, releases, Docker builds, security hardening
+- `git-master` — Atomic commits with style detection, rebase/squash, history archaeology
+- `frontend-design` — Production-grade UI for web and mobile with design systems and visual hierarchy
 - `dart-lsp` / `json-lsp` / `yaml-lsp` / `markdown-lsp` — Language servers (go-to-definition, hover, diagnostics) configured via `lspServers` inline in `marketplace.json`
 
 ## Design Principles
 
 - **Multi-plugin marketplace**: Root is the catalog, each plugin is self-contained under `plugins/<name>/`.
-- **Main-agent only planning**: `/ac:plan`, `/ac:execute`, `/ac:wisdom` run entirely in the main agent. No subagent swarms, no tier routing (haiku/sonnet/opus), no wave-based parallelism, no `Task` tool delegation. Opus 4.7 handles planning and execution.
+- **Main-agent only planning**: `/ac:plan`, `/ac:execute`, `/ac:wisdom` run entirely in the main agent. No subagent swarms, no tier routing, no wave-based parallelism, no `Task` tool delegation.
 - **Ac owns planning**: `/ac:setup-global-claude-md` denies `EnterPlanMode`, `ExitPlanMode`, `Agent(Plan)` in `~/.claude/settings.json` so CC's native plan mode cannot hijack the ac interview flow. `Agent(Explore)` stays allowed for manual user invocation. `WebSearch` / `WebFetch` denied only when kodizm MCP is operational as a replacement.
 - **Progressive disclosure**: Metadata always loaded → SKILL.md body on trigger → `references/` on demand.
 - **Creator skills stay generic**: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `claude-md-writer` produce components for any plugin. Examples use placeholder `<your-*>` subagent names rather than ac-internal agents.

@@ -52,10 +52,15 @@ Decide Intent and Complexity from the request. No user question unless genuinely
 
 **Intent**: Build, Refactor, Architecture, Migration, Bugfix, Research.
 
-**Complexity**:
-- **Trivial**: 1 file, mechanical, zero design decisions (typo fix, version bump, rename).
-- **Simple**: 1-5 tasks, 1-2 modules, at most one design call.
-- **Complex**: 6+ tasks OR 3+ modules OR architectural decisions OR multi-package work.
+**Complexity** (bias toward Simple, multi-phase is rare):
+- **Trivial**: 1 file, mechanical, zero design decisions (typo fix, version bump, rename). Bypass the plan file entirely.
+- **Simple**: default. A single plan file comfortably holds 15-20+ tasks across multiple modules. Architectural decisions inside a single bounded context still belong here. Choose Simple unless ALL three Complex criteria below are met.
+- **Complex (multi-phase)**: only when ALL three apply:
+  1. roughly 15+ tasks AND multi-package or multi-service work (not just multi-module within one service), AND
+  2. natural sequential phase boundaries where each phase is a coherent deliverable that must be approved, executed, and verified before the next phase can safely begin (for example: provision infra, then deploy services, then run data migration, then cut traffic), AND
+  3. at least one rollback or staging window between phases where intermediate verification materially affects downstream work.
+
+When in doubt, pick Simple. A long task list in one file beats a premature phase split: the Mode A/B overhead (ROADMAP, multiple files, status synchronization, phase boundary commits) only pays off when phases truly are independent approval units.
 
 **Trivial bypass**: announce `Trivial task. Executing inline, no plan file needed.` Stop. Return control.
 
@@ -82,24 +87,26 @@ For an Architecture, Migration, or "Build from scratch" intent with no clear anc
 
 **Simple (single-file)**: write `.ac/plans/<slug>.md` with the Plan File Format frontmatter, all section headers, and rough notes. Tasks stay empty until Phase 4.
 
-**Complex**: ask mode first:
+**Complex**: confirm structure first. Default to Single file; pick Mode A or B only when natural phase boundaries demand the split.
 
 ```json
 {
   "questions": [{
-    "question": "This looks like a multi-phase job. How should we structure planning and execution?",
+    "question": "Crossed the Complex threshold. Confirm structure?",
     "header": "Mode",
     "multiSelect": false,
     "options": [
-      {"label": "Mode A, plan all then execute", "description": "Plan every phase up front. /ac:execute <slug>/ runs them continuously. Zero open questions at approval."},
-      {"label": "Mode B, plan and execute phase-by-phase", "description": "Skeleton every phase. Plan phase-01 in detail now; later phases planned after each /ac:execute."},
-      {"label": "Single file override", "description": "Keep the whole effort in one file. Longer Task list, no phase split."}
+      {"label": "Single file (Recommended)", "description": "Keep the whole effort in one plan file. 20+ tasks fit fine; phase splitting adds ROADMAP overhead, multi-file synchronization, and slows execution. Pick this unless there are clear approval or verification gates BETWEEN phases that justify the split."},
+      {"label": "Mode A, plan all then execute", "description": "Plan every phase up front, then /ac:execute <slug>/ runs them continuously. Pick when phases are clearly distinct deliverables but you want non-stop execution after approval."},
+      {"label": "Mode B, plan and execute phase-by-phase", "description": "Skeleton every phase. Plan phase-01 in detail now; later phases planned after each /ac:execute completes. Pick when intermediate phases need their own verification gate before the next phase is even worth planning."}
     ]
   }]
 }
 ```
 
-On Mode A or B:
+On **Single file (Recommended)**: fall back to the Simple skeleton above. Write `.ac/plans/<slug>.md` with the standard frontmatter (`mode: single`) and let the Tasks section grow to whatever length the work needs. No ROADMAP, no phase shells.
+
+On **Mode A or B**:
 1. `mkdir -p .ac/plans/<slug>`.
 2. Write `.ac/plans/<slug>/ROADMAP.md`:
 

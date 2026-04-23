@@ -1,6 +1,6 @@
 {
   "name": "claude-code-plugin",
-  "version": "6.4.1",
+  "version": "6.4.2",
   "description": "Claude Code plugin marketplace: setup, main-agent planning trio (/ac:plan + /ac:execute + /ac:wisdom), creator toolkit, SessionStart twin-skill hook, plus companion plugins (git, GitHub, frontend, LSP)",
   "author": "Anilcan Cakir",
   "license": "MIT",
