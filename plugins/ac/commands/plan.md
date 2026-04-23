@@ -202,7 +202,8 @@ Then:
     "header": "Approval",
     "multiSelect": false,
     "options": [
-      {"label": "Approve", "description": "Set status=approved; print the exact /ac:execute command."},
+      {"label": "Approve and execute now (Recommended)", "description": "Set status=approved and immediately run /ac:execute against the plan in this same turn."},
+      {"label": "Approve only", "description": "Set status=approved and print the exact /ac:execute command for the user to run later."},
       {"label": "Edit specific section", "description": "Tell me which section to change; loop back to Phase 4 for that scope."},
       {"label": "Restart", "description": "Return to Phase 2 and redo classify and skeleton from scratch."}
     ]
@@ -210,12 +211,20 @@ Then:
 }
 ```
 
-On Approve:
-- Set `status: approved` on the target file. Mode A updates every phase file; Mode B updates only the current phase file and ROADMAP.
-- Print the next command:
-  - Simple: `/ac:execute .ac/plans/<slug>.md`
-  - Mode A: `/ac:execute .ac/plans/<slug>/`
-  - Mode B: `/ac:execute .ac/plans/<slug>/phase-0N-<name>.md`
+Resolve the approved plan path from mode (used by both Approve options):
+- Simple: `.ac/plans/<slug>.md`
+- Mode A: `.ac/plans/<slug>/`
+- Mode B: `.ac/plans/<slug>/phase-0N-<name>.md`
+
+On **Approve and execute now**:
+1. Set `status: approved` on the target file (Mode A updates every phase file; Mode B updates only the current phase file and ROADMAP).
+2. Announce: `Plan approved, starting /ac:execute <path>.`
+3. Proceed inline with the `/ac:execute` workflow against the resolved path. Follow its Phase 1 through Phase 5 in the same turn. Do not stop until `/ac:execute` reports completion or halts on a Rule 4 / verify-fail gate.
+
+On **Approve only**:
+1. Set `status: approved` as above.
+2. Print the exact command: `/ac:execute <path>`.
+3. Return control to the user without running execute.
 
 ---
 
