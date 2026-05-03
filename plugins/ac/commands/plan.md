@@ -236,7 +236,11 @@ On **Approve and execute now**:
 
 On **Approve only**:
 1. Set `status: approved` as above.
-2. Print the exact command: `/ac:execute <path>`.
+2. Print both interactive and autonomous example commands so the user can pick when running later. Use this exact format with both interactive and --auto examples:
+   ```
+   Interactive:  /ac:execute <path>
+   Autonomous:   /ac:execute <path> --auto
+   ```
 3. Return control to the user without running execute.
 
 ---
