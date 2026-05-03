@@ -1,6 +1,6 @@
 ---
 description: Execute an approved plan end-to-end in the main agent. Auto-fix non-architectural deviations, ask on Rule 4. Per-task atomic commits via /ac:commit, Nyquist verify gate with one debug retry.
-argument-hint: "[.ac/plans/<slug>.md | <slug>/phase-N.md | <slug>/ for all phases] [--no-push] [--force]"
+argument-hint: "[.ac/plans/<slug>.md | <slug>/phase-N.md | <slug>/ for all phases] [--no-push] [--force] [--auto | --no-auto] [--max-iterations=N] [--resume <slug>]"
 effort: high
 ---
 
@@ -19,15 +19,38 @@ Run an approved plan to completion in the main agent. Loop mode: do not pause be
    - Strip flags before resolving the path:
      - `--force`: allow re-running a `status: complete` plan.
      - `--no-push`: commit locally per Task but skip `git push`.
+     - `--auto`: enter autonomous mode. Sticky, written to the state file, propagates across resumes and across remaining phases.
+     - `--no-auto`: leave autonomous mode. Clears the state file's `autonomous: true`. Useful mid-flight when the user wants to take manual control again.
+     - `--max-iterations=N`: cap the autonomous resume loop. Default 100. Override with `--max-iterations=999` for effectively unbounded runs.
+     - `--resume <slug>`: resume an executing plan from its state file. See step 5.
 
 2. Read the target. Validate frontmatter:
    - `status: approved` or `status: executing`: proceed.
    - `status: complete` without `--force`: refuse with `Plan already complete. Add --force to re-run.`
    - `status: draft`: refuse with `Plan not approved. Run /ac:plan <slug> first.`
 
-3. Set `status: executing` on the target (and on ROADMAP for Mode A).
+3. State file resolution. State path is the schema location from `plugins/ac/references/execution-state-schema.md`:
+   - Simple: `.ac/plans/<slug>.execution-state.md`.
+   - Mode A or B: `.ac/plans/<slug>/.execution-state.md`.
+   - On first run (no state file yet): create it with `iteration: 1`, `autonomous: <true if --auto else false>`, `max_iterations: <flag value or 100>`, `current_phase: 1`, `current_task: 1`, `attempt: 1`, `status: executing`, `started_at: <now>`.
+   - On subsequent runs (state file exists): load frontmatter. If `--auto` was passed now, set `autonomous: true`. If `--no-auto`, set it to `false`. If neither, keep the stored value. Mid-flight switching is supported, the new value applies from the next Task forward.
+   - If `--max-iterations=N` is passed, overwrite the stored cap.
 
-4. Mode A: read ROADMAP, pick the first phase with `status: approved`, make its phase file the current target. Remember the ROADMAP path for Phase 4.
+4. Set `status: executing` on the plan target (and on ROADMAP for Mode A).
+
+5. Mode A: read ROADMAP, pick the first phase with `status: approved`, make its phase file the current target. Remember the ROADMAP path for Phase 4.
+
+### Flag interaction examples
+
+```
+/ac:execute my-plan                   # interactive (default), iteration 1
+/ac:execute my-plan --auto            # autonomous from the start, sticky
+/ac:execute my-plan --auto --no-push  # autonomous + skip push
+/ac:execute --resume my-plan          # resume from state file, mode preserved
+/ac:execute my-plan --auto            # mid-flight switch to autonomous
+/ac:execute my-plan --no-auto         # mid-flight switch back to interactive
+/ac:execute my-plan --auto --max-iterations=300
+```
 
 ---
 
