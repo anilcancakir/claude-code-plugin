@@ -1,6 +1,6 @@
 ---
-description: Interview-driven planning. Writes .ac/plans/<slug>.md or <slug>/phase-N.md. Pair-planning loop, intent-branching, clearance gate, Nyquist verify rule. Main-agent only.
-argument-hint: "[feature description | existing slug to continue Mode B]"
+description: Interview-driven planning. Writes .ac/plans/<slug>.md or <slug>/phase-N.md. Pair-planning loop, intent-branching, clearance gate, Nyquist verify rule. On approval, chains directly into /ac:execute (interactive or --auto autonomous). Main-agent only.
+argument-hint: "[feature description | existing slug to continue Mode B] (approval offers --auto autonomous execute)"
 effort: high
 ---
 
