@@ -227,10 +227,13 @@ Triggered after the last Task of the current phase in Mode A.
 
 2. Set the phase file's `status: complete`.
 3. Update ROADMAP: mark this phase `status: complete`.
-4. Pick the next phase with `status: approved`. If none remain, go to Phase 5.
-5. Set the next phase's `status: executing`. Re-invoke twin skills (Phase 2), restart Phase 3 on the new phase file.
+4. Update the state file: bump `current_phase += 1`, reset `current_task: 1`, refresh `last_updated`.
+5. Pick the next phase with `status: approved`. If none remain, route to Phase 5 Path A (full completion).
+6. Branch on `state.autonomous`:
+   - `autonomous: true` (sticky cross-phase): set the next phase's `status: executing`, then route to Phase 5 Path B so the rest of the plan resumes in a fresh turn via `ScheduleWakeup`. This keeps context lean across phases by design (gsd-style anti-rot, subagent-isolation analogue at the session level).
+   - `autonomous: false` (interactive): set the next phase's `status: executing`, re-invoke twin skills (Phase 2), restart Phase 3 on the new phase file in the same turn.
 
-Only halts on verify-fail or Rule 4. Single-file and Mode B plans skip Phase 4 entirely.
+Only halts on verify-fail or Rule 4 (interactive only). Single-file and Mode B plans skip Phase 4 entirely.
 
 ---
 
