@@ -209,8 +209,8 @@ Then:
     "header": "Approval",
     "multiSelect": false,
     "options": [
-      {"label": "Approve and execute now (Recommended)", "description": "Set status=approved and immediately run /ac:execute against the plan in this same turn."},
-      {"label": "Approve only", "description": "Set status=approved and print the exact /ac:execute command for the user to run later."},
+      {"label": "Approve and execute now (Recommended)", "description": "Set status=approved and immediately run /ac:execute against the plan in this same turn. Pass --auto for autonomous execution (skip-and-log at every stop point, ScheduleWakeup-driven cross-turn loop, max_iterations cap)."},
+      {"label": "Approve only", "description": "Set status=approved and print the exact /ac:execute command for the user to run later. Use --auto for autonomous mode."},
       {"label": "Edit specific section", "description": "Tell me which section to change; loop back to Phase 4 for that scope."},
       {"label": "Restart", "description": "Return to Phase 2 and redo classify and skeleton from scratch."}
     ]
@@ -236,6 +236,8 @@ On **Approve only**:
 ---
 
 ## Plan File Format
+
+Autonomous mode is opt-in via the `--auto` CLI flag, never via plan frontmatter. Run-time state (autonomous flag, current phase + task, iteration count) lives in `.execution-state.md` next to the plan, written and consumed by `/ac:execute`. See `plugins/ac/references/execution-state-schema.md`.
 
 ```markdown
 ---
