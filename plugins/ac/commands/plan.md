@@ -209,8 +209,9 @@ Then:
     "header": "Approval",
     "multiSelect": false,
     "options": [
-      {"label": "Approve and execute now (Recommended)", "description": "Set status=approved and immediately run /ac:execute against the plan in this same turn. Pass --auto for autonomous execution (skip-and-log at every stop point, ScheduleWakeup-driven cross-turn loop, max_iterations cap)."},
-      {"label": "Approve only", "description": "Set status=approved and print the exact /ac:execute command for the user to run later. Use --auto for autonomous mode."},
+      {"label": "Approve and execute autonomously now (Recommended)", "description": "Set status=approved and immediately run /ac:execute <path> --auto in this same turn. Skip-and-log defaults at every stop point: Rule 4 architectural deviations log to Open Questions instead of asking, verify-fail-twice marks the task skipped, preflight-fail leaves the working tree dirty. ScheduleWakeup chains the resume across turns when context fills. Pick this when you want to walk away from the run."},
+      {"label": "Approve and execute now", "description": "Set status=approved and immediately run /ac:execute <path> in this same turn. Interactive: pause on architectural deviations, verify-fail after one debug retry, and preflight-fail."},
+      {"label": "Approve only", "description": "Set status=approved and print the /ac:execute command (with both interactive and --auto examples). For a long plan you want to start later, this is the way."},
       {"label": "Edit specific section", "description": "Tell me which section to change; loop back to Phase 4 for that scope."},
       {"label": "Restart", "description": "Return to Phase 2 and redo classify and skeleton from scratch."}
     ]
