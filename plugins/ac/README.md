@@ -43,7 +43,39 @@ Re-run any command with `update` to sync after plugin updates, e.g. `/ac:setup-g
 | `/ac:setup-language` | Scan writing samples, interview, generate `my-language` skill |
 | `/ac:setup-global-claude-md` | Generate global `~/.claude/CLAUDE.md` — tech stack, skill table, lightweight rules |
 
-Every command runs in the main context with Read / Glob / Grep / Bash. No hidden subagent orchestration — the planning trio (`plan` / `execute` / `wisdom`) runs entirely in the main agent.
+Every command runs in the main context with Read / Glob / Grep / Bash. No hidden subagent orchestration. The planning trio (`plan` / `execute` / `wisdom`) runs entirely in the main agent.
+
+## Autonomous Execution Mode
+
+`/ac:execute --auto` runs an approved plan end-to-end without stopping for architectural questions, verify failures, or preflight failures. Every stop point becomes "skip + log + continue", so the run completes in one pass and the deviation log captures whatever needs human attention afterward.
+
+The mode is sticky: passing `--auto` writes `autonomous: true` to `.ac/plans/<slug>.execution-state.md` (Simple) or `.ac/plans/<slug>/.execution-state.md` (Mode A or B). Compaction-survival is built in: `SessionStart` re-injects the resume reminder, `PreCompact` preserves plan position in the summarization prompt, and `PostToolUse` warns at 75% / 90% context fill. When a Mode A phase finishes in autonomous mode, the boundary calls `ScheduleWakeup` so the next phase resumes in a fresh turn (gsd-style anti-rot).
+
+```bash
+# Start an approved plan in autonomous mode
+/ac:execute my-plan --auto
+
+# Mid-flight switch from interactive to autonomous
+/ac:execute my-plan --auto
+
+# Switch back to interactive
+/ac:execute my-plan --no-auto
+
+# Resume after a session ends or after a ScheduleWakeup-triggered turn
+/ac:execute --resume my-plan
+
+# Override the iteration cap (default 100)
+/ac:execute my-plan --auto --max-iterations=300
+```
+
+| Knob | Default | Purpose |
+|------|---------|---------|
+| `--auto` | off | Sets `autonomous: true` in the state file. Sticky. |
+| `--no-auto` | off | Clears `autonomous`, returns to interactive prompts. |
+| `--max-iterations=N` | 100 | Hard cap on `/ac:execute --resume` re-entries. |
+| `--resume <slug>` | n/a | Loads state, increments iteration, jumps to current_phase + current_task. |
+
+Escape hatches stay available: any Ctrl-C / "stop" leaves `status: executing` so manual `/ac:execute --resume` works. The state file is deleted automatically on completion. See `references/execution-state-schema.md` for the full schema.
 
 ## Creator Skills
 
