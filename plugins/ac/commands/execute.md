@@ -145,6 +145,41 @@ On Verify pass:
 2. Invoke `/ac:commit` with a scope hint, for example: `/ac:commit <slug> task <N>, <imperative short description>`. `/ac:commit` handles preflight (lint, tests), convention detection, staging, atomic commit, and push by default.
 3. Preflight fail: if `/ac:commit` reports lint or test failure across the project (even though the Task's Verify passed), treat it as a verify-fail equivalent. Run the Verify-Fail AskUserQuestion above; do NOT advance until the tree is clean.
 4. `--no-push` variant: call `/ac:commit --interactive <slug> task <N>` so it commits but waits for manual push.
+5. Update the state file (`.ac/plans/<slug>.execution-state.md` for Simple, `.ac/plans/<slug>/.execution-state.md` for Mode A or B): bump `current_task` to the next task index, refresh `last_updated`, reset `attempt: 1`, append a one-line `Last Action` summary in the body. Use a heredoc:
+
+   ```bash
+   cat > "<state-path>" <<EOF
+   ---
+   slug: <slug>
+   mode: <mode>
+   status: executing
+   current_phase: <N>
+   current_task: <next>
+   total_tasks: <count>
+   attempt: 1
+   iteration: <stored>
+   max_iterations: <stored>
+   autonomous: <stored>
+   started_at: <stored>
+   last_updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+   ---
+
+   ## Last Action
+   Completed Task <N-1> (<short title>).
+   Next: Task <N> (<short title>).
+
+   ## Recent Deviations
+   <last 5 entries from plan Deviations Log>
+
+   ## Stagnation Window
+   <last 3 task attempts>
+
+   ## Last Context Warning
+   <preserved from previous state if any>
+   EOF
+   ```
+
+   See `plugins/ac/references/execution-state-schema.md` for the full schema.
 
 Continue to the next Task without pausing.
 
@@ -177,11 +212,16 @@ Only halts on verify-fail or Rule 4. Single-file and Mode B plans skip Phase 4 e
 ## Phase 5: Completion
 
 1. Set `status: complete` on the target. Mode A: also on ROADMAP (meta `status: complete`) and every phase file.
-2. Run the wisdom step inline (no need to spawn `/ac:wisdom`):
+2. Delete the execution state file:
+   - Simple: `rm -f .ac/plans/<slug>.execution-state.md`.
+   - Mode A or B: `rm -f .ac/plans/<slug>/.execution-state.md`.
+
+   The plan frontmatter `status: complete` is the single source of truth from this point. The state file is recreated only if `--force` re-runs the plan.
+3. Run the wisdom step inline (no need to spawn `/ac:wisdom`):
    - Append or consolidate `SUMMARY.md`.
    - Update `open-questions.md` with anything deferred during execute.
    - Memory Reflection (per `/ac:wisdom` Phase 4): evaluate whether the plan produced architectural decisions, codebase evolution, or validated external references worth saving to CC's auto-memory. Save at most 2; save 0 for routine work. Note each saved memory in the plan's Deviations Log so later `/ac:wisdom` runs do not double-save.
-3. Report:
+4. Report:
 
    ```
    Plan <slug> complete.
@@ -194,7 +234,7 @@ Only halts on verify-fail or Rule 4. Single-file and Mode B plans skip Phase 4 e
    SUMMARY: <path>
    ```
 
-4. Suggest next step:
+5. Suggest next step:
    - Single or Mode A: `Plan closed. Review SUMMARY.md.`
    - Mode B: `Next phase pending. Run /ac:plan <slug> to plan phase-0<N+1>.`
 
