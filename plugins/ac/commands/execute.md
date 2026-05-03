@@ -99,8 +99,10 @@ Log entry: `- Task <N> (Rule 2): added <what> to <file>, rationale: <one-liner>.
 Applies to: missing deps (append to `package.json`, `composer.json`, `pubspec.yaml`), build config errors, wrong imports, package name mismatches.
 Log entry: `- Task <N> (Rule 3): <fix> in <file>.`
 
-**Rule 4, ASK via AskUserQuestion, do not proceed until answered.**
+**Rule 4, ASK via AskUserQuestion in interactive mode, AUTO-SKIP in autonomous mode.**
 Applies to: new DB table, non-trivial schema change (rename, drop, type change), new service layer, library switch, breaking API change, scope expansion beyond the Task's listed Files.
+
+If `state.autonomous == false`, ask:
 
 ```json
 {
@@ -118,7 +120,11 @@ Applies to: new DB table, non-trivial schema change (rename, drop, type change),
 }
 ```
 
-Log entry: `- Task <N> (Rule 4): asked <summary>, decision: <choice>, outcome: <what was done>.`
+Log entry (interactive): `- Task <N> (Rule 4): asked <summary>, decision: <choice>, outcome: <what was done>.`
+
+If `state.autonomous == true`, do NOT ask. Skip the Task, append a one-line note to `Open Questions` (so the user can resolve it later), and append to Deviations Log:
+
+`- Task <N> (Rule 4 autonomous skip): <architectural-change summary>, deferred to Open Questions, continuing.`
 
 ### Verify Gate
 
@@ -126,7 +132,9 @@ Run the Task's Verify command via Bash.
 
 - **Pass**: proceed to commit.
 - **First failure**: debug retry. Read the error output; locate the cause in the Task's files first, then immediate neighbors; apply the fix inline; re-run the same Verify. Use the Task's `Failure case` hint when present.
-- **Second failure**: AskUserQuestion.
+- **Second failure**: branch on `state.autonomous`.
+
+If `state.autonomous == false`, AskUserQuestion:
 
 ```json
 {
@@ -144,13 +152,23 @@ Run the Task's Verify command via Bash.
 }
 ```
 
+If `state.autonomous == true`, skip + log + continue. Append to Deviations Log:
+
+`- Task <N> (Verify 2nd fail autonomous skip): <error snippet>, marked task failed, continuing.`
+
+Mark the Task with `(skipped <ISO date>)` instead of `(done <ISO date>)`. Skip the commit step (nothing to commit). Continue to the next Task.
+
 ### Commit
 
 On Verify pass:
 
 1. Mark the Task done in the plan file (checkbox on `Done when`, or append `(done <ISO date>)`).
 2. Invoke `/ac:commit` with a scope hint, for example: `/ac:commit <slug> task <N>, <imperative short description>`. `/ac:commit` handles preflight (lint, tests), convention detection, staging, atomic commit, and push by default.
-3. Preflight fail: if `/ac:commit` reports lint or test failure across the project (even though the Task's Verify passed), treat it as a verify-fail equivalent. Run the Verify-Fail AskUserQuestion above; do NOT advance until the tree is clean.
+3. Preflight fail: if `/ac:commit` reports lint or test failure across the project (even though the Task's Verify passed), branch on `state.autonomous`.
+   - Interactive: run the Verify-Fail AskUserQuestion above; do NOT advance until the tree is clean.
+   - Autonomous: skip the commit, append to Deviations Log:
+     `- Task <N> (Preflight fail autonomous skip): <commit error snippet>, working tree left dirty, continuing.`
+     Mark the Task with `(skipped <ISO date>)` and continue. The next task may inherit the dirty tree; that is acceptable in autonomous mode and will be reflected in the final report.
 4. `--no-push` variant: call `/ac:commit --interactive <slug> task <N>` so it commits but waits for manual push.
 5. Update the state file (`.ac/plans/<slug>.execution-state.md` for Simple, `.ac/plans/<slug>/.execution-state.md` for Mode A or B): bump `current_task` to the next task index, refresh `last_updated`, reset `attempt: 1`, append a one-line `Last Action` summary in the body. Use a heredoc:
 
