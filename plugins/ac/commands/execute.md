@@ -234,9 +234,26 @@ Only halts on verify-fail or Rule 4. Single-file and Mode B plans skip Phase 4 e
 
 ---
 
-## Phase 5: Completion
+## Phase 5: Completion or Schedule
 
-1. Set `status: complete` on the target. Mode A: also on ROADMAP (meta `status: complete`) and every phase file.
+Phase 5 is the exit point. Two paths: full completion, or voluntary mid-run exit with autonomous resume scheduled.
+
+### Decision tree
+
+```
+state.status == 'iteration-limit-hit'
+  -> notify user, exit cleanly, no schedule
+plan complete (all phases done, all tasks done or skipped)
+  -> finalize completion (steps below), no schedule
+plan incomplete AND state.autonomous == true AND state.iteration < state.max_iterations
+  -> ScheduleWakeup, exit cleanly
+plan incomplete AND interactive
+  -> exit cleanly, no schedule (user resumes manually)
+```
+
+### Path A, completion
+
+1. Set `status: complete` on the plan target. Mode A: also on ROADMAP (meta `status: complete`) and every phase file.
 2. Delete the execution state file:
    - Simple: `rm -f .ac/plans/<slug>.execution-state.md`.
    - Mode A or B: `rm -f .ac/plans/<slug>/.execution-state.md`.
@@ -262,6 +279,42 @@ Only halts on verify-fail or Rule 4. Single-file and Mode B plans skip Phase 4 e
 5. Suggest next step:
    - Single or Mode A: `Plan closed. Review SUMMARY.md.`
    - Mode B: `Next phase pending. Run /ac:plan <slug> to plan phase-0<N+1>.`
+
+### Path B, autonomous schedule
+
+When the plan is incomplete AND `state.autonomous == true` AND `state.iteration < state.max_iterations`:
+
+1. Update the state file's `last_updated` and confirm `current_phase` and `current_task` reflect the next executable position.
+2. Call `ScheduleWakeup`:
+
+   ```
+   ScheduleWakeup(
+     delaySeconds: 60,
+     prompt: "/ac:execute --resume <slug>",
+     reason: "autonomous resume: phase <P>, task <T>, iteration <I>/<MAX>"
+   )
+   ```
+
+3. Print the schedule confirmation: `Scheduled autonomous resume in 60s. Plan: <slug>, position: phase <P> task <T>, iteration <I>/<MAX>.`
+4. Exit cleanly. No wisdom step yet (plan is not complete). The next `/ac:execute --resume <slug>` turn picks up from the state file.
+
+`ScheduleWakeup` is a deferred tool. If it has not been loaded yet in the current turn, run `ToolSearch(query: "select:ScheduleWakeup", max_results: 1)` first to load its schema.
+
+### Path C, iteration cap reached
+
+When `state.iteration >= state.max_iterations` (already set in Phase 1 resume guard):
+
+1. Confirm state file `status: iteration-limit-hit` is persisted.
+2. Print: `Iteration cap (<N>) reached for plan <slug> at phase <P> task <T>. Resume manually with /ac:execute --resume <slug> --max-iterations=<bigger>.`
+3. Exit cleanly. No schedule, no wisdom step.
+
+### Path D, interactive incomplete exit
+
+When the plan is incomplete AND `state.autonomous == false` (rare, e.g., user pressed stop or interactive verify-fail rollback chosen):
+
+1. Leave `status: executing` on the plan and the state file untouched.
+2. Print: `Paused at phase <P> task <T>. Resume with /ac:execute --resume <slug>.`
+3. Exit cleanly.
 
 ---
 
