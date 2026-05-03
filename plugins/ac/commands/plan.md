@@ -145,6 +145,9 @@ Pair-planning cycle: **Explore the code → Update the plan file → Ask the use
 4. If the question implies more scan is needed, use inline Read / Glob / Grep first. Escalate to `Agent(subagent_type: "Explore", thoroughness: "quick" or "medium")` only when the next answer clearly needs more than 3 directed queries or a broad survey.
 5. Never ask what the code can answer; read the code.
 6. Scale depth to the task: a vague feature request needs many rounds, a focused bug fix may need one or none.
+7. Each option description must include at least one concrete example: a code snippet, file path, command, or scenario walkthrough. Abstract phrasing alone (`pick this if you want X`) is not enough; users decide on concrete consequences. Use the `preview` field for side-by-side code, config, or layout comparisons. Example:
+   - BAD: `Use a service layer.`
+   - GOOD: `Add UserService with create()/update()/delete() methods. Controller calls UserService::create(); UserService raises UserCreated event handled by SendWelcomeEmailListener.`
 
 **Mode A**: loop through every phase in ROADMAP order, fully populating each `phase-0N-*.md`. No open questions allowed at approval.
 
