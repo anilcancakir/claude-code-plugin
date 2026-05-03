@@ -1,8 +1,8 @@
 # ac
 
-**Claude Code setup + creator toolkit.**
+**Main-agent planning trio + autonomous execution + setup and creator toolkit.**
 
-`ac` is a lean plugin that helps you set up Claude Code the way you like it and build new Claude Code components (skills, agents, commands, rules, CLAUDE.md files). It does NOT override CC's native planning, agents, or `Task` tool. Use `/plan` (CC native), spawn CC's default agents, and let `ac` handle the paperwork.
+`ac` is a plugin for structured development workflows. It owns planning end-to-end: `/ac:plan` interviews you into a plan file, `/ac:execute` runs it task-by-task with atomic commits, `/ac:wisdom` summarizes the run. `/ac:execute --auto` flips on autonomous mode (skip-and-log defaults at every stop point, sticky state file, ScheduleWakeup cross-turn loop). `/ac:setup-global-claude-md` denies `EnterPlanMode`, `ExitPlanMode`, and `Agent(Plan)` in `~/.claude/settings.json` so CC's native plan mode cannot hijack the ac interview flow. Setup, init, and creator skills round out the toolkit.
 
 ## Install
 
@@ -33,8 +33,8 @@ Re-run any command with `update` to sync after plugin updates, e.g. `/ac:setup-g
 
 | Command | Purpose |
 |---------|---------|
-| `/ac:plan` | Interview-driven planning, writes `.ac/plans/<slug>.md`. Auto-detects Simple vs multi-phase (Mode A: plan-then-execute-all, Mode B: plan-and-execute per phase). Main agent only |
-| `/ac:execute` | Runs an approved plan end-to-end. Auto-fix bugs / missing validation / blocking issues. Asks only on architectural deviations. Per-task atomic commits + Nyquist verify gate |
+| `/ac:plan` | Interview-driven planning, writes `.ac/plans/<slug>.md`. Auto-detects Simple vs multi-phase (Mode A: plan-then-execute-all, Mode B: plan-and-execute per phase). Approval can chain straight into `/ac:execute --auto`. Main agent only |
+| `/ac:execute` | Runs an approved plan end-to-end. Auto-fix bugs / missing validation / blocking issues. Interactive: ask on architectural deviations. Autonomous (`--auto`): skip-and-log every stop point, ScheduleWakeup cross-turn loop. Per-task atomic commits + Nyquist verify gate |
 | `/ac:wisdom` | SUMMARY.md + open-questions.md generator. Auto-invoked at `/ac:execute` completion; callable standalone for re-summarization |
 | `/ac:commit` | Preflight checks → atomic commit → push. Delegates to `git-master` if installed |
 | `/ac:init-claude-md` | Generate project CLAUDE.md from codebase discovery + interview |
@@ -116,7 +116,7 @@ Get your token at [kodizm.com](https://kodizm.com). Without it, kodizm tools are
 
 ## Pure Markdown
 
-Every component is YAML frontmatter + markdown. No compiled code, no runtime dependencies. 6 commands, 6 creator skills, all text files you can read and modify.
+Every component is YAML frontmatter + markdown. The three hooks (`session-start.mjs`, `pre-compact.mjs`, `post-tool-use.mjs`) are short Node scripts with zero runtime dependencies. 9 commands, 6 creator skills, 3 hooks, all text files you can read and modify.
 
 ## License
 

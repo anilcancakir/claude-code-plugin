@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Mission
 
-This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` ships a main-agent planning trio (`/ac:plan`, `/ac:execute`, `/ac:wisdom`) plus setup, init, and commit commands and creator skills for building Claude Code extensions (skills, agents, commands, rules, CLAUDE.md files). The planning trio runs entirely in the main agent (no subagent swarms, no tier routing); `/ac:setup-global-claude-md` blocks `EnterPlanMode`, `ExitPlanMode`, and `Agent(Plan)` in `~/.claude/settings.json` so the ac trio owns planning end-to-end. A `SessionStart` hook reminds Claude to invoke the user's personal `my-coding` and `my-language` twin skills before code or prose output. The marketplace structure allows additional plugins to be added independently.
+This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` ships a main-agent planning trio (`/ac:plan`, `/ac:execute`, `/ac:wisdom`) with an autonomous execution mode (`/ac:execute --auto`, sticky state file, `ScheduleWakeup` cross-turn loop), plus setup, init, and commit commands and creator skills for building Claude Code extensions (skills, agents, commands, rules, CLAUDE.md files). The planning trio runs entirely in the main agent (no subagent swarms, no tier routing); `/ac:setup-global-claude-md` blocks `EnterPlanMode`, `ExitPlanMode`, and `Agent(Plan)` in `~/.claude/settings.json` so the ac trio owns planning end-to-end. Three hooks back the workflow: `SessionStart` reminds Claude to invoke the user's personal `my-coding` and `my-language` twin skills (and re-injects autonomous-run state on resume), `PreCompact` preserves run state in the summarization prompt, `PostToolUse` warns at 75% / 90% context fill during autonomous runs. The marketplace structure allows additional plugins to be added independently.
 
 ## Architecture
 
@@ -12,12 +12,12 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` shi
 ├── .claude-plugin/
 │   └── marketplace.json          # Plugin catalog — all plugins registered here
 ├── plugins/
-│   ├── ac/                       # Main plugin: planning trio + creator skills + setup/init commands + SessionStart hook
+│   ├── ac/                       # Main plugin: planning trio + autonomous execution + creator skills + 3 hooks
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json       # Minimal: name, description, author
 │   │   ├── .mcp.json             # MCP server configs (kodizm bundled)
 │   │   ├── commands/             # 9 user-invocable /ac:* commands (plan, execute, wisdom, commit, init-*, setup-*)
-│   │   ├── hooks/                # SessionStart twin-skill reminder (session-start.mjs + hooks.json)
+│   │   ├── hooks/                # session-start.mjs (twin-skill + autonomous resume), pre-compact.mjs (state preservation), post-tool-use.mjs (context monitor)
 │   │   ├── skills/
 │   │   │   ├── prompt-writer/    # Shared CC prompt writing foundation + references/
 │   │   │   ├── skill-creator/    # Skill creation + references/
@@ -25,7 +25,7 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` shi
 │   │   │   ├── command-creator/  # Command creation + references/
 │   │   │   ├── rule-creator/     # Rule creation
 │   │   │   └── claude-md-writer/ # CLAUDE.md authoring + references/
-│   │   ├── references/           # Templates for setup/init commands and CLAUDE.md generation
+│   │   ├── references/           # Templates for setup/init commands, CLAUDE.md generation, and execution-state schema
 │   │   ├── README.md
 │   │   └── LICENSE
 │   ├── github-cli/               # GitHub CLI skill plugin
