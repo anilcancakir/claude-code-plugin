@@ -36,9 +36,16 @@ Run an approved plan to completion in the main agent. Loop mode: do not pause be
    - On subsequent runs (state file exists): load frontmatter. If `--auto` was passed now, set `autonomous: true`. If `--no-auto`, set it to `false`. If neither, keep the stored value. Mid-flight switching is supported, the new value applies from the next Task forward.
    - If `--max-iterations=N` is passed, overwrite the stored cap.
 
-4. Set `status: executing` on the plan target (and on ROADMAP for Mode A).
+4. Resume mode (`--resume <slug>` was passed):
+   - State file MUST exist; if missing, refuse with `No execution state for <slug>. Run /ac:execute <slug> first.`
+   - Increment `iteration` in the state frontmatter by 1 (`iteration += 1`).
+   - Hard cap check: if `iteration > max_iterations`, set state `status: iteration-limit-hit`, leave plan `status: executing`, do NOT call ScheduleWakeup, exit cleanly with: `Iteration cap (<N>) reached. Resume manually: /ac:execute --resume <slug> --max-iterations=<bigger>.`
+   - Jump directly to Phase 3 starting at the stored `current_phase` and `current_task`. Skip Phase 1 step 5 plan picker.
+   - Phase 2 twin-skill re-invoke runs unconditionally on resume so compaction-dropped Skill state is restored.
 
-5. Mode A: read ROADMAP, pick the first phase with `status: approved`, make its phase file the current target. Remember the ROADMAP path for Phase 4.
+5. Set `status: executing` on the plan target (and on ROADMAP for Mode A).
+
+6. Mode A first-run path (no `--resume`): read ROADMAP, pick the first phase with `status: approved`, make its phase file the current target. Remember the ROADMAP path for Phase 4.
 
 ### Flag interaction examples
 
