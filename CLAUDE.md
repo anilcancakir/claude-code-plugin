@@ -35,15 +35,14 @@ This is a **multi-plugin marketplace** for Claude Code. The main plugin `ac` shi
 │   ├── dart-lsp/                 # Dart/Flutter language server plugin
 │   ├── json-lsp/                 # JSON language server plugin
 │   ├── yaml-lsp/                 # YAML language server plugin
-│   ├── markdown-lsp/             # Markdown language server plugin
-│   └── ac-new/                   # Liquid template renderer (experimental)
+│   └── markdown-lsp/             # Markdown language server plugin
 ├── CLAUDE.md                     # This file
 ├── README.md                     # Marketplace README
 ├── package.json
 └── LICENSE
 ```
 
-All components are pure markdown with YAML frontmatter. No compiled code (except `ac-new`).
+All components are pure markdown with YAML frontmatter. No compiled code.
 
 **Marketplace vs Plugin boundary**: Root `.claude-plugin/marketplace.json` is the catalog. It lists all plugins with `"source": "./plugins/<name>"`. Each plugin has its own `.claude-plugin/plugin.json` (minimal: name, description, author). Heavy metadata (version, category, homepage, tags) lives only in marketplace.json.
 
