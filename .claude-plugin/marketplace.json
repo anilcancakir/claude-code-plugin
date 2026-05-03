@@ -9,8 +9,8 @@
     "plugins": [
         {
             "name": "ac",
-            "description": "Claude Code setup + creator toolkit plus main-agent planning trio with autonomous execution mode (/ac:execute --auto, ScheduleWakeup resume, compaction-survivable state) — /ac:plan, /ac:execute, /ac:wisdom, /ac:setup-*, /ac:init-*, /ac:commit commands plus skill-creator, agent-creator, command-creator, rule-creator, and claude-md-writer skills.",
-            "version": "6.5.0",
+            "description": "Claude Code setup + creator toolkit plus main-agent planning trio with autonomous execution mode (/ac:execute --auto, ScheduleWakeup resume, compaction-survivable state) and /ac:plan auto-execute approval option — /ac:plan, /ac:execute, /ac:wisdom, /ac:setup-*, /ac:init-*, /ac:commit commands plus skill-creator, agent-creator, command-creator, rule-creator, and claude-md-writer skills.",
+            "version": "6.5.1",
             "author": {
                 "name": "Anilcan Cakir",
                 "email": "anilcan.cakir@gmail.com"
