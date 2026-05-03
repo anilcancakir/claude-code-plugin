@@ -224,10 +224,15 @@ Resolve the approved plan path from mode (used by both Approve options):
 - Mode A: `.ac/plans/<slug>/`
 - Mode B: `.ac/plans/<slug>/phase-0N-<name>.md`
 
+On **Approve and execute autonomously now**:
+1. Set `status: approved` on the target file (Mode A updates every phase file; Mode B updates only the current phase file and ROADMAP).
+2. Announce: `Plan approved, starting /ac:execute <path> --auto.`
+3. Proceed inline with the `/ac:execute` workflow against the resolved path WITH the `--auto` flag. Follow its Phase 1 through Phase 5 in the same turn. Phase 5 routes to Path B (`ScheduleWakeup`) when work remains, so a long autonomous run continues across turns automatically. Do not stop except on iteration-cap or user interrupt. Skip-and-log every stop point silently; the final report lists everything skipped.
+
 On **Approve and execute now**:
 1. Set `status: approved` on the target file (Mode A updates every phase file; Mode B updates only the current phase file and ROADMAP).
 2. Announce: `Plan approved, starting /ac:execute <path>.`
-3. Proceed inline with the `/ac:execute` workflow against the resolved path. Follow its Phase 1 through Phase 5 in the same turn. Do not stop until `/ac:execute` reports completion or halts on a Rule 4 / verify-fail gate.
+3. Proceed inline with the `/ac:execute` workflow against the resolved path (no `--auto`). Follow its Phase 1 through Phase 5 in the same turn. Pause on Rule 4 architectural deviation, verify-fail after one debug retry, or preflight-fail.
 
 On **Approve only**:
 1. Set `status: approved` as above.
