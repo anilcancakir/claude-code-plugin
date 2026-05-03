@@ -92,6 +92,7 @@ Commands run in the main context. None of them spawn subagents; the old `ac:expl
 - **Creator skills stay generic**: `skill-creator`, `agent-creator`, `command-creator`, `rule-creator`, `claude-md-writer` produce components for any plugin. Examples use placeholder `<your-*>` subagent names rather than ac-internal agents.
 - **Direct tool access in commands**: Init, setup, and planning commands discover the codebase with Read / Glob / Grep / Bash directly. No research subagents are spawned.
 - **Per-task atomic commits**: `/ac:execute` invokes `/ac:commit` after every Task whose Verify passed. Conventional Commits format with scope (via `my-language`), auto-push by default, `--no-push` opt-out for offline or protected branches.
+- **Autonomous execution**: `/ac:execute --auto` opts into a sticky autonomous mode written to `.ac/plans/<slug>.execution-state.md` (Simple) or `<slug>/.execution-state.md` (Mode A or B). Every interactive stop point becomes skip-and-log so the run completes unattended. `max_iterations` (default 100, override with `--max-iterations=N`) caps the resume loop. Mode A phase boundaries route through Phase 5's `ScheduleWakeup` for cross-turn anti-rot. Compaction-survival comes from the `PreCompact` and `PostToolUse` hooks plus the `SessionStart` resume injection.
 - **Nyquist rule**: Every Task in a plan file must declare an automated `Verify` command. If missing, `/ac:plan` adds a Wave 0 scaffold Task before it.
 - **Twin skill enforcement**: `SessionStart` hook at `plugins/ac/hooks/session-start.mjs` injects an `additionalContext` reminder so Claude invokes `Skill("my-coding")` and `Skill("my-language")` before any code or prose output. Fires on startup, resume, clear, and compact triggers. Silent no-op if the user has not installed the twin skills.
 - **Project override**: Always obey the active project's `CLAUDE.md`, `CLAUDE.local.md`, and `.claude/rules/`. When switching workdir, re-read and follow that directory's project rules.
@@ -102,7 +103,10 @@ Commands run in the main context. None of them spawn subagents; the old `ac:expl
 
 - `plugins/ac/commands/plan.md`, `execute.md`, `wisdom.md`: Main-agent planning trio. Phase-based, AskUserQuestion-driven, per-task atomic commits via `/ac:commit`.
 - `plugins/ac/commands/setup-global-claude-md.md`: Generates `~/.claude/CLAUDE.md` and configures `~/.claude/settings.json` deny list for native plan mode tools.
-- `plugins/ac/hooks/hooks.json`, `plugins/ac/hooks/session-start.mjs`: SessionStart hook that injects Twin Mode reminder on startup, resume, clear, and compact triggers.
+- `plugins/ac/hooks/hooks.json`, `plugins/ac/hooks/session-start.mjs`: SessionStart hook that injects Twin Mode reminder on startup, resume, clear, and compact triggers, plus the autonomous run resume reminder when an `.execution-state.md` is present.
+- `plugins/ac/hooks/pre-compact.mjs`: PreCompact hook. Emits `newCustomInstructions` so the summarization model preserves slug + current phase/task + iteration + recent deviations + twin skill reminder.
+- `plugins/ac/hooks/post-tool-use.mjs`: PostToolUse hook. Reads transcript usage to approximate context fill, emits WARNING (75%) or CRITICAL (90%) `additionalContext` during autonomous runs. Throttled with a 5-tool-call cooldown via the state file body.
+- `plugins/ac/references/execution-state-schema.md`: `.execution-state.md` schema, lifecycle, and three example states (Simple, Mode A mid-run, just-before-delete).
 - `plugins/ac/skills/prompt-writer/SKILL.md`: Shared foundation for all creator skills, CC prompt writing principles.
 - `plugins/ac/skills/prompt-writer/references/`: Frontmatter schemas, dedup guide, writing patterns (shared by all creators).
 - `plugins/ac/skills/claude-md-writer/SKILL.md`: CLAUDE.md authoring patterns, quality scoring, compression tactics.
