@@ -1,5 +1,5 @@
 {
-  "description": "ac plugin hooks: nudge Claude to invoke the user's personal twin skills at session start, preserve autonomous /ac:execute state across compaction, and warn when context fills mid-run.",
+  "description": "ac plugin hooks: nudge Claude to invoke the user's personal twin skills at session start, inject autonomous-run resume reminder when an .execution-state.md is present, and preserve plan state through compaction via PreCompact.",
   "hooks": {
     "SessionStart": [
       {
@@ -19,17 +19,6 @@
             "type": "command",
             "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.mjs",
             "timeout": 3
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.mjs",
-            "timeout": 1
           }
         ]
       }

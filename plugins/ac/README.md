@@ -49,7 +49,7 @@ Every command runs in the main context with Read / Glob / Grep / Bash. No hidden
 
 `/ac:execute --auto` runs an approved plan end-to-end without stopping for architectural questions, verify failures, or preflight failures. Every stop point becomes "skip + log + continue", so the run completes in one pass and the deviation log captures whatever needs human attention afterward.
 
-The mode is sticky: passing `--auto` writes `autonomous: true` to `.ac/plans/<slug>.execution-state.md` (Simple) or `.ac/plans/<slug>/.execution-state.md` (Mode A or B). Compaction-survival is built in: `SessionStart` re-injects the resume reminder, `PreCompact` preserves plan position in the summarization prompt, and `PostToolUse` warns at 75% / 90% context fill. When a Mode A phase finishes in autonomous mode, the boundary calls `ScheduleWakeup` so the next phase resumes in a fresh turn (gsd-style anti-rot).
+The mode is sticky: passing `--auto` writes `autonomous: true` to `.ac/plans/<slug>.execution-state.md` (Simple) or `.ac/plans/<slug>/.execution-state.md` (Mode A or B). Compaction-survival is built in: `SessionStart` re-injects the resume reminder after CC's native auto-compaction, and `PreCompact` preserves plan position in the summarization prompt. When a Mode A phase finishes in autonomous mode, the boundary calls `ScheduleWakeup` so the next phase resumes in a fresh turn (gsd-style anti-rot). Phase 5 only enters at one of four conditions: plan complete, iteration cap, Mode A boundary, or user interrupt. Mid-task context warnings never bail the run.
 
 ```bash
 # Start an approved plan in autonomous mode
@@ -116,7 +116,7 @@ Get your token at [kodizm.com](https://kodizm.com). Without it, kodizm tools are
 
 ## Pure Markdown
 
-Every component is YAML frontmatter + markdown. The three hooks (`session-start.mjs`, `pre-compact.mjs`, `post-tool-use.mjs`) are short Node scripts with zero runtime dependencies. 9 commands, 6 creator skills, 3 hooks, all text files you can read and modify.
+Every component is YAML frontmatter + markdown. The two hooks (`session-start.mjs`, `pre-compact.mjs`) are short Node scripts with zero runtime dependencies. 9 commands, 6 creator skills, 2 hooks, all text files you can read and modify.
 
 ## License
 

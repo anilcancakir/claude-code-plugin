@@ -6,7 +6,7 @@ Claude Code plugins for structured development workflows.
 
 | Plugin | Description |
 |--------|-------------|
-| **[ac](plugins/ac/)** | Main-agent planning trio (`/ac:plan`, `/ac:execute`, `/ac:wisdom`) with autonomous execution mode (`--auto`, sticky state file, `ScheduleWakeup` cross-turn loop), setup + creator toolkit (`/ac:setup-*`, `/ac:init-*`, `/ac:commit`), skill/agent/command/rule/CLAUDE.md creators, three hooks (SessionStart twin-skill + autonomous resume, PreCompact state preservation, PostToolUse context monitor) |
+| **[ac](plugins/ac/)** | Main-agent planning trio (`/ac:plan`, `/ac:execute`, `/ac:wisdom`) with autonomous execution mode (`--auto`, sticky state file, `ScheduleWakeup` cross-turn loop), setup + creator toolkit (`/ac:setup-*`, `/ac:init-*`, `/ac:commit`), skill/agent/command/rule/CLAUDE.md creators, two hooks (SessionStart twin-skill + autonomous resume, PreCompact state preservation) |
 | **[github-cli](plugins/github-cli/)** | GitHub CLI skill: issues, PRs, releases, actions, `gh api` |
 | **[git-master](plugins/git-master/)** | Git expert: atomic commits, rebase, history archaeology |
 | **[github-actions](plugins/github-actions/)** | GitHub Actions workflow generator: CI/CD, releases, Docker, security hardening |
@@ -48,10 +48,10 @@ After updating, sync your config:
 ├── .claude-plugin/
 │   └── marketplace.json      # Plugin catalog
 ├── plugins/
-│   ├── ac/                   # Main plugin: 9 commands, 6 creator skills, 3 hooks
+│   ├── ac/                   # Main plugin: 9 commands, 6 creator skills, 2 hooks
 │   │   ├── commands/         # plan, execute, wisdom, commit, init-*, setup-*
 │   │   ├── skills/           # prompt-writer, skill-creator, agent-creator, command-creator, rule-creator, claude-md-writer
-│   │   ├── hooks/            # SessionStart (twin-skill + resume), PreCompact (state preservation), PostToolUse (context monitor)
+│   │   ├── hooks/            # SessionStart (twin-skill + resume), PreCompact (state preservation)
 │   │   └── references/       # CLAUDE.md templates, style templates, execution-state schema
 │   ├── github-cli/           # GitHub CLI skill
 │   ├── github-actions/       # GitHub Actions workflow generator

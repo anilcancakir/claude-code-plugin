@@ -1,7 +1,7 @@
 {
   "name": "claude-code-plugin",
-  "version": "6.5.1",
-  "description": "Claude Code plugin marketplace: setup, main-agent planning trio (/ac:plan + /ac:execute + /ac:wisdom) with autonomous execution mode and auto-execute approval option, creator toolkit, SessionStart + PreCompact + PostToolUse hooks, plus companion plugins (git, GitHub, frontend, LSP)",
+  "version": "6.5.2",
+  "description": "Claude Code plugin marketplace: setup, main-agent planning trio (/ac:plan + /ac:execute + /ac:wisdom) with autonomous execution mode and auto-execute approval option, creator toolkit, SessionStart + PreCompact hooks, plus companion plugins (git, GitHub, frontend, LSP)",
   "author": "Anilcan Cakir",
   "license": "MIT",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "ac",
-  "description": "Main-agent planning trio (/ac:plan, /ac:execute, /ac:wisdom) with autonomous execution mode plus setup, init, commit commands and skill, agent, command, rule, CLAUDE.md creator skills. Three hooks back the workflow: SessionStart, PreCompact, PostToolUse.",
+  "description": "Main-agent planning trio (/ac:plan, /ac:execute, /ac:wisdom) with autonomous execution mode plus setup, init, commit commands and skill, agent, command, rule, CLAUDE.md creator skills. Two hooks back the workflow: SessionStart for twin-skill and resume, PreCompact for state preservation.",
   "author": {
     "name": "Anilcan Cakir",
     "email": "anilcan.cakir@gmail.com"
