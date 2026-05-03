@@ -7,20 +7,27 @@
  * `utils/hooks.ts:3867` — source enum: 'startup' | 'resume' | 'clear' |
  * 'compact').
  *
- * Detects the user's personal twin skills at ~/.claude/skills/my-coding and
- * ~/.claude/skills/my-language. When present, injects a short
- * additionalContext reminder so Claude invokes them via the Skill tool before
- * writing code or prose. Silent no-op when neither skill is installed.
+ * Two responsibilities:
  *
- * Post-compact trigger adds an extra line reminding Claude that prior Skill
- * invocations may have been compacted out of history and should be re-invoked
- * if the upcoming turn requires the coding or prose baseline.
+ * 1. Twin skill reminder. Detects the user's personal skills at
+ *    ~/.claude/skills/my-coding and ~/.claude/skills/my-language. When present,
+ *    injects a short additionalContext reminder so Claude invokes them via the
+ *    Skill tool before writing code or prose. Silent no-op when neither skill
+ *    is installed. Post-compact trigger adds an extra line about re-invoking
+ *    skills that may have been compacted out of history.
+ *
+ * 2. Autonomous execution resume. Scans for `.execution-state.md` files in
+ *    `.ac/plans/` (Simple sibling and Mode A/B child layouts). When a state
+ *    file with `status: executing` is found, adds a resume reminder so the
+ *    upcoming turn knows it can call `/ac:execute --resume <slug>` and which
+ *    phase + task to pick up from. Schema: see
+ *    `plugins/ac/references/execution-state-schema.md`.
  *
  * Schema: writes `hookSpecificOutput.additionalContext` on stdout. Any runtime
  * error exits 0 silently so a broken hook never blocks the session.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -96,13 +103,171 @@ function buildContext({ bullets, source }) {
     return lines.join("\n");
 }
 
+/**
+ * Parses the YAML frontmatter block from a markdown file's contents.
+ *
+ * Only flat scalar key: value pairs are recognized (no nesting, no lists).
+ * Returns an empty object when the file has no frontmatter or parsing fails.
+ *
+ * @param {string} content
+ * @returns {Record<string, string>}
+ */
+function parseFrontmatter(content) {
+    const fields = {};
+
+    if (!content.startsWith("---\n")) {
+        return fields;
+    }
+
+    const end = content.indexOf("\n---", 4);
+
+    if (end === -1) {
+        return fields;
+    }
+
+    const block = content.slice(4, end);
+
+    for (const line of block.split("\n")) {
+        const colon = line.indexOf(":");
+
+        if (colon === -1) {
+            continue;
+        }
+
+        const key = line.slice(0, colon).trim();
+        const value = line.slice(colon + 1).trim();
+
+        if (key) {
+            fields[key] = value;
+        }
+    }
+
+    return fields;
+}
+
+/**
+ * Scans `.ac/plans/` for `.execution-state.md` files (Simple sibling and
+ * Mode A/B child layouts) and returns parsed frontmatter for any state file
+ * with `status: executing`.
+ *
+ * Returns an empty array when the directory does not exist or no executing
+ * plan is found. All errors are swallowed (returns []) so a malformed state
+ * file never breaks the hook.
+ *
+ * @returns {Array<{ path: string, fields: Record<string, string> }>}
+ */
+function findExecutingPlans() {
+    const plansDir = join(process.cwd(), ".ac", "plans");
+
+    if (!existsSync(plansDir)) {
+        return [];
+    }
+
+    const found = [];
+
+    try {
+        // 1. Simple layout: <slug>.execution-state.md sibling files.
+        for (const entry of readdirSync(plansDir)) {
+            if (!entry.endsWith(".execution-state.md")) {
+                continue;
+            }
+
+            const path = join(plansDir, entry);
+            const content = readFileSync(path, "utf8");
+            const fields = parseFrontmatter(content);
+
+            if (fields.status === "executing") {
+                found.push({
+                    path,
+                    fields,
+                });
+            }
+        }
+
+        // 2. Mode A and B layout: <slug>/.execution-state.md child files.
+        for (const entry of readdirSync(plansDir)) {
+            const childDir = join(plansDir, entry);
+
+            if (!statSync(childDir).isDirectory()) {
+                continue;
+            }
+
+            const stateFile = join(childDir, ".execution-state.md");
+
+            if (!existsSync(stateFile)) {
+                continue;
+            }
+
+            const content = readFileSync(stateFile, "utf8");
+            const fields = parseFrontmatter(content);
+
+            if (fields.status === "executing") {
+                found.push({
+                    path: stateFile,
+                    fields,
+                });
+            }
+        }
+    } catch {
+        return [];
+    }
+
+    return found;
+}
+
+/**
+ * Builds a one-block resume reminder for the executing plans found on disk.
+ *
+ * Lists each plan with its slug, mode, current phase + task, iteration count,
+ * and autonomous flag so the upcoming turn can route to /ac:execute --resume
+ * without re-discovering state. Returns an empty string when nothing is
+ * executing.
+ *
+ * @param {Array<{ path: string, fields: Record<string, string> }>} executing
+ * @returns {string}
+ */
+function buildResumeContext(executing) {
+    if (executing.length === 0) {
+        return "";
+    }
+
+    const lines = [
+        "## ac autonomous execution resume",
+        "",
+        "One or more plans are mid-run. Pick up via `/ac:execute --resume <slug>`:",
+        "",
+    ];
+
+    for (const { fields } of executing) {
+        const slug = fields.slug || "(unknown)";
+        const mode = fields.mode || "single";
+        const phase = fields.current_phase || "?";
+        const task = fields.current_task || "?";
+        const iteration = fields.iteration || "?";
+        const max = fields.max_iterations || "?";
+        const autonomous = fields.autonomous === "true";
+
+        lines.push(
+            `- ${slug} (mode: ${mode}, phase ${phase} task ${task}, iteration ${iteration}/${max}, autonomous: ${autonomous})`,
+        );
+    }
+
+    lines.push(
+        "",
+        "Re-invoke `Skill(\"my-coding\")` and `Skill(\"my-language\")` before continuing, then `/ac:execute --resume <slug>`.",
+    );
+
+    return lines.join("\n");
+}
+
 async function main() {
     const skillsRoot = join(homedir(), ".claude", "skills");
     const hasMyCoding = existsSync(join(skillsRoot, "my-coding", "SKILL.md"));
     const hasMyLanguage = existsSync(join(skillsRoot, "my-language", "SKILL.md"));
+    const executing = findExecutingPlans();
 
-    // Silent skip when the user has not installed any twin skill yet.
-    if (!hasMyCoding && !hasMyLanguage) {
+    // Silent skip when neither twin skill is installed AND no plan is executing.
+    if (!hasMyCoding && !hasMyLanguage && executing.length === 0) {
         process.exit(EXIT_SILENT);
     }
 
@@ -110,13 +275,29 @@ async function main() {
     const input = parseInput(raw);
     const source = typeof input.source === "string" ? input.source : "startup";
 
-    const bullets = buildBullets({ hasMyCoding, hasMyLanguage });
-    const context = buildContext({ bullets, source });
+    const sections = [];
+
+    if (hasMyCoding || hasMyLanguage) {
+        const bullets = buildBullets({
+            hasMyCoding,
+            hasMyLanguage,
+        });
+        sections.push(buildContext({
+            bullets,
+            source,
+        }));
+    }
+
+    const resume = buildResumeContext(executing);
+
+    if (resume) {
+        sections.push(resume);
+    }
 
     const output = {
         hookSpecificOutput: {
             hookEventName: "SessionStart",
-            additionalContext: context,
+            additionalContext: sections.join("\n\n"),
         },
     };
 
